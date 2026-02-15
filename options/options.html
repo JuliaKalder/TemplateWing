@@ -6,25 +6,32 @@
 </head>
 <body>
   <div class="options-container">
-    <h1 data-i18n="optionsTitle"></h1>
 
-    <div class="toolbar">
-      <button id="btn-add" data-i18n="optionsAddTemplate"></button>
+    <!-- View: Template list -->
+    <div id="view-list">
+      <h1 data-i18n="optionsTitle"></h1>
+
+      <div class="toolbar">
+        <button id="btn-add" data-i18n="optionsAddTemplate"></button>
+      </div>
+
+      <div id="template-list" class="template-list">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div id="empty-state" class="empty-state" hidden>
+        <p data-i18n="optionsNoTemplates"></p>
+      </div>
     </div>
 
-    <div id="template-list" class="template-list">
-      <!-- Filled dynamically -->
-    </div>
-
-    <div id="empty-state" class="empty-state" hidden>
-      <p data-i18n="optionsNoTemplates"></p>
-    </div>
-
-    <!-- Template editor dialog -->
-    <div id="editor-overlay" class="editor-overlay" hidden>
-      <div class="editor-dialog">
+    <!-- View: Template editor -->
+    <div id="view-editor" hidden>
+      <div class="editor-header">
+        <button id="btn-back" class="btn-back" data-i18n="optionsBack"></button>
         <h2 id="editor-title" data-i18n="optionsNewTemplate"></h2>
+      </div>
 
+      <div class="editor-form">
         <label data-i18n="optionsLabelName"></label>
         <input type="text" id="editor-name">
 
@@ -32,7 +39,22 @@
         <input type="text" id="editor-subject">
 
         <label data-i18n="optionsLabelBody"></label>
-        <textarea id="editor-body" rows="10"></textarea>
+        <div class="editor-toolbar">
+          <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+          <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic"><i>I</i></button>
+          <button type="button" class="toolbar-btn" data-cmd="underline" title="Underline"><u>U</u></button>
+          <span class="toolbar-sep"></span>
+          <button type="button" class="toolbar-btn" data-cmd="insertUnorderedList" title="Bullet List">&#8226; List</button>
+          <button type="button" class="toolbar-btn" data-cmd="insertOrderedList" title="Numbered List">1. List</button>
+          <span class="toolbar-sep"></span>
+          <select id="format-block" class="toolbar-select" title="Format">
+            <option value="p">Normal</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+            <option value="blockquote">Quote</option>
+          </select>
+        </div>
+        <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
 
         <div class="attachment-section">
           <label data-i18n="optionsLabelAttachments"></label>
@@ -47,6 +69,7 @@
         </div>
       </div>
     </div>
+
   </div>
 
   <script type="module" src="options.js"></script>

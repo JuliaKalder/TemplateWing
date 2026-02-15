@@ -15,6 +15,11 @@ function localize() {
   }
 }
 
+function showView(name) {
+  document.getElementById("view-list").hidden = (name !== "list");
+  document.getElementById("view-editor").hidden = (name !== "editor");
+}
+
 async function renderTemplateList() {
   const list = document.getElementById("template-list");
   const emptyState = document.getElementById("empty-state");
@@ -149,11 +154,10 @@ async function addFiles(files) {
 async function openEditor(id) {
   editingId = id || null;
   pendingAttachments = [];
-  const overlay = document.getElementById("editor-overlay");
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const subjectInput = document.getElementById("editor-subject");
-  const bodyInput = document.getElementById("editor-body");
+  const bodyEditor = document.getElementById("editor-body");
 
   if (id) {
     title.textContent = messenger.i18n.getMessage("optionsEditTemplate");
@@ -161,31 +165,31 @@ async function openEditor(id) {
     if (template) {
       nameInput.value = template.name;
       subjectInput.value = template.subject || "";
-      bodyInput.value = template.body || "";
+      bodyEditor.innerHTML = template.body || "";
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
     }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
     nameInput.value = "";
     subjectInput.value = "";
-    bodyInput.value = "";
+    bodyEditor.innerHTML = "";
   }
 
   renderAttachments();
-  overlay.hidden = false;
+  showView("editor");
   nameInput.focus();
 }
 
 function closeEditor() {
-  document.getElementById("editor-overlay").hidden = true;
   editingId = null;
   pendingAttachments = [];
+  showView("list");
 }
 
 async function handleSave() {
   const name = document.getElementById("editor-name").value.trim();
   const subject = document.getElementById("editor-subject").value.trim();
-  const body = document.getElementById("editor-body").value;
+  const body = document.getElementById("editor-body").innerHTML;
 
   if (!name) {
     document.getElementById("editor-name").focus();
@@ -200,14 +204,19 @@ async function handleSave() {
     attachments: pendingAttachments,
   };
 
-  await saveTemplate(template);
+  try {
+    await saveTemplate(template);
+  } catch (err) {
+    console.error("TemplateWing: save failed", err);
+  }
   closeEditor();
-  renderTemplateList();
+  await renderTemplateList();
 }
 
 document.getElementById("btn-add").addEventListener("click", () => openEditor());
 document.getElementById("btn-save").addEventListener("click", handleSave);
 document.getElementById("btn-cancel").addEventListener("click", closeEditor);
+document.getElementById("btn-back").addEventListener("click", closeEditor);
 
 document.getElementById("btn-add-files").addEventListener("click", () => {
   document.getElementById("file-input").click();
@@ -220,8 +229,19 @@ document.getElementById("file-input").addEventListener("change", (e) => {
   }
 });
 
-document.getElementById("editor-overlay").addEventListener("click", (e) => {
-  if (e.target === e.currentTarget) closeEditor();
+// Rich text toolbar
+for (const btn of document.querySelectorAll(".toolbar-btn[data-cmd]")) {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    document.execCommand(btn.dataset.cmd, false, null);
+    document.getElementById("editor-body").focus();
+  });
+}
+
+document.getElementById("format-block").addEventListener("change", (e) => {
+  document.execCommand("formatBlock", false, e.target.value);
+  document.getElementById("editor-body").focus();
+  e.target.value = "p";
 });
 
 localize();
