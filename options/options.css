@@ -190,3 +190,70 @@ h1 {
 .btn-primary:hover {
   background: #004ec2 !important;
 }
+
+/* Attachment section */
+.attachment-section {
+  margin-top: 12px;
+}
+
+.btn-add-file {
+  margin-top: 8px;
+  padding: 6px 14px;
+  border: 1px dashed #0060df;
+  border-radius: 4px;
+  background: #f0f4ff;
+  color: #0060df;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-add-file:hover {
+  background: #e0ebff;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.attachment-item .att-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.attachment-item .att-size {
+  color: #888;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.attachment-item .att-remove {
+  padding: 2px 8px;
+  border: 1px solid #d40000;
+  border-radius: 3px;
+  background: none;
+  color: #d40000;
+  cursor: pointer;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.attachment-item .att-remove:hover {
+  background: #fff0f0;
+}

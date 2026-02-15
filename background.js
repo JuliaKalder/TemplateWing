@@ -50,6 +50,16 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
       subject: template.subject,
     });
   }
+
+  if (template.attachments && template.attachments.length > 0) {
+    for (const att of template.attachments) {
+      const binary = atob(att.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const file = new File([bytes], att.name, { type: att.type });
+      await messenger.compose.addAttachment(tab.id, { file, name: att.name });
+    }
+  }
 });
 
 messenger.runtime.onMessage.addListener((message) => {

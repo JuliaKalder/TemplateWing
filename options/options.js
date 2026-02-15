@@ -6,6 +6,7 @@ import {
 } from "../modules/template-store.js";
 
 let editingId = null;
+let pendingAttachments = [];
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
@@ -78,8 +79,76 @@ async function renderTemplateList() {
   }
 }
 
-function openEditor(id) {
+function generateAttId() {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function renderAttachments() {
+  const list = document.getElementById("attachment-list");
+  list.innerHTML = "";
+
+  for (const att of pendingAttachments) {
+    const item = document.createElement("div");
+    item.className = "attachment-item";
+
+    const name = document.createElement("span");
+    name.className = "att-name";
+    name.textContent = att.name;
+
+    const size = document.createElement("span");
+    size.className = "att-size";
+    size.textContent = formatFileSize(att.size);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "att-remove";
+    removeBtn.textContent = messenger.i18n.getMessage("optionsRemoveAttachment");
+    removeBtn.addEventListener("click", () => {
+      pendingAttachments = pendingAttachments.filter((a) => a.id !== att.id);
+      renderAttachments();
+    });
+
+    item.appendChild(name);
+    item.appendChild(size);
+    item.appendChild(removeBtn);
+    list.appendChild(item);
+  }
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addFiles(files) {
+  for (const file of files) {
+    const data = await readFileAsBase64(file);
+    pendingAttachments.push({
+      id: generateAttId(),
+      name: file.name,
+      type: file.type || "application/octet-stream",
+      size: file.size,
+      data,
+    });
+  }
+  renderAttachments();
+}
+
+async function openEditor(id) {
   editingId = id || null;
+  pendingAttachments = [];
   const overlay = document.getElementById("editor-overlay");
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
@@ -88,13 +157,13 @@ function openEditor(id) {
 
   if (id) {
     title.textContent = messenger.i18n.getMessage("optionsEditTemplate");
-    getTemplate(id).then((template) => {
-      if (template) {
-        nameInput.value = template.name;
-        subjectInput.value = template.subject || "";
-        bodyInput.value = template.body || "";
-      }
-    });
+    const template = await getTemplate(id);
+    if (template) {
+      nameInput.value = template.name;
+      subjectInput.value = template.subject || "";
+      bodyInput.value = template.body || "";
+      pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
+    }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
     nameInput.value = "";
@@ -102,6 +171,7 @@ function openEditor(id) {
     bodyInput.value = "";
   }
 
+  renderAttachments();
   overlay.hidden = false;
   nameInput.focus();
 }
@@ -109,6 +179,7 @@ function openEditor(id) {
 function closeEditor() {
   document.getElementById("editor-overlay").hidden = true;
   editingId = null;
+  pendingAttachments = [];
 }
 
 async function handleSave() {
@@ -126,6 +197,7 @@ async function handleSave() {
     name,
     subject,
     body,
+    attachments: pendingAttachments,
   };
 
   await saveTemplate(template);
@@ -136,6 +208,17 @@ async function handleSave() {
 document.getElementById("btn-add").addEventListener("click", () => openEditor());
 document.getElementById("btn-save").addEventListener("click", handleSave);
 document.getElementById("btn-cancel").addEventListener("click", closeEditor);
+
+document.getElementById("btn-add-files").addEventListener("click", () => {
+  document.getElementById("file-input").click();
+});
+
+document.getElementById("file-input").addEventListener("change", (e) => {
+  if (e.target.files.length > 0) {
+    addFiles(e.target.files);
+    e.target.value = "";
+  }
+});
 
 document.getElementById("editor-overlay").addEventListener("click", (e) => {
   if (e.target === e.currentTarget) closeEditor();

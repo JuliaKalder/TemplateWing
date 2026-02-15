@@ -95,5 +95,28 @@
         "example": "Willkommens-E-Mail"
       }
     }
+  },
+
+  "optionsLabelAttachments": {
+    "message": "Anhänge",
+    "description": "Label für den Anhänge-Bereich im Editor"
+  },
+  "optionsAddFiles": {
+    "message": "Dateien hinzufügen…",
+    "description": "Button zum Hinzufügen von Dateianhängen"
+  },
+  "optionsRemoveAttachment": {
+    "message": "Entfernen",
+    "description": "Button zum Entfernen eines Anhangs"
+  },
+  "popupAttachmentCount": {
+    "message": "$COUNT$ Anhang/Anhänge",
+    "description": "Anzahl der Anhänge im Popup",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

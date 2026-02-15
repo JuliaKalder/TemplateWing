@@ -45,12 +45,28 @@ h2 {
   border-color: #b0c4ff;
 }
 
+.template-item .name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
 .template-item .name {
   font-weight: 500;
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.template-item .att-badge {
+  font-size: 10px;
+  background: #0060df;
+  color: #fff;
+  border-radius: 8px;
+  padding: 1px 6px;
+  flex-shrink: 0;
 }
 
 .template-item .insert-btn {

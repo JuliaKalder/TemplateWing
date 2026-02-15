@@ -95,5 +95,28 @@
         "example": "Welcome Email"
       }
     }
+  },
+
+  "optionsLabelAttachments": {
+    "message": "Attachments",
+    "description": "Label for attachments section in editor"
+  },
+  "optionsAddFiles": {
+    "message": "Add Files…",
+    "description": "Button to add file attachments"
+  },
+  "optionsRemoveAttachment": {
+    "message": "Remove",
+    "description": "Button to remove an attachment"
+  },
+  "popupAttachmentCount": {
+    "message": "$COUNT$ attachment(s)",
+    "description": "Attachment count shown in popup",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }
