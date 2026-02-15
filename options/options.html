@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <h1 data-i18n="optionsTitle"></h1>
+
+    <div class="toolbar">
+      <button id="btn-add" data-i18n="optionsAddTemplate"></button>
+    </div>
+
+    <div id="template-list" class="template-list">
+      <!-- Filled dynamically -->
+    </div>
+
+    <div id="empty-state" class="empty-state" hidden>
+      <p data-i18n="optionsNoTemplates"></p>
+    </div>
+
+    <!-- Template editor dialog -->
+    <div id="editor-overlay" class="editor-overlay" hidden>
+      <div class="editor-dialog">
+        <h2 id="editor-title" data-i18n="optionsNewTemplate"></h2>
+
+        <label data-i18n="optionsLabelName"></label>
+        <input type="text" id="editor-name">
+
+        <label data-i18n="optionsLabelSubject"></label>
+        <input type="text" id="editor-subject">
+
+        <label data-i18n="optionsLabelBody"></label>
+        <textarea id="editor-body" rows="10"></textarea>
+
+        <div class="editor-actions">
+          <button id="btn-save" class="btn-primary" data-i18n="optionsSave"></button>
+          <button id="btn-cancel" data-i18n="optionsCancel"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

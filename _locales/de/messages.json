@@ -1,0 +1,99 @@
+{
+  "extensionName": {
+    "message": "TemplateWing",
+    "description": "Name der Erweiterung"
+  },
+  "extensionDescription": {
+    "message": "E-Mail-Vorlagen mit Anhängen verwalten und einfügen",
+    "description": "Beschreibung der Erweiterung"
+  },
+  "composeActionTitle": {
+    "message": "Vorlagen",
+    "description": "Tooltip für den Compose-Action-Button"
+  },
+
+  "menuInsertTemplate": {
+    "message": "Vorlage einfügen",
+    "description": "Kontextmenü-Eintrag im Verfassen-Fenster"
+  },
+  "menuNoTemplates": {
+    "message": "Keine Vorlagen vorhanden",
+    "description": "Wird angezeigt wenn keine Vorlagen existieren"
+  },
+
+  "popupTitle": {
+    "message": "Vorlagen",
+    "description": "Popup-Überschrift"
+  },
+  "popupInsert": {
+    "message": "Einfügen",
+    "description": "Button zum Einfügen einer Vorlage"
+  },
+  "popupNoTemplates": {
+    "message": "Noch keine Vorlagen. Klicke unten, um eine zu erstellen.",
+    "description": "Leerer Zustand im Popup"
+  },
+  "popupManageTemplates": {
+    "message": "Vorlagen verwalten…",
+    "description": "Button zum Öffnen der Einstellungsseite"
+  },
+
+  "optionsTitle": {
+    "message": "TemplateWing — Vorlagen verwalten",
+    "description": "Überschrift der Einstellungsseite"
+  },
+  "optionsAddTemplate": {
+    "message": "Neue Vorlage",
+    "description": "Button zum Hinzufügen einer neuen Vorlage"
+  },
+  "optionsNoTemplates": {
+    "message": "Noch keine Vorlagen. Klicke auf \"Neue Vorlage\" um loszulegen.",
+    "description": "Leerer Zustand auf der Einstellungsseite"
+  },
+  "optionsNewTemplate": {
+    "message": "Neue Vorlage",
+    "description": "Editor-Dialog-Titel für neue Vorlage"
+  },
+  "optionsEditTemplate": {
+    "message": "Vorlage bearbeiten",
+    "description": "Editor-Dialog-Titel beim Bearbeiten"
+  },
+  "optionsLabelName": {
+    "message": "Name",
+    "description": "Label für das Namensfeld"
+  },
+  "optionsLabelSubject": {
+    "message": "Betreff",
+    "description": "Label für das Betrefffeld"
+  },
+  "optionsLabelBody": {
+    "message": "Inhalt",
+    "description": "Label für das Textfeld"
+  },
+  "optionsSave": {
+    "message": "Speichern",
+    "description": "Speichern-Button"
+  },
+  "optionsCancel": {
+    "message": "Abbrechen",
+    "description": "Abbrechen-Button"
+  },
+  "optionsEdit": {
+    "message": "Bearbeiten",
+    "description": "Bearbeiten-Button auf der Vorlagenkarte"
+  },
+  "optionsDelete": {
+    "message": "Löschen",
+    "description": "Löschen-Button auf der Vorlagenkarte"
+  },
+  "optionsConfirmDelete": {
+    "message": "Vorlage \"$NAME$\" löschen?",
+    "description": "Bestätigungsdialog beim Löschen",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Willkommens-E-Mail"
+      }
+    }
+  }
+}

@@ -1,0 +1,192 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #f5f5f5;
+}
+
+.options-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.toolbar {
+  margin-bottom: 16px;
+}
+
+#btn-add {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #0060df;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#btn-add:hover {
+  background: #004ec2;
+}
+
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.template-card .info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-card .info .name {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.template-card .info .subject {
+  font-size: 12px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card .actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.template-card .actions button {
+  padding: 5px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f9f9f9;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.template-card .actions button:hover {
+  background: #eee;
+}
+
+.template-card .actions .btn-delete {
+  color: #d40000;
+  border-color: #d40000;
+}
+
+.template-card .actions .btn-delete:hover {
+  background: #fff0f0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #666;
+  background: #fff;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+}
+
+/* Editor dialog */
+.editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.editor-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.editor-dialog h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+.editor-dialog label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  margin-top: 12px;
+  color: #555;
+}
+
+.editor-dialog input,
+.editor-dialog textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.editor-dialog textarea {
+  resize: vertical;
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.editor-actions button {
+  padding: 8px 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f9f9f9;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: #0060df !important;
+  color: #fff !important;
+  border-color: #0060df !important;
+}
+
+.btn-primary:hover {
+  background: #004ec2 !important;
+}

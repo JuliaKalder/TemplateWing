@@ -1,0 +1,99 @@
+{
+  "extensionName": {
+    "message": "TemplateWing",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Manage and insert email templates with attachments",
+    "description": "Description of the extension"
+  },
+  "composeActionTitle": {
+    "message": "Templates",
+    "description": "Tooltip for the compose action button"
+  },
+
+  "menuInsertTemplate": {
+    "message": "Insert Template",
+    "description": "Context menu root item in compose body"
+  },
+  "menuNoTemplates": {
+    "message": "No templates available",
+    "description": "Shown when no templates exist"
+  },
+
+  "popupTitle": {
+    "message": "Templates",
+    "description": "Popup heading"
+  },
+  "popupInsert": {
+    "message": "Insert",
+    "description": "Button to insert a template"
+  },
+  "popupNoTemplates": {
+    "message": "No templates yet. Click below to create one.",
+    "description": "Empty state in popup"
+  },
+  "popupManageTemplates": {
+    "message": "Manage Templates…",
+    "description": "Button to open options page"
+  },
+
+  "optionsTitle": {
+    "message": "TemplateWing — Manage Templates",
+    "description": "Options page heading"
+  },
+  "optionsAddTemplate": {
+    "message": "New Template",
+    "description": "Button to add a new template"
+  },
+  "optionsNoTemplates": {
+    "message": "No templates yet. Click \"New Template\" to get started.",
+    "description": "Empty state on options page"
+  },
+  "optionsNewTemplate": {
+    "message": "New Template",
+    "description": "Editor dialog title for new template"
+  },
+  "optionsEditTemplate": {
+    "message": "Edit Template",
+    "description": "Editor dialog title for editing"
+  },
+  "optionsLabelName": {
+    "message": "Name",
+    "description": "Label for template name input"
+  },
+  "optionsLabelSubject": {
+    "message": "Subject",
+    "description": "Label for subject input"
+  },
+  "optionsLabelBody": {
+    "message": "Body",
+    "description": "Label for body textarea"
+  },
+  "optionsSave": {
+    "message": "Save",
+    "description": "Save button"
+  },
+  "optionsCancel": {
+    "message": "Cancel",
+    "description": "Cancel button"
+  },
+  "optionsEdit": {
+    "message": "Edit",
+    "description": "Edit button on template card"
+  },
+  "optionsDelete": {
+    "message": "Delete",
+    "description": "Delete button on template card"
+  },
+  "optionsConfirmDelete": {
+    "message": "Delete template \"$NAME$\"?",
+    "description": "Confirmation dialog for deletion",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  }
+}
