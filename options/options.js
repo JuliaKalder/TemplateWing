@@ -25,7 +25,7 @@ async function renderTemplateList() {
   const emptyState = document.getElementById("empty-state");
   const templates = await getTemplates();
 
-  list.innerHTML = "";
+  list.replaceChildren();
 
   if (templates.length === 0) {
     list.hidden = true;
@@ -96,7 +96,7 @@ function formatFileSize(bytes) {
 
 function renderAttachments() {
   const list = document.getElementById("attachment-list");
-  list.innerHTML = "";
+  list.replaceChildren();
 
   for (const att of pendingAttachments) {
     const item = document.createElement("div");
@@ -165,14 +165,18 @@ async function openEditor(id) {
     if (template) {
       nameInput.value = template.name;
       subjectInput.value = template.subject || "";
-      bodyEditor.innerHTML = template.body || "";
+      bodyEditor.replaceChildren();
+      if (template.body) {
+        const parsed = new DOMParser().parseFromString(template.body, "text/html");
+        bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+      }
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
     }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
     nameInput.value = "";
     subjectInput.value = "";
-    bodyEditor.innerHTML = "";
+    bodyEditor.replaceChildren();
   }
 
   renderAttachments();

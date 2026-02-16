@@ -12,7 +12,7 @@ async function renderTemplateList() {
   const emptyState = document.getElementById("empty-state");
   const templates = await getTemplates();
 
-  list.innerHTML = "";
+  list.replaceChildren();
 
   if (templates.length === 0) {
     list.hidden = true;
