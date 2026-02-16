@@ -15,6 +15,9 @@
         <button id="btn-add" data-i18n="optionsAddTemplate"></button>
       </div>
 
+      <input type="text" id="search-input" class="search-input"
+             data-i18n-placeholder="searchPlaceholder">
+
       <div id="template-list" class="template-list">
         <!-- Filled dynamically -->
       </div>
@@ -37,6 +40,12 @@
 
         <label data-i18n="optionsLabelSubject"></label>
         <input type="text" id="editor-subject">
+
+        <label data-i18n="optionsLabelInsertMode"></label>
+        <select id="editor-insert-mode">
+          <option value="append" data-i18n="optionsInsertModeAppend"></option>
+          <option value="replace" data-i18n="optionsInsertModeReplace"></option>
+        </select>
 
         <label data-i18n="optionsLabelBody"></label>
         <div class="editor-toolbar">

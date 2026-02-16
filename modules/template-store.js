@@ -30,6 +30,7 @@ export async function saveTemplate(template) {
     template.createdAt = now;
     template.updatedAt = now;
     template.attachments = template.attachments || [];
+    template.insertMode = template.insertMode || "append";
     templates.push(template);
   }
 

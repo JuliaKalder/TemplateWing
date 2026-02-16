@@ -118,6 +118,37 @@
     "message": "Entfernen",
     "description": "Button zum Entfernen eines Anhangs"
   },
+  "searchPlaceholder": {
+    "message": "Vorlagen suchen…",
+    "description": "Platzhaltertext für das Suchfeld"
+  },
+  "optionsDuplicate": {
+    "message": "Duplizieren",
+    "description": "Button zum Duplizieren einer Vorlage"
+  },
+  "optionsDuplicateName": {
+    "message": "Kopie von $NAME$",
+    "description": "Standardname für eine duplizierte Vorlage",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Willkommens-E-Mail"
+      }
+    }
+  },
+  "optionsLabelInsertMode": {
+    "message": "Einfügemodus",
+    "description": "Label für das Einfügemodus-Dropdown"
+  },
+  "optionsInsertModeAppend": {
+    "message": "An bestehenden Inhalt anhängen",
+    "description": "Option: Vorlageninhalt an bestehende E-Mail anhängen"
+  },
+  "optionsInsertModeReplace": {
+    "message": "Bestehenden Inhalt ersetzen",
+    "description": "Option: bestehenden E-Mail-Inhalt durch Vorlage ersetzen"
+  },
+
   "popupAttachmentCount": {
     "message": "$COUNT$ Anhang/Anhänge",
     "description": "Anzahl der Anhänge im Popup",

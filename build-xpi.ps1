@@ -16,6 +16,7 @@ $files = @(
     "background.js"
     "LICENSE"
     "modules/template-store.js"
+    "modules/template-insert.js"
     "popup/popup.html"
     "popup/popup.css"
     "popup/popup.js"

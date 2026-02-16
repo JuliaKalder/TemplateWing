@@ -1,3 +1,47 @@
+:root {
+  --color-primary: #0060df;
+  --color-primary-hover: #004ec2;
+  --color-primary-on: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-text-muted: #888888;
+  --color-text-label: #555555;
+  --color-bg: #ffffff;
+  --color-bg-page: #f5f5f5;
+  --color-bg-secondary: #f9f9f9;
+  --color-bg-hover: #eeeeee;
+  --color-bg-highlight: #f0f4ff;
+  --color-bg-highlight-hover: #e0ebff;
+  --color-border: #cccccc;
+  --color-border-light: #dddddd;
+  --color-border-medium: #e0e0e0;
+  --color-error: #d40000;
+  --color-error-bg: #fff0f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #73a7f3;
+    --color-primary-hover: #9dc0f7;
+    --color-primary-on: #1a1a1a;
+    --color-text: #e8e8e8;
+    --color-text-secondary: #aaaaaa;
+    --color-text-muted: #999999;
+    --color-text-label: #bbbbbb;
+    --color-bg: #2b2b2b;
+    --color-bg-page: #1e1e1e;
+    --color-bg-secondary: #333333;
+    --color-bg-hover: #3a3a3a;
+    --color-bg-highlight: #2a3245;
+    --color-bg-highlight-hover: #344060;
+    --color-border: #555555;
+    --color-border-light: #444444;
+    --color-border-medium: #4a4a4a;
+    --color-error: #ff6b6b;
+    --color-error-bg: #3d2020;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -7,8 +51,8 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
-  color: #1a1a1a;
-  background: #f5f5f5;
+  color: var(--color-text);
+  background: var(--color-bg-page);
 }
 
 .options-container {
@@ -31,14 +75,31 @@ h1 {
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
-  background: #0060df;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-primary-on);
   font-size: 14px;
   cursor: pointer;
 }
 
 #btn-add:hover {
-  background: #004ec2;
+  background: var(--color-primary-hover);
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 12px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .template-list {
@@ -52,8 +113,8 @@ h1 {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
   border-radius: 6px;
 }
 
@@ -69,7 +130,7 @@ h1 {
 
 .template-card .info .subject {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -84,32 +145,33 @@ h1 {
 
 .template-card .actions button {
   padding: 5px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #f9f9f9;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 13px;
 }
 
 .template-card .actions button:hover {
-  background: #eee;
+  background: var(--color-bg-hover);
 }
 
 .template-card .actions .btn-delete {
-  color: #d40000;
-  border-color: #d40000;
+  color: var(--color-error);
+  border-color: var(--color-error);
 }
 
 .template-card .actions .btn-delete:hover {
-  background: #fff0f0;
+  background: var(--color-error-bg);
 }
 
 .empty-state {
   text-align: center;
   padding: 48px 24px;
-  color: #666;
-  background: #fff;
-  border: 1px dashed #ccc;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
   border-radius: 6px;
 }
 
@@ -128,15 +190,16 @@ h1 {
 
 .btn-back {
   padding: 6px 14px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #f9f9f9;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 14px;
 }
 
 .btn-back:hover {
-  background: #eee;
+  background: var(--color-bg-hover);
 }
 
 .editor-form label {
@@ -145,16 +208,19 @@ h1 {
   font-weight: 500;
   margin-bottom: 4px;
   margin-top: 12px;
-  color: #555;
+  color: var(--color-text-label);
 }
 
-.editor-form input {
+.editor-form input,
+.editor-form select {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
   font-family: inherit;
   font-size: 14px;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 /* Rich text editor */
@@ -163,8 +229,8 @@ h1 {
   align-items: center;
   gap: 4px;
   padding: 6px 8px;
-  background: #f5f5f5;
-  border: 1px solid #ccc;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
   border-bottom: none;
   border-radius: 4px 4px 0 0;
   margin-top: 4px;
@@ -175,57 +241,62 @@ h1 {
   border: 1px solid transparent;
   border-radius: 3px;
   background: none;
+  color: var(--color-text);
   cursor: pointer;
   font-size: 13px;
   min-width: 28px;
 }
 
 .toolbar-btn:hover {
-  background: #e0e0e0;
-  border-color: #ccc;
+  background: var(--color-border-medium);
+  border-color: var(--color-border);
 }
 
 .toolbar-sep {
   width: 1px;
   height: 20px;
-  background: #ccc;
+  background: var(--color-border);
   margin: 0 4px;
 }
 
 .toolbar-select {
   padding: 3px 6px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 3px;
-  background: #fff;
+  background: var(--color-bg);
+  color: var(--color-text);
   font-size: 13px;
   cursor: pointer;
 }
 
+/* WYSIWYG editor keeps light colors for accurate email preview */
 .richtext-editor {
   width: 100%;
   min-height: 300px;
   max-height: 50vh;
   overflow-y: auto;
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 0 0 4px 4px;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   outline: none;
+  background: #ffffff;
+  color: #1a1a1a;
 }
 
 .richtext-editor:focus {
-  border-color: #0060df;
+  border-color: var(--color-primary);
 }
 
 .editor-error {
   margin-top: 12px;
   padding: 10px 14px;
-  background: #fff0f0;
-  border: 1px solid #d40000;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
   border-radius: 4px;
-  color: #d40000;
+  color: var(--color-error);
   font-size: 13px;
 }
 
@@ -238,21 +309,22 @@ h1 {
 
 .editor-actions button {
   padding: 8px 20px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: #f9f9f9;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 14px;
 }
 
 .btn-primary {
-  background: #0060df !important;
-  color: #fff !important;
-  border-color: #0060df !important;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-on) !important;
+  border-color: var(--color-primary) !important;
 }
 
 .btn-primary:hover {
-  background: #004ec2 !important;
+  background: var(--color-primary-hover) !important;
 }
 
 /* Attachment section */
@@ -263,16 +335,16 @@ h1 {
 .btn-add-file {
   margin-top: 8px;
   padding: 6px 14px;
-  border: 1px dashed #0060df;
+  border: 1px dashed var(--color-primary);
   border-radius: 4px;
-  background: #f0f4ff;
-  color: #0060df;
+  background: var(--color-bg-highlight);
+  color: var(--color-primary);
   cursor: pointer;
   font-size: 13px;
 }
 
 .btn-add-file:hover {
-  background: #e0ebff;
+  background: var(--color-bg-highlight-hover);
 }
 
 .attachment-list {
@@ -287,8 +359,8 @@ h1 {
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-medium);
   border-radius: 4px;
   font-size: 13px;
 }
@@ -302,22 +374,22 @@ h1 {
 }
 
 .attachment-item .att-size {
-  color: #888;
+  color: var(--color-text-muted);
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .attachment-item .att-remove {
   padding: 2px 8px;
-  border: 1px solid #d40000;
+  border: 1px solid var(--color-error);
   border-radius: 3px;
   background: none;
-  color: #d40000;
+  color: var(--color-error);
   cursor: pointer;
   font-size: 12px;
   flex-shrink: 0;
 }
 
 .attachment-item .att-remove:hover {
-  background: #fff0f0;
+  background: var(--color-error-bg);
 }

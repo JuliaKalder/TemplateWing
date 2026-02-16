@@ -118,6 +118,37 @@
     "message": "Remove",
     "description": "Button to remove an attachment"
   },
+  "searchPlaceholder": {
+    "message": "Search templates…",
+    "description": "Placeholder text for the search input"
+  },
+  "optionsDuplicate": {
+    "message": "Duplicate",
+    "description": "Button to duplicate a template"
+  },
+  "optionsDuplicateName": {
+    "message": "Copy of $NAME$",
+    "description": "Default name for a duplicated template",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "optionsLabelInsertMode": {
+    "message": "Insertion Mode",
+    "description": "Label for the insertion mode dropdown"
+  },
+  "optionsInsertModeAppend": {
+    "message": "Append to existing content",
+    "description": "Option to append template body to existing email body"
+  },
+  "optionsInsertModeReplace": {
+    "message": "Replace existing content",
+    "description": "Option to replace existing email body with template body"
+  },
+
   "popupAttachmentCount": {
     "message": "$COUNT$ attachment(s)",
     "description": "Attachment count shown in popup",

@@ -1,9 +1,14 @@
 import { getTemplates, getTemplate } from "../modules/template-store.js";
+import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
     const key = el.getAttribute("data-i18n");
     el.textContent = messenger.i18n.getMessage(key);
+  }
+  for (const el of document.querySelectorAll("[data-i18n-placeholder]")) {
+    const key = el.getAttribute("data-i18n-placeholder");
+    el.placeholder = messenger.i18n.getMessage(key);
   }
 }
 
@@ -26,6 +31,8 @@ async function renderTemplateList() {
   for (const template of templates) {
     const item = document.createElement("div");
     item.className = "template-item";
+    item.dataset.name = template.name.toLowerCase();
+    item.dataset.subject = (template.subject || "").toLowerCase();
 
     const nameRow = document.createElement("div");
     nameRow.className = "name-row";
@@ -67,34 +74,22 @@ async function insertTemplate(id) {
   });
   if (tabs.length === 0) return;
 
-  const tab = tabs[0];
-  const details = await messenger.compose.getComposeDetails(tab.id);
-
-  if (template.body) {
-    const body = details.body || "";
-    await messenger.compose.setComposeDetails(tab.id, {
-      body: body + template.body,
-    });
-  }
-
-  if (template.subject) {
-    await messenger.compose.setComposeDetails(tab.id, {
-      subject: template.subject,
-    });
-  }
-
-  if (template.attachments && template.attachments.length > 0) {
-    for (const att of template.attachments) {
-      const binary = atob(att.data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const file = new File([bytes], att.name, { type: att.type });
-      await messenger.compose.addAttachment(tab.id, { file, name: att.name });
-    }
-  }
-
+  await insertTemplateIntoTab(tabs[0].id, template);
   window.close();
 }
+
+function filterTemplates() {
+  const query = document.getElementById("search-input").value.toLowerCase().trim();
+  const items = document.querySelectorAll("#template-list .template-item");
+  for (const item of items) {
+    const matches = !query
+      || item.dataset.name.includes(query)
+      || item.dataset.subject.includes(query);
+    item.hidden = !matches;
+  }
+}
+
+document.getElementById("search-input").addEventListener("input", filterTemplates);
 
 document.getElementById("btn-manage").addEventListener("click", async () => {
   await messenger.runtime.openOptionsPage();
