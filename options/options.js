@@ -190,6 +190,8 @@ async function handleSave() {
   const name = document.getElementById("editor-name").value.trim();
   const subject = document.getElementById("editor-subject").value.trim();
   const body = document.getElementById("editor-body").innerHTML;
+  const errorEl = document.getElementById("editor-error");
+  errorEl.hidden = true;
 
   if (!name) {
     document.getElementById("editor-name").focus();
@@ -208,6 +210,9 @@ async function handleSave() {
     await saveTemplate(template);
   } catch (err) {
     console.error("TemplateWing: save failed", err);
+    errorEl.textContent = messenger.i18n.getMessage("optionsSaveError");
+    errorEl.hidden = false;
+    return;
   }
   closeEditor();
   await renderTemplateList();

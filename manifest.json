@@ -42,6 +42,7 @@
   "permissions": [
     "compose",
     "storage",
-    "menus"
+    "menus",
+    "unlimitedStorage"
   ]
 }

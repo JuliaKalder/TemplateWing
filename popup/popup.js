@@ -96,8 +96,15 @@ async function insertTemplate(id) {
   window.close();
 }
 
-document.getElementById("btn-manage").addEventListener("click", () => {
-  messenger.runtime.openOptionsPage();
+document.getElementById("btn-manage").addEventListener("click", async () => {
+  await messenger.runtime.openOptionsPage();
+  const allWindows = await messenger.windows.getAll();
+  for (const win of allWindows) {
+    if (win.type === "normal") {
+      await messenger.windows.update(win.id, { focused: true });
+      break;
+    }
+  }
   window.close();
 });
 

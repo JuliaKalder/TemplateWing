@@ -101,6 +101,11 @@
     }
   },
 
+  "optionsSaveError": {
+    "message": "Vorlage konnte nicht gespeichert werden. Möglicherweise ist der Speicher voll — versuche, Anhänge zu verkleinern oder alte Vorlagen zu löschen.",
+    "description": "Fehlermeldung wenn das Speichern fehlschlägt"
+  },
+
   "optionsLabelAttachments": {
     "message": "Anhänge",
     "description": "Label für den Anhänge-Bereich im Editor"

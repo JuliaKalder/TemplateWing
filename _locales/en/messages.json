@@ -101,6 +101,11 @@
     }
   },
 
+  "optionsSaveError": {
+    "message": "Could not save template. Storage may be full — try reducing attachment sizes or deleting old templates.",
+    "description": "Error message when saving fails"
+  },
+
   "optionsLabelAttachments": {
     "message": "Attachments",
     "description": "Label for attachments section in editor"
