@@ -15,8 +15,13 @@
         <button id="btn-add" data-i18n="optionsAddTemplate"></button>
       </div>
 
-      <input type="text" id="search-input" class="search-input"
-             data-i18n-placeholder="searchPlaceholder">
+      <div class="filter-row">
+        <input type="text" id="search-input" class="search-input"
+               data-i18n-placeholder="searchPlaceholder">
+        <select id="category-filter" class="category-filter">
+          <option value="" data-i18n="optionsCategoryAll"></option>
+        </select>
+      </div>
 
       <div id="template-list" class="template-list">
         <!-- Filled dynamically -->
@@ -38,8 +43,24 @@
         <label data-i18n="optionsLabelName"></label>
         <input type="text" id="editor-name">
 
+        <label data-i18n="optionsLabelCategory"></label>
+        <input type="text" id="editor-category" list="category-suggestions"
+               data-i18n-placeholder="optionsCategoryPlaceholder">
+        <datalist id="category-suggestions"></datalist>
+
         <label data-i18n="optionsLabelSubject"></label>
         <input type="text" id="editor-subject">
+
+        <label data-i18n="optionsLabelTo"></label>
+        <input type="text" id="editor-to" placeholder="recipient@example.com, Name <email@example.com>">
+
+        <label data-i18n="optionsLabelCc"></label>
+        <input type="text" id="editor-cc" placeholder="recipient@example.com">
+
+        <label data-i18n="optionsLabelBcc"></label>
+        <input type="text" id="editor-bcc" placeholder="recipient@example.com">
+
+        <div class="recipient-help" data-i18n="optionsRecipientHelp"></div>
 
         <label data-i18n="optionsLabelInsertMode"></label>
         <select id="editor-insert-mode">
@@ -64,6 +85,16 @@
           </select>
         </div>
         <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
+
+        <div class="variables-help">
+          <label data-i18n="optionsLabelVariables"></label>
+          <div class="variables-info">
+            <span class="variable-item" data-i18n="optionsVariableDate"></span>
+            <span class="variable-item" data-i18n="optionsVariableTime"></span>
+            <span class="variable-item" data-i18n="optionsVariableSenderName"></span>
+            <span class="variable-item" data-i18n="optionsVariableSenderEmail"></span>
+          </div>
+        </div>
 
         <div class="attachment-section">
           <label data-i18n="optionsLabelAttachments"></label>

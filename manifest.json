@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Julia Kalder <mail@julia-kalder.de>",
   "homepage_url": "https://github.com/JuliaKalder/TemplateWing",
   "default_locale": "en",
@@ -43,6 +43,46 @@
     "compose",
     "storage",
     "menus",
-    "unlimitedStorage"
-  ]
+    "unlimitedStorage",
+    "accountsRead"
+  ],
+
+  "commands": {
+    "insert-template-1": {
+      "suggested_key": { "default": "Ctrl+Shift+1" },
+      "description": "Insert template 1"
+    },
+    "insert-template-2": {
+      "suggested_key": { "default": "Ctrl+Shift+2" },
+      "description": "Insert template 2"
+    },
+    "insert-template-3": {
+      "suggested_key": { "default": "Ctrl+Shift+3" },
+      "description": "Insert template 3"
+    },
+    "insert-template-4": {
+      "suggested_key": { "default": "Ctrl+Shift+4" },
+      "description": "Insert template 4"
+    },
+    "insert-template-5": {
+      "suggested_key": { "default": "Ctrl+Shift+5" },
+      "description": "Insert template 5"
+    },
+    "insert-template-6": {
+      "suggested_key": { "default": "Ctrl+Shift+6" },
+      "description": "Insert template 6"
+    },
+    "insert-template-7": {
+      "suggested_key": { "default": "Ctrl+Shift+7" },
+      "description": "Insert template 7"
+    },
+    "insert-template-8": {
+      "suggested_key": { "default": "Ctrl+Shift+8" },
+      "description": "Insert template 8"
+    },
+    "insert-template-9": {
+      "suggested_key": { "default": "Ctrl+Shift+9" },
+      "description": "Insert template 9"
+    }
+  }
 }

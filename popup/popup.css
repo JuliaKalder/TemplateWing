@@ -57,16 +57,39 @@ h2 {
   color: var(--color-text-heading);
 }
 
+.filter-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
 .search-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   font-family: inherit;
   font-size: 13px;
-  margin-bottom: 8px;
   background: var(--color-bg);
   color: var(--color-text);
+}
+
+.category-filter {
+  width: 90px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.category-filter:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .search-input:focus {
@@ -117,6 +140,27 @@ h2 {
   color: var(--color-primary-on);
   border-radius: 8px;
   padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+.template-item .category-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  background: var(--color-bg-highlight);
+  border: 1px solid var(--color-border-highlight);
+  border-radius: 8px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.template-item .shortcut-badge {
+  font-size: 10px;
+  font-family: monospace;
+  padding: 1px 5px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 

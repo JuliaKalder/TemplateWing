@@ -158,5 +158,60 @@
         "example": "3"
       }
     }
+  },
+
+  "optionsLabelCategory": {
+    "message": "Category (optional)",
+    "description": "Label for category input"
+  },
+  "optionsCategoryPlaceholder": {
+    "message": "e.g. Support, Formal, Internal",
+    "description": "Placeholder for category input"
+  },
+  "optionsCategoryAll": {
+    "message": "All Categories",
+    "description": "Option to show all categories in filter"
+  },
+  "popupCategoryAll": {
+    "message": "All",
+    "description": "Option to show all categories in popup filter"
+  },
+
+  "optionsLabelTo": {
+    "message": "To (Recipients)",
+    "description": "Label for To field"
+  },
+  "optionsLabelCc": {
+    "message": "Cc (Carbon Copy)",
+    "description": "Label for Cc field"
+  },
+  "optionsLabelBcc": {
+    "message": "Bcc (Blind Carbon Copy)",
+    "description": "Label for Bcc field"
+  },
+  "optionsRecipientHelp": {
+    "message": "Separate multiple recipients with commas. Example: john@example.com, Jane Doe <jane@example.com>",
+    "description": "Help text for recipient fields"
+  },
+
+  "optionsLabelVariables": {
+    "message": "Available Variables",
+    "description": "Label for variables help section"
+  },
+  "optionsVariableDate": {
+    "message": "{DATE} — Current date",
+    "description": "Describes DATE variable"
+  },
+  "optionsVariableTime": {
+    "message": "{TIME} — Current time",
+    "description": "Describes TIME variable"
+  },
+  "optionsVariableSenderName": {
+    "message": "{SENDER_NAME} — Your name",
+    "description": "Describes SENDER_NAME variable"
+  },
+  "optionsVariableSenderEmail": {
+    "message": "{SENDER_EMAIL} — Your email",
+    "description": "Describes SENDER_EMAIL variable"
   }
 }

@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate } from "../modules/template-store.js";
+import { getTemplates, getTemplate, getCategories } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 function localize() {
@@ -28,11 +28,13 @@ async function renderTemplateList() {
   list.hidden = false;
   emptyState.hidden = true;
 
-  for (const template of templates) {
+  for (let i = 0; i < templates.length; i++) {
+    const template = templates[i];
     const item = document.createElement("div");
     item.className = "template-item";
     item.dataset.name = template.name.toLowerCase();
     item.dataset.subject = (template.subject || "").toLowerCase();
+    item.dataset.category = (template.category || "").toLowerCase();
 
     const nameRow = document.createElement("div");
     nameRow.className = "name-row";
@@ -41,6 +43,13 @@ async function renderTemplateList() {
     name.className = "name";
     name.textContent = template.name;
     nameRow.appendChild(name);
+
+    if (template.category) {
+      const catBadge = document.createElement("span");
+      catBadge.className = "category-badge";
+      catBadge.textContent = template.category;
+      nameRow.appendChild(catBadge);
+    }
 
     if (template.attachments && template.attachments.length > 0) {
       const badge = document.createElement("span");
@@ -51,6 +60,13 @@ async function renderTemplateList() {
         String(template.attachments.length)
       );
       nameRow.appendChild(badge);
+    }
+
+    if (i < 9) {
+      const shortcutBadge = document.createElement("span");
+      shortcutBadge.className = "shortcut-badge";
+      shortcutBadge.textContent = `Ctrl+Shift+${i + 1}`;
+      nameRow.appendChild(shortcutBadge);
     }
 
     const btn = document.createElement("button");
@@ -80,16 +96,33 @@ async function insertTemplate(id) {
 
 function filterTemplates() {
   const query = document.getElementById("search-input").value.toLowerCase().trim();
+  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const items = document.querySelectorAll("#template-list .template-item");
   for (const item of items) {
-    const matches = !query
+    const matchesSearch = !query
       || item.dataset.name.includes(query)
       || item.dataset.subject.includes(query);
-    item.style.display = matches ? "" : "none";
+    const matchesCategory = !selectedCategory
+      || item.dataset.category === selectedCategory;
+    item.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+  }
+}
+
+async function populateCategoryFilter() {
+  const filter = document.getElementById("category-filter");
+  const categories = await getCategories();
+  const options = filter.querySelectorAll("option:not(:first-child)");
+  options.forEach((opt) => opt.remove());
+  for (const cat of categories) {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    filter.appendChild(option);
   }
 }
 
 document.getElementById("search-input").addEventListener("input", filterTemplates);
+document.getElementById("category-filter").addEventListener("change", filterTemplates);
 
 document.getElementById("btn-manage").addEventListener("click", async () => {
   await messenger.runtime.openOptionsPage();
@@ -104,4 +137,4 @@ document.getElementById("btn-manage").addEventListener("click", async () => {
 });
 
 localize();
-renderTemplateList();
+renderTemplateList().then(() => populateCategoryFilter());

@@ -158,5 +158,60 @@
         "example": "3"
       }
     }
+  },
+
+  "optionsLabelCategory": {
+    "message": "Kategorie (optional)",
+    "description": "Label für Kategoriefeld"
+  },
+  "optionsCategoryPlaceholder": {
+    "message": "z.B. Support, Formell, Intern",
+    "description": "Platzhalter für Kategorieeingabe"
+  },
+  "optionsCategoryAll": {
+    "message": "Alle Kategorien",
+    "description": "Option zum Anzeigen aller Kategorien im Filter"
+  },
+  "popupCategoryAll": {
+    "message": "Alle",
+    "description": "Option zum Anzeigen aller Kategorien im Popup-Filter"
+  },
+
+  "optionsLabelTo": {
+    "message": "An (Empfänger)",
+    "description": "Label für An-Feld"
+  },
+  "optionsLabelCc": {
+    "message": "Cc (Kopie)",
+    "description": "Label für Cc-Feld"
+  },
+  "optionsLabelBcc": {
+    "message": "Bcc (Blindkopie)",
+    "description": "Label für Bcc-Feld"
+  },
+  "optionsRecipientHelp": {
+    "message": "Mehrere Empfänger durch Komma trennen. Beispiel: max@beispiel.de, Maria Müller <maria@beispiel.de>",
+    "description": "Hilfetext für Empfängerfelder"
+  },
+
+  "optionsLabelVariables": {
+    "message": "Verfügbare Variablen",
+    "description": "Label für den Variablen-Hilfebereich"
+  },
+  "optionsVariableDate": {
+    "message": "{DATE} — Aktuelles Datum",
+    "description": "Beschreibt DATE-Variable"
+  },
+  "optionsVariableTime": {
+    "message": "{TIME} — Aktuelle Uhrzeit",
+    "description": "Beschreibt TIME-Variable"
+  },
+  "optionsVariableSenderName": {
+    "message": "{SENDER_NAME} — Ihr Name",
+    "description": "Beschreibt SENDER_NAME-Variable"
+  },
+  "optionsVariableSenderEmail": {
+    "message": "{SENDER_EMAIL} — Ihre E-Mail",
+    "description": "Beschreibt SENDER_EMAIL-Variable"
   }
 }

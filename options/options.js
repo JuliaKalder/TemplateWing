@@ -3,6 +3,7 @@ import {
   getTemplate,
   saveTemplate,
   deleteTemplate,
+  getCategories,
 } from "../modules/template-store.js";
 
 let editingId = null;
@@ -45,6 +46,7 @@ async function renderTemplateList() {
     card.className = "template-card";
     card.dataset.name = template.name.toLowerCase();
     card.dataset.subject = (template.subject || "").toLowerCase();
+    card.dataset.category = (template.category || "").toLowerCase();
 
     const info = document.createElement("div");
     info.className = "info";
@@ -52,6 +54,13 @@ async function renderTemplateList() {
     const name = document.createElement("div");
     name.className = "name";
     name.textContent = template.name;
+
+    if (template.category) {
+      const categoryBadge = document.createElement("span");
+      categoryBadge.className = "category-badge";
+      categoryBadge.textContent = template.category;
+      name.appendChild(categoryBadge);
+    }
 
     const subject = document.createElement("div");
     subject.className = "subject";
@@ -77,7 +86,8 @@ async function renderTemplateList() {
       );
       if (confirm(msg)) {
         await deleteTemplate(template.id);
-        renderTemplateList();
+        await renderTemplateList();
+        await populateCategoryFilter();
       }
     });
 
@@ -92,6 +102,30 @@ async function renderTemplateList() {
     card.appendChild(info);
     card.appendChild(actions);
     list.appendChild(card);
+  }
+}
+
+async function populateCategoryFilter() {
+  const filter = document.getElementById("category-filter");
+  const categories = await getCategories();
+  const options = filter.querySelectorAll("option:not(:first-child)");
+  options.forEach((opt) => opt.remove());
+  for (const cat of categories) {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    filter.appendChild(option);
+  }
+}
+
+async function populateCategorySuggestions() {
+  const datalist = document.getElementById("category-suggestions");
+  const categories = await getCategories();
+  datalist.replaceChildren();
+  for (const cat of categories) {
+    const option = document.createElement("option");
+    option.value = cat;
+    datalist.appendChild(option);
   }
 }
 
@@ -167,7 +201,11 @@ async function openEditor(id) {
   pendingAttachments = [];
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
+  const categoryInput = document.getElementById("editor-category");
   const subjectInput = document.getElementById("editor-subject");
+  const toInput = document.getElementById("editor-to");
+  const ccInput = document.getElementById("editor-cc");
+  const bccInput = document.getElementById("editor-bcc");
   const insertModeSelect = document.getElementById("editor-insert-mode");
   const bodyEditor = document.getElementById("editor-body");
 
@@ -176,7 +214,11 @@ async function openEditor(id) {
     const template = await getTemplate(id);
     if (template) {
       nameInput.value = template.name;
+      categoryInput.value = template.category || "";
       subjectInput.value = template.subject || "";
+      toInput.value = (template.to || []).join(", ");
+      ccInput.value = (template.cc || []).join(", ");
+      bccInput.value = (template.bcc || []).join(", ");
       insertModeSelect.value = template.insertMode || "append";
       bodyEditor.replaceChildren();
       if (template.body) {
@@ -188,11 +230,16 @@ async function openEditor(id) {
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
     nameInput.value = "";
+    categoryInput.value = "";
     subjectInput.value = "";
+    toInput.value = "";
+    ccInput.value = "";
+    bccInput.value = "";
     insertModeSelect.value = "append";
     bodyEditor.replaceChildren();
   }
 
+  await populateCategorySuggestions();
   renderAttachments();
   showView("editor");
   nameInput.focus();
@@ -214,13 +261,21 @@ async function duplicateTemplate(id) {
 
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
+  const categoryInput = document.getElementById("editor-category");
   const subjectInput = document.getElementById("editor-subject");
+  const toInput = document.getElementById("editor-to");
+  const ccInput = document.getElementById("editor-cc");
+  const bccInput = document.getElementById("editor-bcc");
   const insertModeSelect = document.getElementById("editor-insert-mode");
   const bodyEditor = document.getElementById("editor-body");
 
   title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
   nameInput.value = messenger.i18n.getMessage("optionsDuplicateName", template.name);
+  categoryInput.value = template.category || "";
   subjectInput.value = template.subject || "";
+  toInput.value = (template.to || []).join(", ");
+  ccInput.value = (template.cc || []).join(", ");
+  bccInput.value = (template.bcc || []).join(", ");
   insertModeSelect.value = template.insertMode || "append";
 
   bodyEditor.replaceChildren();
@@ -229,15 +284,26 @@ async function duplicateTemplate(id) {
     bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
   }
 
+  await populateCategorySuggestions();
   renderAttachments();
   showView("editor");
   nameInput.focus();
   nameInput.select();
 }
 
+function parseRecipients(value) {
+  return value.trim()
+    ? value.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+}
+
 async function handleSave() {
   const name = document.getElementById("editor-name").value.trim();
+  const category = document.getElementById("editor-category").value.trim();
   const subject = document.getElementById("editor-subject").value.trim();
+  const to = parseRecipients(document.getElementById("editor-to").value);
+  const cc = parseRecipients(document.getElementById("editor-cc").value);
+  const bcc = parseRecipients(document.getElementById("editor-bcc").value);
   const body = document.getElementById("editor-body").innerHTML;
   const errorEl = document.getElementById("editor-error");
   errorEl.hidden = true;
@@ -252,7 +318,11 @@ async function handleSave() {
   const template = {
     id: editingId || undefined,
     name,
+    category,
     subject,
+    to,
+    cc,
+    bcc,
     body,
     insertMode,
     attachments: pendingAttachments,
@@ -268,20 +338,25 @@ async function handleSave() {
   }
   closeEditor();
   await renderTemplateList();
+  await populateCategoryFilter();
 }
 
 function filterTemplates() {
   const query = document.getElementById("search-input").value.toLowerCase().trim();
+  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const cards = document.querySelectorAll("#template-list .template-card");
   for (const card of cards) {
-    const matches = !query
+    const matchesSearch = !query
       || card.dataset.name.includes(query)
       || card.dataset.subject.includes(query);
-    card.style.display = matches ? "" : "none";
+    const matchesCategory = !selectedCategory
+      || card.dataset.category === selectedCategory;
+    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
   }
 }
 
 document.getElementById("search-input").addEventListener("input", filterTemplates);
+document.getElementById("category-filter").addEventListener("change", filterTemplates);
 document.getElementById("btn-add").addEventListener("click", () => openEditor());
 document.getElementById("btn-save").addEventListener("click", handleSave);
 document.getElementById("btn-cancel").addEventListener("click", closeEditor);
@@ -314,4 +389,4 @@ document.getElementById("format-block").addEventListener("change", (e) => {
 });
 
 localize();
-renderTemplateList();
+renderTemplateList().then(() => populateCategoryFilter());

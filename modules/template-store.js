@@ -31,11 +31,25 @@ export async function saveTemplate(template) {
     template.updatedAt = now;
     template.attachments = template.attachments || [];
     template.insertMode = template.insertMode || "append";
+    template.category = template.category || "";
+    template.to = template.to || [];
+    template.cc = template.cc || [];
+    template.bcc = template.bcc || [];
     templates.push(template);
   }
 
   await messenger.storage.local.set({ [STORAGE_KEY]: templates });
   return template;
+}
+
+export async function getCategories() {
+  const templates = await getTemplates();
+  const categories = templates
+    .map((t) => t.category)
+    .filter(Boolean)
+    .filter((cat, idx, arr) => arr.indexOf(cat) === idx)
+    .sort();
+  return categories;
 }
 
 export async function deleteTemplate(id) {

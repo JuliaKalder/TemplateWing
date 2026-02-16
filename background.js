@@ -1,6 +1,15 @@
 import { getTemplates, getTemplate } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
+function getSortedTemplates(templates) {
+  return [...templates].sort((a, b) => {
+    const catA = (a.category || "").toLowerCase();
+    const catB = (b.category || "").toLowerCase();
+    if (catA !== catB) return catA.localeCompare(catB);
+    return a.name.localeCompare(b.name);
+  });
+}
+
 async function buildContextMenu() {
   await messenger.menus.removeAll();
 
@@ -20,15 +29,51 @@ async function buildContextMenu() {
       contexts: ["compose_body"],
       enabled: false,
     });
-  } else {
-    for (const template of templates) {
+    return;
+  }
+
+  const categorized = {};
+  const uncategorized = [];
+
+  for (const template of templates) {
+    if (template.category) {
+      if (!categorized[template.category]) {
+        categorized[template.category] = [];
+      }
+      categorized[template.category].push(template);
+    } else {
+      uncategorized.push(template);
+    }
+  }
+
+  const sortedCategories = Object.keys(categorized).sort();
+
+  for (const category of sortedCategories) {
+    const categoryId = `templatewing-cat-${category.replace(/[^a-zA-Z0-9]/g, "_")}`;
+    messenger.menus.create({
+      id: categoryId,
+      title: category,
+      parentId: "templatewing-root",
+      contexts: ["compose_body"],
+    });
+
+    for (const template of categorized[category]) {
       messenger.menus.create({
         id: `templatewing-insert-${template.id}`,
         title: template.name,
-        parentId: "templatewing-root",
+        parentId: categoryId,
         contexts: ["compose_body"],
       });
     }
+  }
+
+  for (const template of uncategorized) {
+    messenger.menus.create({
+      id: `templatewing-insert-${template.id}`,
+      title: template.name,
+      parentId: "templatewing-root",
+      contexts: ["compose_body"],
+    });
   }
 }
 
@@ -40,6 +85,26 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   if (!template) return;
 
   await insertTemplateIntoTab(tab.id, template);
+});
+
+messenger.commands.onCommand.addListener(async (commandName) => {
+  if (!commandName.startsWith("insert-template-")) return;
+
+  const index = parseInt(commandName.replace("insert-template-", ""), 10) - 1;
+  const templates = getSortedTemplates(await getTemplates());
+
+  if (index < 0 || index >= templates.length) return;
+
+  const template = templates[index];
+
+  const tabs = await messenger.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  if (tabs.length === 0) return;
+
+  await insertTemplateIntoTab(tabs[0].id, template);
 });
 
 messenger.runtime.onMessage.addListener((message) => {

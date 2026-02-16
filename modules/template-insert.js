@@ -1,30 +1,70 @@
 /**
+ * Replace template variables in text.
+ * @param {string} text - Text containing placeholders
+ * @param {number} tabId - The compose tab ID (used to resolve sender identity)
+ * @returns {Promise<string>} Text with placeholders replaced
+ */
+async function replaceVariables(text, tabId) {
+  if (!text) return text;
+
+  const now = new Date();
+  let senderName = "";
+  let senderEmail = "";
+
+  try {
+    const details = await messenger.compose.getComposeDetails(tabId);
+    if (details.identityId) {
+      const identity = await messenger.identities.get(details.identityId);
+      if (identity) {
+        senderName = identity.name || "";
+        senderEmail = identity.email || "";
+      }
+    }
+  } catch (err) {
+    console.warn("TemplateWing: could not resolve sender identity", err);
+  }
+
+  return text
+    .replace(/\{DATE\}/gi, now.toLocaleDateString())
+    .replace(/\{TIME\}/gi, now.toLocaleTimeString())
+    .replace(/\{SENDER_NAME\}/gi, senderName)
+    .replace(/\{SENDER_EMAIL\}/gi, senderEmail);
+}
+
+/**
  * Insert a template into a compose tab.
  * @param {number} tabId - The compose tab ID
  * @param {object} template - Template object from storage
  */
 export async function insertTemplateIntoTab(tabId, template) {
   const mode = template.insertMode || "append";
+  const details = {};
 
   if (template.body) {
+    const body = await replaceVariables(template.body, tabId);
     if (mode === "replace") {
-      await messenger.compose.setComposeDetails(tabId, {
-        body: template.body,
-      });
+      details.body = body;
     } else {
-      const details = await messenger.compose.getComposeDetails(tabId);
-      const existingBody = details.body || "";
-      await messenger.compose.setComposeDetails(tabId, {
-        body: existingBody + template.body,
-      });
+      const existing = await messenger.compose.getComposeDetails(tabId);
+      details.body = (existing.body || "") + body;
     }
   }
 
   if (template.subject) {
-    await messenger.compose.setComposeDetails(tabId, {
-      subject: template.subject,
-    });
+    details.subject = await replaceVariables(template.subject, tabId);
   }
+
+  if (template.to && template.to.length > 0) {
+    details.to = template.to;
+  }
+  if (template.cc && template.cc.length > 0) {
+    details.cc = template.cc;
+  }
+  if (template.bcc && template.bcc.length > 0) {
+    details.bcc = template.bcc;
+  }
+
+  await messenger.compose.setComposeDetails(tabId, details);
 
   if (template.attachments && template.attachments.length > 0) {
     for (const att of template.attachments) {
