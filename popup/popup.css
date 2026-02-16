@@ -104,8 +104,7 @@ h2 {
 
 .template-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 8px 10px;
   border: 1px solid var(--color-border-medium);
   border-radius: 4px;
@@ -119,12 +118,11 @@ h2 {
   border-color: var(--color-border-highlight);
 }
 
-.template-item .name-row {
+.template-item .top-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .template-item .name {
@@ -132,6 +130,15 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.template-item .meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .template-item .att-badge {
@@ -173,7 +180,6 @@ h2 {
   color: var(--color-primary-on);
   cursor: pointer;
   flex-shrink: 0;
-  margin-left: 8px;
 }
 
 .template-item .insert-btn:hover {

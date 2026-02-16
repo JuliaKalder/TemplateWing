@@ -36,46 +36,58 @@ async function renderTemplateList() {
     item.dataset.subject = (template.subject || "").toLowerCase();
     item.dataset.category = (template.category || "").toLowerCase();
 
-    const nameRow = document.createElement("div");
-    nameRow.className = "name-row";
+    const topRow = document.createElement("div");
+    topRow.className = "top-row";
 
     const name = document.createElement("span");
     name.className = "name";
     name.textContent = template.name;
-    nameRow.appendChild(name);
-
-    if (template.category) {
-      const catBadge = document.createElement("span");
-      catBadge.className = "category-badge";
-      catBadge.textContent = template.category;
-      nameRow.appendChild(catBadge);
-    }
-
-    if (template.attachments && template.attachments.length > 0) {
-      const badge = document.createElement("span");
-      badge.className = "att-badge";
-      badge.textContent = template.attachments.length;
-      badge.title = messenger.i18n.getMessage(
-        "popupAttachmentCount",
-        String(template.attachments.length)
-      );
-      nameRow.appendChild(badge);
-    }
-
-    if (i < 9) {
-      const shortcutBadge = document.createElement("span");
-      shortcutBadge.className = "shortcut-badge";
-      shortcutBadge.textContent = `Ctrl+Shift+${i + 1}`;
-      nameRow.appendChild(shortcutBadge);
-    }
+    topRow.appendChild(name);
 
     const btn = document.createElement("button");
     btn.className = "insert-btn";
     btn.textContent = messenger.i18n.getMessage("popupInsert");
     btn.addEventListener("click", () => insertTemplate(template.id));
+    topRow.appendChild(btn);
 
-    item.appendChild(nameRow);
-    item.appendChild(btn);
+    item.appendChild(topRow);
+
+    const hasMeta = template.category
+      || (template.attachments && template.attachments.length > 0)
+      || i < 9;
+
+    if (hasMeta) {
+      const metaRow = document.createElement("div");
+      metaRow.className = "meta-row";
+
+      if (template.category) {
+        const catBadge = document.createElement("span");
+        catBadge.className = "category-badge";
+        catBadge.textContent = template.category;
+        metaRow.appendChild(catBadge);
+      }
+
+      if (template.attachments && template.attachments.length > 0) {
+        const badge = document.createElement("span");
+        badge.className = "att-badge";
+        badge.textContent = template.attachments.length;
+        badge.title = messenger.i18n.getMessage(
+          "popupAttachmentCount",
+          String(template.attachments.length)
+        );
+        metaRow.appendChild(badge);
+      }
+
+      if (i < 9) {
+        const shortcutBadge = document.createElement("span");
+        shortcutBadge.className = "shortcut-badge";
+        shortcutBadge.textContent = `Ctrl+Shift+${i + 1}`;
+        metaRow.appendChild(shortcutBadge);
+      }
+
+      item.appendChild(metaRow);
+    }
+
     list.appendChild(item);
   }
 }
