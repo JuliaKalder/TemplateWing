@@ -85,7 +85,7 @@ function filterTemplates() {
     const matches = !query
       || item.dataset.name.includes(query)
       || item.dataset.subject.includes(query);
-    item.hidden = !matches;
+    item.style.display = matches ? "" : "none";
   }
 }
 

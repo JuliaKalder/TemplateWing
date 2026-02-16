@@ -277,7 +277,7 @@ function filterTemplates() {
     const matches = !query
       || card.dataset.name.includes(query)
       || card.dataset.subject.includes(query);
-    card.hidden = !matches;
+    card.style.display = matches ? "" : "none";
   }
 }
 
