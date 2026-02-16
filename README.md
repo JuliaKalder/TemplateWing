@@ -2,7 +2,19 @@
 
 An easy-to-use template management add-on for Mozilla Thunderbird (128+).
 
+[![Available on Thunderbird Add-ons](https://img.shields.io/badge/Thunderbird_Add--ons-TemplateWing-blue)](https://addons.thunderbird.net/thunderbird/addon/templatewing/)
+
 Save and reuse email templates — including file attachments — directly from the compose window.
+
+## Screenshots
+
+| Template selection | Context menu |
+|---|---|
+| ![Template selection](screenshots/template-selection.png) | ![Context menu](screenshots/context-menu.png) |
+
+| Manage templates | Template editor |
+|---|---|
+| ![Options page](screenshots/options-page.png) | ![Template editor](screenshots/template-editor.png) |
 
 ## Features
 
@@ -16,9 +28,8 @@ Save and reuse email templates — including file attachments — directly from 
 
 ### From Thunderbird Add-ons (ATN)
 
-1. Open Thunderbird → Menu (≡) → Add-ons and Themes (`Ctrl+Shift+A`)
-2. Search for **TemplateWing**
-3. Click **Add to Thunderbird**
+1. Visit the [TemplateWing page on Thunderbird Add-ons](https://addons.thunderbird.net/thunderbird/addon/templatewing/)
+2. Click **Add to Thunderbird**
 
 ### Manual installation
 
