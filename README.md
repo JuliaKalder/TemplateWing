@@ -21,7 +21,14 @@ Save and reuse email templates — including file attachments — directly from 
 - **Rich text editor** — Create templates with bold, italic, underline, lists, headings, and quotes
 - **File attachments** — Attach files to templates; they are stored with the template and added automatically when inserting
 - **One-click insert** — Insert templates via the toolbar button in the compose window or the right-click context menu
-- **Subject lines** — Set a default subject per template
+- **Subject, recipients & insertion mode** — Set a default subject, To/Cc/Bcc addresses, and choose whether the template appends to or replaces the current message body
+- **Categories** — Organise templates into categories and filter by them in both the popup and the options page
+- **Variables** — Use `{DATE}`, `{TIME}`, `{SENDER_NAME}`, and `{SENDER_EMAIL}` in subject or body; they are resolved on insert
+- **Keyboard shortcuts** — Insert your first 9 templates with `Ctrl+Shift+1` – `Ctrl+Shift+9` directly from the compose window
+- **Recent templates first** — The popup sorts by most recently used, so your go-to templates are always at the top; the options page shows a usage count per template
+- **Import / Export** — Back up all templates as a JSON file and restore or share them on any device
+- **Save from email** — Right-click any message in the message list → *Save as Template* to create a template pre-filled with subject and body
+- **Dark mode** — Follows the system colour scheme automatically
 - **Localized** — Full English and German localization
 
 ## Installation
@@ -41,10 +48,12 @@ Save and reuse email templates — including file attachments — directly from 
 
 1. Open a new compose window
 2. Click the **TemplateWing icon** in the toolbar to see your templates
-3. Click **Insert** to apply a template to the current message
+3. Click **Insert** to apply a template — or use `Ctrl+Shift+1`–`9` for the first nine
 4. Click **Manage Templates…** to create, edit, or delete templates
 
 Templates can also be inserted via the **right-click context menu** in the compose body.
+
+To create a template from an existing email, **right-click a message** in the message list and choose **Save as Template**.
 
 ## Development
 
