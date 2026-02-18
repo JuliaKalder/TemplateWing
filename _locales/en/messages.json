@@ -219,11 +219,6 @@
     "description": "Describes SENDER_EMAIL variable"
   },
 
-  "menuSaveAsTemplate": {
-    "message": "Save as Template",
-    "description": "Context menu item on a message in the message list"
-  },
-
   "optionsUsageCount": {
     "message": "Used $COUNT$ time(s)",
     "description": "Usage count shown on template card",

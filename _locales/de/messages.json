@@ -219,11 +219,6 @@
     "description": "Beschreibt SENDER_EMAIL-Variable"
   },
 
-  "menuSaveAsTemplate": {
-    "message": "Als Vorlage speichern",
-    "description": "Kontextmenü-Eintrag in der Nachrichtenliste"
-  },
-
   "optionsUsageCount": {
     "message": "$COUNT$-mal verwendet",
     "description": "Nutzungszähler auf der Vorlagenkarte",
