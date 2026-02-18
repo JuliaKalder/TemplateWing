@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(du:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File build-xpi.ps1)",
+      "Bash(git push:*)",
+      "WebSearch",
+      "WebFetch(domain:extensionworkshop.com)",
+      "WebFetch(domain:developer.thunderbird.net)",
+      "WebFetch(domain:thunderbird.github.io)",
+      "WebFetch(domain:addons-reviewer-guide.thunderbird.net)",
+      "WebFetch(domain:github.com)",
+      "Bash(zip:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File build-source-zip.ps1)",
+      "Bash(where:*)",
+      "Bash(convert:*)",
+      "Bash(gh release create:*)",
+      "Bash(gh repo edit:*)",
+      "WebFetch(domain:webextension-api.thunderbird.net)",
+      "Bash(gh label create:*)",
+      "Bash(gh issue create:*)"
+    ]
+  }
+}
