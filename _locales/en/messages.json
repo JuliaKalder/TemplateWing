@@ -20,6 +20,10 @@
     "message": "No templates available",
     "description": "Shown when no templates exist"
   },
+  "menuSaveAsTemplate": {
+    "message": "Save as Template",
+    "description": "Context menu item on a message in the message list"
+  },
 
   "popupTitle": {
     "message": "Templates",
@@ -213,5 +217,47 @@
   "optionsVariableSenderEmail": {
     "message": "{SENDER_EMAIL} — Your email",
     "description": "Describes SENDER_EMAIL variable"
+  },
+
+  "menuSaveAsTemplate": {
+    "message": "Save as Template",
+    "description": "Context menu item on a message in the message list"
+  },
+
+  "optionsUsageCount": {
+    "message": "Used $COUNT$ time(s)",
+    "description": "Usage count shown on template card",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "optionsUsageNever": {
+    "message": "Never used",
+    "description": "Shown on template card when template has never been inserted"
+  },
+  "optionsExportJson": {
+    "message": "Export JSON",
+    "description": "Button to export all templates as a JSON file"
+  },
+  "optionsImportJson": {
+    "message": "Import JSON",
+    "description": "Button to import templates from a JSON file"
+  },
+  "optionsImportSuccess": {
+    "message": "$COUNT$ template(s) imported.",
+    "description": "Success message after importing templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "optionsImportError": {
+    "message": "Invalid file. Please select a valid TemplateWing JSON export.",
+    "description": "Error message when an invalid file is imported"
   }
 }

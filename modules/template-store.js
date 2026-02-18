@@ -57,3 +57,12 @@ export async function deleteTemplate(id) {
   const filtered = templates.filter((t) => t.id !== id);
   await messenger.storage.local.set({ [STORAGE_KEY]: filtered });
 }
+
+export async function trackUsage(id) {
+  const templates = await getTemplates();
+  const t = templates.find((t) => t.id === id);
+  if (!t) return;
+  t.usageCount = (t.usageCount || 0) + 1;
+  t.lastUsedAt = new Date().toISOString();
+  await messenger.storage.local.set({ [STORAGE_KEY]: templates });
+}

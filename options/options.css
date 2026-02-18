@@ -17,6 +17,8 @@
   --color-border-medium: #e0e0e0;
   --color-error: #d40000;
   --color-error-bg: #fff0f0;
+  --color-success: #197a3e;
+  --color-success-bg: #f0fff4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +41,8 @@
     --color-border-medium: #4a4a4a;
     --color-error: #ff6b6b;
     --color-error-bg: #3d2020;
+    --color-success: #5bc88a;
+    --color-success-bg: #1a2e20;
   }
 }
 
@@ -464,4 +468,46 @@ h1 {
   border: 1px solid var(--color-border);
   border-radius: 3px;
   color: var(--color-primary);
+}
+
+/* Import/Export toolbar buttons */
+#btn-export,
+#btn-import {
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+#btn-export:hover,
+#btn-import:hover {
+  background: var(--color-bg-hover);
+}
+
+/* Import feedback message */
+.import-feedback {
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  border-radius: 4px;
+  color: var(--color-success);
+  font-size: 13px;
+}
+
+.import-feedback.error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* Usage count on template cards */
+.template-card .info .usage {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
 }

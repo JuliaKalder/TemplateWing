@@ -20,6 +20,10 @@
     "message": "Keine Vorlagen vorhanden",
     "description": "Wird angezeigt wenn keine Vorlagen existieren"
   },
+  "menuSaveAsTemplate": {
+    "message": "Als Vorlage speichern",
+    "description": "Kontextmenü-Eintrag in der Nachrichtenliste"
+  },
 
   "popupTitle": {
     "message": "Vorlagen",
@@ -213,5 +217,47 @@
   "optionsVariableSenderEmail": {
     "message": "{SENDER_EMAIL} — Ihre E-Mail",
     "description": "Beschreibt SENDER_EMAIL-Variable"
+  },
+
+  "menuSaveAsTemplate": {
+    "message": "Als Vorlage speichern",
+    "description": "Kontextmenü-Eintrag in der Nachrichtenliste"
+  },
+
+  "optionsUsageCount": {
+    "message": "$COUNT$-mal verwendet",
+    "description": "Nutzungszähler auf der Vorlagenkarte",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "optionsUsageNever": {
+    "message": "Noch nie verwendet",
+    "description": "Wird angezeigt wenn die Vorlage noch nie eingefügt wurde"
+  },
+  "optionsExportJson": {
+    "message": "JSON exportieren",
+    "description": "Button zum Exportieren aller Vorlagen als JSON-Datei"
+  },
+  "optionsImportJson": {
+    "message": "JSON importieren",
+    "description": "Button zum Importieren von Vorlagen aus einer JSON-Datei"
+  },
+  "optionsImportSuccess": {
+    "message": "$COUNT$ Vorlage(n) importiert.",
+    "description": "Erfolgsmeldung nach dem Import",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "optionsImportError": {
+    "message": "Ungültige Datei. Bitte eine gültige TemplateWing-JSON-Exportdatei wählen.",
+    "description": "Fehlermeldung bei ungültiger Importdatei"
   }
 }

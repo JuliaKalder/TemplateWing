@@ -66,8 +66,15 @@ async function renderTemplateList() {
     subject.className = "subject";
     subject.textContent = template.subject || "";
 
+    const usage = document.createElement("div");
+    usage.className = "usage";
+    usage.textContent = template.usageCount
+      ? messenger.i18n.getMessage("optionsUsageCount", String(template.usageCount))
+      : messenger.i18n.getMessage("optionsUsageNever");
+
     info.appendChild(name);
     info.appendChild(subject);
+    info.appendChild(usage);
 
     const actions = document.createElement("div");
     actions.className = "actions";
@@ -196,7 +203,7 @@ async function addFiles(files) {
   renderAttachments();
 }
 
-async function openEditor(id) {
+async function openEditor(id, prefill = null) {
   editingId = id || null;
   pendingAttachments = [];
   const title = document.getElementById("editor-title");
@@ -229,14 +236,18 @@ async function openEditor(id) {
     }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
-    nameInput.value = "";
+    nameInput.value = prefill ? prefill.name || "" : "";
     categoryInput.value = "";
-    subjectInput.value = "";
+    subjectInput.value = prefill ? prefill.subject || "" : "";
     toInput.value = "";
     ccInput.value = "";
     bccInput.value = "";
     insertModeSelect.value = "append";
     bodyEditor.replaceChildren();
+    if (prefill && prefill.body) {
+      const parsed = new DOMParser().parseFromString(prefill.body, "text/html");
+      bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+    }
   }
 
   await populateCategorySuggestions();
@@ -341,6 +352,64 @@ async function handleSave() {
   await populateCategoryFilter();
 }
 
+async function handleExport() {
+  const templates = await getTemplates();
+  const payload = {
+    version: "1.3",
+    exportedAt: new Date().toISOString(),
+    templates,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "templatewing-templates.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function showImportFeedback(message, isError) {
+  const el = document.getElementById("import-feedback");
+  el.textContent = message;
+  el.className = "import-feedback" + (isError ? " error" : "");
+  el.hidden = false;
+  setTimeout(() => { el.hidden = true; }, 5000);
+}
+
+async function handleImport(file) {
+  let parsed;
+  try {
+    const text = await file.text();
+    parsed = JSON.parse(text);
+  } catch {
+    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    return;
+  }
+
+  if (!parsed || !Array.isArray(parsed.templates)) {
+    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    return;
+  }
+
+  let count = 0;
+  for (const t of parsed.templates) {
+    if (!t || typeof t.name !== "string") continue;
+    const { id, createdAt, updatedAt, usageCount, lastUsedAt, ...rest } = t;
+    try {
+      await saveTemplate(rest);
+      count++;
+    } catch (err) {
+      console.error("TemplateWing: import failed for template", t.name, err);
+    }
+  }
+
+  showImportFeedback(
+    messenger.i18n.getMessage("optionsImportSuccess", String(count)),
+    false
+  );
+  await renderTemplateList();
+}
+
 function filterTemplates() {
   const query = document.getElementById("search-input").value.toLowerCase().trim();
   const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
@@ -361,6 +430,19 @@ document.getElementById("btn-add").addEventListener("click", () => openEditor())
 document.getElementById("btn-save").addEventListener("click", handleSave);
 document.getElementById("btn-cancel").addEventListener("click", closeEditor);
 document.getElementById("btn-back").addEventListener("click", closeEditor);
+
+document.getElementById("btn-export").addEventListener("click", handleExport);
+
+document.getElementById("btn-import").addEventListener("click", () => {
+  document.getElementById("import-file-input").click();
+});
+
+document.getElementById("import-file-input").addEventListener("change", (e) => {
+  if (e.target.files.length > 0) {
+    handleImport(e.target.files[0]);
+    e.target.value = "";
+  }
+});
 
 document.getElementById("btn-add-files").addEventListener("click", () => {
   document.getElementById("file-input").click();
@@ -389,4 +471,12 @@ document.getElementById("format-block").addEventListener("change", (e) => {
 });
 
 localize();
-renderTemplateList().then(() => populateCategoryFilter());
+await renderTemplateList();
+await populateCategoryFilter();
+
+// Check for pre-fill data from "Save as Template" context menu
+const prefillResult = await messenger.storage.local.get({ _prefillTemplate: null });
+if (prefillResult._prefillTemplate) {
+  await messenger.storage.local.remove("_prefillTemplate");
+  openEditor(null, prefillResult._prefillTemplate);
+}

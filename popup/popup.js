@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate, getCategories } from "../modules/template-store.js";
+import { getTemplates, getTemplate, getCategories, trackUsage } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 function localize() {
@@ -15,7 +15,13 @@ function localize() {
 async function renderTemplateList() {
   const list = document.getElementById("template-list");
   const emptyState = document.getElementById("empty-state");
-  const templates = await getTemplates();
+  const allTemplates = await getTemplates();
+  const templates = allTemplates.slice().sort((a, b) => {
+    if (!a.lastUsedAt && !b.lastUsedAt) return 0;
+    if (!a.lastUsedAt) return 1;
+    if (!b.lastUsedAt) return -1;
+    return b.lastUsedAt.localeCompare(a.lastUsedAt);
+  });
 
   list.replaceChildren();
 
@@ -103,6 +109,7 @@ async function insertTemplate(id) {
   if (tabs.length === 0) return;
 
   await insertTemplateIntoTab(tabs[0].id, template);
+  await trackUsage(id);
   window.close();
 }
 

@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate } from "./modules/template-store.js";
+import { getTemplates, getTemplate, trackUsage } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
 function getSortedTemplates(templates) {
@@ -17,6 +17,12 @@ async function buildContextMenu() {
     id: "templatewing-root",
     title: messenger.i18n.getMessage("menuInsertTemplate"),
     contexts: ["compose_body"],
+  });
+
+  messenger.menus.create({
+    id: "templatewing-save-as-template",
+    title: messenger.i18n.getMessage("menuSaveAsTemplate"),
+    contexts: ["message_list"],
   });
 
   const templates = await getTemplates();
@@ -77,7 +83,51 @@ async function buildContextMenu() {
   }
 }
 
+function findPart(part, contentType) {
+  if (part.contentType === contentType && part.body) return part.body;
+  if (part.parts) {
+    for (const child of part.parts) {
+      const found = findPart(child, contentType);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function extractBody(part) {
+  const html = findPart(part, "text/html");
+  if (html) return { html: true, body: html };
+  const plain = findPart(part, "text/plain");
+  if (plain) return { html: false, body: plain };
+  return null;
+}
+
 messenger.menus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === "templatewing-save-as-template") {
+    const messages = info.selectedMessages && info.selectedMessages.messages;
+    if (!messages || messages.length === 0) return;
+
+    const msg = messages[0];
+    let body = "";
+    try {
+      const full = await messenger.messages.getFull(msg.id);
+      const extracted = extractBody(full);
+      if (extracted) {
+        body = extracted.html
+          ? extracted.body
+          : extracted.body.replace(/\n/g, "<br>");
+      }
+    } catch (e) {
+      console.error("TemplateWing: could not get message body", e);
+    }
+
+    await messenger.storage.local.set({
+      _prefillTemplate: { subject: msg.subject || "", body },
+    });
+    await messenger.runtime.openOptionsPage();
+    return;
+  }
+
   if (!info.menuItemId.startsWith("templatewing-insert-")) return;
 
   const templateId = info.menuItemId.replace("templatewing-insert-", "");
@@ -85,6 +135,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   if (!template) return;
 
   await insertTemplateIntoTab(tab.id, template);
+  await trackUsage(templateId);
 });
 
 messenger.commands.onCommand.addListener(async (commandName) => {

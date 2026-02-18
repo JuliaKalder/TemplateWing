@@ -13,7 +13,11 @@
 
       <div class="toolbar">
         <button id="btn-add" data-i18n="optionsAddTemplate"></button>
+        <button id="btn-export" data-i18n="optionsExportJson"></button>
+        <button id="btn-import" data-i18n="optionsImportJson"></button>
+        <input type="file" id="import-file-input" accept=".json" hidden>
       </div>
+      <div id="import-feedback" class="import-feedback" hidden></div>
 
       <div class="filter-row">
         <input type="text" id="search-input" class="search-input"
