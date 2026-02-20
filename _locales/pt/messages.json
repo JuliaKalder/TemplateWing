@@ -1,0 +1,258 @@
+{
+  "extensionName": {
+    "message": "TemplateWing",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Gerir e inserir modelos de e-mail com anexos",
+    "description": "Description of the extension"
+  },
+  "composeActionTitle": {
+    "message": "Modelos",
+    "description": "Tooltip for the compose action button"
+  },
+
+  "menuInsertTemplate": {
+    "message": "Inserir modelo",
+    "description": "Context menu root item in compose body"
+  },
+  "menuNoTemplates": {
+    "message": "Nenhum modelo disponível",
+    "description": "Shown when no templates exist"
+  },
+  "menuSaveAsTemplate": {
+    "message": "Guardar como modelo",
+    "description": "Context menu item on a message in the message list"
+  },
+
+  "popupTitle": {
+    "message": "Modelos",
+    "description": "Popup heading"
+  },
+  "popupInsert": {
+    "message": "Inserir",
+    "description": "Button to insert a template"
+  },
+  "popupNoTemplates": {
+    "message": "Ainda não há modelos. Clique abaixo para criar um.",
+    "description": "Empty state in popup"
+  },
+  "popupManageTemplates": {
+    "message": "Gerir modelos…",
+    "description": "Button to open options page"
+  },
+
+  "optionsTitle": {
+    "message": "TemplateWing — Gerir Modelos",
+    "description": "Options page heading"
+  },
+  "optionsAddTemplate": {
+    "message": "Novo modelo",
+    "description": "Button to add a new template"
+  },
+  "optionsNoTemplates": {
+    "message": "Ainda não há modelos. Clique em «Novo modelo» para começar.",
+    "description": "Empty state on options page"
+  },
+  "optionsNewTemplate": {
+    "message": "Novo modelo",
+    "description": "Editor dialog title for new template"
+  },
+  "optionsEditTemplate": {
+    "message": "Editar modelo",
+    "description": "Editor dialog title for editing"
+  },
+  "optionsLabelName": {
+    "message": "Nome",
+    "description": "Label for template name input"
+  },
+  "optionsLabelSubject": {
+    "message": "Assunto",
+    "description": "Label for subject input"
+  },
+  "optionsLabelBody": {
+    "message": "Corpo",
+    "description": "Label for body textarea"
+  },
+  "optionsBack": {
+    "message": "\u2190 Voltar",
+    "description": "Back button to return to template list"
+  },
+  "optionsSave": {
+    "message": "Guardar",
+    "description": "Save button"
+  },
+  "optionsCancel": {
+    "message": "Cancelar",
+    "description": "Cancel button"
+  },
+  "optionsEdit": {
+    "message": "Editar",
+    "description": "Edit button on template card"
+  },
+  "optionsDelete": {
+    "message": "Eliminar",
+    "description": "Delete button on template card"
+  },
+  "optionsConfirmDelete": {
+    "message": "Eliminar o modelo «$NAME$»?",
+    "description": "Confirmation dialog for deletion",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+
+  "optionsSaveError": {
+    "message": "Não foi possível guardar o modelo. O armazenamento pode estar cheio — tente reduzir o tamanho dos anexos ou eliminar modelos antigos.",
+    "description": "Error message when saving fails"
+  },
+
+  "optionsLabelAttachments": {
+    "message": "Anexos",
+    "description": "Label for attachments section in editor"
+  },
+  "optionsAddFiles": {
+    "message": "Adicionar ficheiros…",
+    "description": "Button to add file attachments"
+  },
+  "optionsRemoveAttachment": {
+    "message": "Remover",
+    "description": "Button to remove an attachment"
+  },
+  "searchPlaceholder": {
+    "message": "Pesquisar modelos…",
+    "description": "Placeholder text for the search input"
+  },
+  "optionsDuplicate": {
+    "message": "Duplicar",
+    "description": "Button to duplicate a template"
+  },
+  "optionsDuplicateName": {
+    "message": "Cópia de $NAME$",
+    "description": "Default name for a duplicated template",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "optionsLabelInsertMode": {
+    "message": "Modo de inserção",
+    "description": "Label for the insertion mode dropdown"
+  },
+  "optionsInsertModeAppend": {
+    "message": "Acrescentar ao conteúdo existente",
+    "description": "Option to append template body to existing email body"
+  },
+  "optionsInsertModeReplace": {
+    "message": "Substituir conteúdo existente",
+    "description": "Option to replace existing email body with template body"
+  },
+
+  "popupAttachmentCount": {
+    "message": "$COUNT$ anexo(s)",
+    "description": "Attachment count shown in popup",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+
+  "optionsLabelCategory": {
+    "message": "Categoria (opcional)",
+    "description": "Label for category input"
+  },
+  "optionsCategoryPlaceholder": {
+    "message": "ex. Suporte, Formal, Interno",
+    "description": "Placeholder for category input"
+  },
+  "optionsCategoryAll": {
+    "message": "Todas as categorias",
+    "description": "Option to show all categories in filter"
+  },
+  "popupCategoryAll": {
+    "message": "Todos",
+    "description": "Option to show all categories in popup filter"
+  },
+
+  "optionsLabelTo": {
+    "message": "Para (Destinatários)",
+    "description": "Label for To field"
+  },
+  "optionsLabelCc": {
+    "message": "Cc (Cópia)",
+    "description": "Label for Cc field"
+  },
+  "optionsLabelBcc": {
+    "message": "Cco (Cópia oculta)",
+    "description": "Label for Bcc field"
+  },
+  "optionsRecipientHelp": {
+    "message": "Separe vários destinatários com vírgulas. Exemplo: joao@exemplo.pt, João Silva <joao@exemplo.pt>",
+    "description": "Help text for recipient fields"
+  },
+
+  "optionsLabelVariables": {
+    "message": "Variáveis disponíveis",
+    "description": "Label for variables help section"
+  },
+  "optionsVariableDate": {
+    "message": "{DATE} — Data atual",
+    "description": "Describes DATE variable"
+  },
+  "optionsVariableTime": {
+    "message": "{TIME} — Hora atual",
+    "description": "Describes TIME variable"
+  },
+  "optionsVariableSenderName": {
+    "message": "{SENDER_NAME} — O seu nome",
+    "description": "Describes SENDER_NAME variable"
+  },
+  "optionsVariableSenderEmail": {
+    "message": "{SENDER_EMAIL} — O seu e-mail",
+    "description": "Describes SENDER_EMAIL variable"
+  },
+
+  "optionsUsageCount": {
+    "message": "Usado $COUNT$ vez/vezes",
+    "description": "Usage count shown on template card",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "optionsUsageNever": {
+    "message": "Nunca usado",
+    "description": "Shown on template card when template has never been inserted"
+  },
+  "optionsExportJson": {
+    "message": "Exportar JSON",
+    "description": "Button to export all templates as a JSON file"
+  },
+  "optionsImportJson": {
+    "message": "Importar JSON",
+    "description": "Button to import templates from a JSON file"
+  },
+  "optionsImportSuccess": {
+    "message": "$COUNT$ modelo(s) importado(s).",
+    "description": "Success message after importing templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "optionsImportError": {
+    "message": "Ficheiro inválido. Por favor, selecione um ficheiro JSON TemplateWing válido.",
+    "description": "Error message when an invalid file is imported"
+  }
+}

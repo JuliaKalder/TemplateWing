@@ -1,0 +1,258 @@
+{
+  "extensionName": {
+    "message": "TemplateWing",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Gestionar e insertar plantillas de correo electrónico con archivos adjuntos",
+    "description": "Description of the extension"
+  },
+  "composeActionTitle": {
+    "message": "Plantillas",
+    "description": "Tooltip for the compose action button"
+  },
+
+  "menuInsertTemplate": {
+    "message": "Insertar plantilla",
+    "description": "Context menu root item in compose body"
+  },
+  "menuNoTemplates": {
+    "message": "No hay plantillas disponibles",
+    "description": "Shown when no templates exist"
+  },
+  "menuSaveAsTemplate": {
+    "message": "Guardar como plantilla",
+    "description": "Context menu item on a message in the message list"
+  },
+
+  "popupTitle": {
+    "message": "Plantillas",
+    "description": "Popup heading"
+  },
+  "popupInsert": {
+    "message": "Insertar",
+    "description": "Button to insert a template"
+  },
+  "popupNoTemplates": {
+    "message": "Aún no hay plantillas. Haz clic abajo para crear una.",
+    "description": "Empty state in popup"
+  },
+  "popupManageTemplates": {
+    "message": "Gestionar plantillas…",
+    "description": "Button to open options page"
+  },
+
+  "optionsTitle": {
+    "message": "TemplateWing — Gestionar plantillas",
+    "description": "Options page heading"
+  },
+  "optionsAddTemplate": {
+    "message": "Nueva plantilla",
+    "description": "Button to add a new template"
+  },
+  "optionsNoTemplates": {
+    "message": "Aún no hay plantillas. Haz clic en «Nueva plantilla» para empezar.",
+    "description": "Empty state on options page"
+  },
+  "optionsNewTemplate": {
+    "message": "Nueva plantilla",
+    "description": "Editor dialog title for new template"
+  },
+  "optionsEditTemplate": {
+    "message": "Editar plantilla",
+    "description": "Editor dialog title for editing"
+  },
+  "optionsLabelName": {
+    "message": "Nombre",
+    "description": "Label for template name input"
+  },
+  "optionsLabelSubject": {
+    "message": "Asunto",
+    "description": "Label for subject input"
+  },
+  "optionsLabelBody": {
+    "message": "Cuerpo",
+    "description": "Label for body textarea"
+  },
+  "optionsBack": {
+    "message": "\u2190 Volver",
+    "description": "Back button to return to template list"
+  },
+  "optionsSave": {
+    "message": "Guardar",
+    "description": "Save button"
+  },
+  "optionsCancel": {
+    "message": "Cancelar",
+    "description": "Cancel button"
+  },
+  "optionsEdit": {
+    "message": "Editar",
+    "description": "Edit button on template card"
+  },
+  "optionsDelete": {
+    "message": "Eliminar",
+    "description": "Delete button on template card"
+  },
+  "optionsConfirmDelete": {
+    "message": "¿Eliminar la plantilla «$NAME$»?",
+    "description": "Confirmation dialog for deletion",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+
+  "optionsSaveError": {
+    "message": "No se pudo guardar la plantilla. El almacenamiento puede estar lleno — intenta reducir el tamaño de los archivos adjuntos o eliminar plantillas antiguas.",
+    "description": "Error message when saving fails"
+  },
+
+  "optionsLabelAttachments": {
+    "message": "Archivos adjuntos",
+    "description": "Label for attachments section in editor"
+  },
+  "optionsAddFiles": {
+    "message": "Agregar archivos…",
+    "description": "Button to add file attachments"
+  },
+  "optionsRemoveAttachment": {
+    "message": "Eliminar",
+    "description": "Button to remove an attachment"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar plantillas…",
+    "description": "Placeholder text for the search input"
+  },
+  "optionsDuplicate": {
+    "message": "Duplicar",
+    "description": "Button to duplicate a template"
+  },
+  "optionsDuplicateName": {
+    "message": "Copia de $NAME$",
+    "description": "Default name for a duplicated template",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "optionsLabelInsertMode": {
+    "message": "Modo de inserción",
+    "description": "Label for the insertion mode dropdown"
+  },
+  "optionsInsertModeAppend": {
+    "message": "Agregar al contenido existente",
+    "description": "Option to append template body to existing email body"
+  },
+  "optionsInsertModeReplace": {
+    "message": "Reemplazar contenido existente",
+    "description": "Option to replace existing email body with template body"
+  },
+
+  "popupAttachmentCount": {
+    "message": "$COUNT$ archivo(s) adjunto(s)",
+    "description": "Attachment count shown in popup",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+
+  "optionsLabelCategory": {
+    "message": "Categoría (opcional)",
+    "description": "Label for category input"
+  },
+  "optionsCategoryPlaceholder": {
+    "message": "ej. Soporte, Formal, Interno",
+    "description": "Placeholder for category input"
+  },
+  "optionsCategoryAll": {
+    "message": "Todas las categorías",
+    "description": "Option to show all categories in filter"
+  },
+  "popupCategoryAll": {
+    "message": "Todos",
+    "description": "Option to show all categories in popup filter"
+  },
+
+  "optionsLabelTo": {
+    "message": "Para (Destinatarios)",
+    "description": "Label for To field"
+  },
+  "optionsLabelCc": {
+    "message": "Cc (Copia)",
+    "description": "Label for Cc field"
+  },
+  "optionsLabelBcc": {
+    "message": "Cco (Copia oculta)",
+    "description": "Label for Bcc field"
+  },
+  "optionsRecipientHelp": {
+    "message": "Separa varios destinatarios con comas. Ejemplo: juan@ejemplo.com, Juan Pérez <juan@ejemplo.com>",
+    "description": "Help text for recipient fields"
+  },
+
+  "optionsLabelVariables": {
+    "message": "Variables disponibles",
+    "description": "Label for variables help section"
+  },
+  "optionsVariableDate": {
+    "message": "{DATE} — Fecha actual",
+    "description": "Describes DATE variable"
+  },
+  "optionsVariableTime": {
+    "message": "{TIME} — Hora actual",
+    "description": "Describes TIME variable"
+  },
+  "optionsVariableSenderName": {
+    "message": "{SENDER_NAME} — Tu nombre",
+    "description": "Describes SENDER_NAME variable"
+  },
+  "optionsVariableSenderEmail": {
+    "message": "{SENDER_EMAIL} — Tu correo electrónico",
+    "description": "Describes SENDER_EMAIL variable"
+  },
+
+  "optionsUsageCount": {
+    "message": "Usado $COUNT$ vez/veces",
+    "description": "Usage count shown on template card",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "optionsUsageNever": {
+    "message": "Nunca usado",
+    "description": "Shown on template card when template has never been inserted"
+  },
+  "optionsExportJson": {
+    "message": "Exportar JSON",
+    "description": "Button to export all templates as a JSON file"
+  },
+  "optionsImportJson": {
+    "message": "Importar JSON",
+    "description": "Button to import templates from a JSON file"
+  },
+  "optionsImportSuccess": {
+    "message": "$COUNT$ plantilla(s) importada(s).",
+    "description": "Success message after importing templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "optionsImportError": {
+    "message": "Archivo inválido. Por favor selecciona un archivo JSON de TemplateWing válido.",
+    "description": "Error message when an invalid file is imported"
+  }
+}

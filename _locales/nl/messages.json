@@ -1,0 +1,258 @@
+{
+  "extensionName": {
+    "message": "TemplateWing",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "E-mail-sjablonen met bijlagen beheren en invoegen",
+    "description": "Description of the extension"
+  },
+  "composeActionTitle": {
+    "message": "Sjablonen",
+    "description": "Tooltip for the compose action button"
+  },
+
+  "menuInsertTemplate": {
+    "message": "Sjabloon invoegen",
+    "description": "Context menu root item in compose body"
+  },
+  "menuNoTemplates": {
+    "message": "Geen sjablonen beschikbaar",
+    "description": "Shown when no templates exist"
+  },
+  "menuSaveAsTemplate": {
+    "message": "Opslaan als sjabloon",
+    "description": "Context menu item on a message in the message list"
+  },
+
+  "popupTitle": {
+    "message": "Sjablonen",
+    "description": "Popup heading"
+  },
+  "popupInsert": {
+    "message": "Invoegen",
+    "description": "Button to insert a template"
+  },
+  "popupNoTemplates": {
+    "message": "Nog geen sjablonen. Klik hieronder om er een te maken.",
+    "description": "Empty state in popup"
+  },
+  "popupManageTemplates": {
+    "message": "Sjablonen beheren…",
+    "description": "Button to open options page"
+  },
+
+  "optionsTitle": {
+    "message": "TemplateWing — Sjablonen beheren",
+    "description": "Options page heading"
+  },
+  "optionsAddTemplate": {
+    "message": "Nieuw sjabloon",
+    "description": "Button to add a new template"
+  },
+  "optionsNoTemplates": {
+    "message": "Nog geen sjablonen. Klik op «Nieuw sjabloon» om te beginnen.",
+    "description": "Empty state on options page"
+  },
+  "optionsNewTemplate": {
+    "message": "Nieuw sjabloon",
+    "description": "Editor dialog title for new template"
+  },
+  "optionsEditTemplate": {
+    "message": "Sjabloon bewerken",
+    "description": "Editor dialog title for editing"
+  },
+  "optionsLabelName": {
+    "message": "Naam",
+    "description": "Label for template name input"
+  },
+  "optionsLabelSubject": {
+    "message": "Onderwerp",
+    "description": "Label for subject input"
+  },
+  "optionsLabelBody": {
+    "message": "Bericht",
+    "description": "Label for body textarea"
+  },
+  "optionsBack": {
+    "message": "\u2190 Terug",
+    "description": "Back button to return to template list"
+  },
+  "optionsSave": {
+    "message": "Opslaan",
+    "description": "Save button"
+  },
+  "optionsCancel": {
+    "message": "Annuleren",
+    "description": "Cancel button"
+  },
+  "optionsEdit": {
+    "message": "Bewerken",
+    "description": "Edit button on template card"
+  },
+  "optionsDelete": {
+    "message": "Verwijderen",
+    "description": "Delete button on template card"
+  },
+  "optionsConfirmDelete": {
+    "message": "Sjabloon «$NAME$» verwijderen?",
+    "description": "Confirmation dialog for deletion",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+
+  "optionsSaveError": {
+    "message": "Sjabloon kon niet worden opgeslagen. Opslagruimte is mogelijk vol — probeer bijlagen te verkleinen of oude sjablonen te verwijderen.",
+    "description": "Error message when saving fails"
+  },
+
+  "optionsLabelAttachments": {
+    "message": "Bijlagen",
+    "description": "Label for attachments section in editor"
+  },
+  "optionsAddFiles": {
+    "message": "Bestanden toevoegen…",
+    "description": "Button to add file attachments"
+  },
+  "optionsRemoveAttachment": {
+    "message": "Verwijderen",
+    "description": "Button to remove an attachment"
+  },
+  "searchPlaceholder": {
+    "message": "Sjablonen zoeken…",
+    "description": "Placeholder text for the search input"
+  },
+  "optionsDuplicate": {
+    "message": "Dupliceren",
+    "description": "Button to duplicate a template"
+  },
+  "optionsDuplicateName": {
+    "message": "Kopie van $NAME$",
+    "description": "Default name for a duplicated template",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "optionsLabelInsertMode": {
+    "message": "Invoegmodus",
+    "description": "Label for the insertion mode dropdown"
+  },
+  "optionsInsertModeAppend": {
+    "message": "Toevoegen aan bestaande inhoud",
+    "description": "Option to append template body to existing email body"
+  },
+  "optionsInsertModeReplace": {
+    "message": "Bestaande inhoud vervangen",
+    "description": "Option to replace existing email body with template body"
+  },
+
+  "popupAttachmentCount": {
+    "message": "$COUNT$ bijlage(n)",
+    "description": "Attachment count shown in popup",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+
+  "optionsLabelCategory": {
+    "message": "Categorie (optioneel)",
+    "description": "Label for category input"
+  },
+  "optionsCategoryPlaceholder": {
+    "message": "bijv. Ondersteuning, Formeel, Intern",
+    "description": "Placeholder for category input"
+  },
+  "optionsCategoryAll": {
+    "message": "Alle categorieën",
+    "description": "Option to show all categories in filter"
+  },
+  "popupCategoryAll": {
+    "message": "Alle",
+    "description": "Option to show all categories in popup filter"
+  },
+
+  "optionsLabelTo": {
+    "message": "Aan (Ontvangers)",
+    "description": "Label for To field"
+  },
+  "optionsLabelCc": {
+    "message": "Cc (Kopie)",
+    "description": "Label for Cc field"
+  },
+  "optionsLabelBcc": {
+    "message": "Bcc (Verborgen kopie)",
+    "description": "Label for Bcc field"
+  },
+  "optionsRecipientHelp": {
+    "message": "Meerdere ontvangers scheiden met komma's. Voorbeeld: jan@voorbeeld.nl, Jan de Vries <jan@voorbeeld.nl>",
+    "description": "Help text for recipient fields"
+  },
+
+  "optionsLabelVariables": {
+    "message": "Beschikbare variabelen",
+    "description": "Label for variables help section"
+  },
+  "optionsVariableDate": {
+    "message": "{DATE} — Huidige datum",
+    "description": "Describes DATE variable"
+  },
+  "optionsVariableTime": {
+    "message": "{TIME} — Huidige tijd",
+    "description": "Describes TIME variable"
+  },
+  "optionsVariableSenderName": {
+    "message": "{SENDER_NAME} — Uw naam",
+    "description": "Describes SENDER_NAME variable"
+  },
+  "optionsVariableSenderEmail": {
+    "message": "{SENDER_EMAIL} — Uw e-mail",
+    "description": "Describes SENDER_EMAIL variable"
+  },
+
+  "optionsUsageCount": {
+    "message": "$COUNT$ keer gebruikt",
+    "description": "Usage count shown on template card",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "optionsUsageNever": {
+    "message": "Nooit gebruikt",
+    "description": "Shown on template card when template has never been inserted"
+  },
+  "optionsExportJson": {
+    "message": "JSON exporteren",
+    "description": "Button to export all templates as a JSON file"
+  },
+  "optionsImportJson": {
+    "message": "JSON importeren",
+    "description": "Button to import templates from a JSON file"
+  },
+  "optionsImportSuccess": {
+    "message": "$COUNT$ sjabloon/sjablonen geïmporteerd.",
+    "description": "Success message after importing templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "optionsImportError": {
+    "message": "Ongeldig bestand. Selecteer een geldig TemplateWing JSON-bestand.",
+    "description": "Error message when an invalid file is imported"
+  }
+}
