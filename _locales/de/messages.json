@@ -254,5 +254,27 @@
   "optionsImportError": {
     "message": "Ungültige Datei. Bitte eine gültige TemplateWing-JSON-Exportdatei wählen.",
     "description": "Fehlermeldung bei ungültiger Importdatei"
+  },
+
+  "optionsLabelAccounts": {
+    "message": "Konten (optional)",
+    "description": "Label für die Konten-/Identitätsauswahl"
+  },
+  "optionsAccountsHelp": {
+    "message": "Leer lassen, um diese Vorlage für alle Konten anzuzeigen. Bestimmte Konten auswählen, um einzuschränken, wann diese Vorlage erscheint.",
+    "description": "Hilfetext für das Kontenfeld"
+  },
+  "optionsAllAccounts": {
+    "message": "Alle Konten",
+    "description": "Option um Vorlage für alle Konten anzuzeigen"
+  },
+
+  "optionsLabelNestedTemplates": {
+    "message": "Verschachtelte Vorlagen",
+    "description": "Label for nested template help section"
+  },
+  "optionsNestedTemplatesHelp": {
+    "message": "Andere Vorlage einbinden mit {{template:Vorlagenname}} oder {{templateid:abc123}}. Zirkuläre Verweise werden erkannt und verhindert.",
+    "description": "Help text for nested template syntax"
   }
 }

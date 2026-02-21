@@ -1,6 +1,21 @@
 import { getTemplates, getTemplate, trackUsage } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
+async function getCurrentIdentityId(tabId) {
+  try {
+    const details = await messenger.compose.getComposeDetails(tabId);
+    return details.identityId || null;
+  } catch (err) {
+    console.warn("TemplateWing: could not get current identity", err);
+    return null;
+  }
+}
+
+function isTemplateAllowedForIdentity(template, identityId) {
+  if (!template.identities || template.identities.length === 0) return true;
+  return template.identities.includes(identityId);
+}
+
 function getSortedTemplates(templates) {
   return [...templates].sort((a, b) => {
     const catA = (a.category || "").toLowerCase();
@@ -134,6 +149,12 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   const template = await getTemplate(templateId);
   if (!template) return;
 
+  const currentIdentityId = await getCurrentIdentityId(tab.id);
+  if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
+    console.warn("TemplateWing: template not allowed for current identity");
+    return;
+  }
+
   await insertTemplateIntoTab(tab.id, template);
   await trackUsage(templateId);
 });
@@ -142,11 +163,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   if (!commandName.startsWith("insert-template-")) return;
 
   const index = parseInt(commandName.replace("insert-template-", ""), 10) - 1;
-  const templates = getSortedTemplates(await getTemplates());
-
-  if (index < 0 || index >= templates.length) return;
-
-  const template = templates[index];
+  const allTemplates = await getTemplates();
 
   const tabs = await messenger.tabs.query({
     active: true,
@@ -154,6 +171,16 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   });
 
   if (tabs.length === 0) return;
+
+  const currentIdentityId = await getCurrentIdentityId(tabs[0].id);
+
+  const templates = getSortedTemplates(
+    allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
+  );
+
+  if (index < 0 || index >= templates.length) return;
+
+  const template = templates[index];
 
   await insertTemplateIntoTab(tabs[0].id, template);
 });

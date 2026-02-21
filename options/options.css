@@ -470,6 +470,26 @@ h1 {
   color: var(--color-primary);
 }
 
+/* Nested templates help box */
+.nested-templates-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--color-bg-highlight);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 4px;
+}
+
+.nested-templates-help label {
+  margin-top: 0 !important;
+}
+
+.nested-templates-info {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  font-family: monospace;
+}
+
 /* Import/Export toolbar buttons */
 #btn-export,
 #btn-import {
@@ -510,4 +530,16 @@ h1 {
   font-size: 11px;
   color: var(--color-text-muted);
   margin-top: 2px;
+}
+
+/* Account/identity selector */
+.identities-select {
+  height: 120px;
+}
+
+.account-help {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  font-style: italic;
 }

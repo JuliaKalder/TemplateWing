@@ -254,5 +254,27 @@
   "optionsImportError": {
     "message": "Archivo inválido. Por favor selecciona un archivo JSON de TemplateWing válido.",
     "description": "Error message when an invalid file is imported"
+  },
+
+  "optionsLabelAccounts": {
+    "message": "Cuentas (opcional)",
+    "description": "Label for accounts/identities selection"
+  },
+  "optionsAccountsHelp": {
+    "message": "Déjalo vacío para mostrar esta plantilla en todas las cuentas. Selecciona cuentas específicas para limitar cuándo aparece esta plantilla.",
+    "description": "Help text for accounts field"
+  },
+  "optionsAllAccounts": {
+    "message": "Todas las cuentas",
+    "description": "Option to show template for all accounts"
+  },
+
+  "optionsLabelNestedTemplates": {
+    "message": "Plantillas anidadas",
+    "description": "Label for nested template help section"
+  },
+  "optionsNestedTemplatesHelp": {
+    "message": "Incluir otra plantilla usando {{template:Nombre de la plantilla}} o {{templateid:abc123}}. Las referencias circulares se detectan y previenen.",
+    "description": "Help text for nested template syntax"
   }
 }

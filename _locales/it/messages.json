@@ -254,5 +254,27 @@
   "optionsImportError": {
     "message": "File non valido. Seleziona un file JSON TemplateWing valido.",
     "description": "Error message when an invalid file is imported"
+  },
+
+  "optionsLabelAccounts": {
+    "message": "Account (opzionale)",
+    "description": "Label for accounts/identities selection"
+  },
+  "optionsAccountsHelp": {
+    "message": "Lascia vuoto per mostrare questo modello per tutti gli account. Seleziona account specifici per limitare quando questo modello appare.",
+    "description": "Help text for accounts field"
+  },
+  "optionsAllAccounts": {
+    "message": "Tutti gli account",
+    "description": "Option to show template for all accounts"
+  },
+
+  "optionsLabelNestedTemplates": {
+    "message": "Modelli annidati",
+    "description": "Label for nested template help section"
+  },
+  "optionsNestedTemplatesHelp": {
+    "message": "Includi un altro modello usando {{template:Nome del modello}} o {{templateid:abc123}}. I riferimenti circolari vengono rilevati e prevenuti.",
+    "description": "Help text for nested template syntax"
   }
 }

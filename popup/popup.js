@@ -1,6 +1,21 @@
 import { getTemplates, getTemplate, getCategories, trackUsage } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
+async function getCurrentIdentityId() {
+  try {
+    const tabs = await messenger.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tabs.length === 0) return null;
+    const details = await messenger.compose.getComposeDetails(tabs[0].id);
+    return details.identityId || null;
+  } catch (err) {
+    console.warn("TemplateWing: could not get current identity", err);
+    return null;
+  }
+}
+
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
     const key = el.getAttribute("data-i18n");
@@ -16,12 +31,20 @@ async function renderTemplateList() {
   const list = document.getElementById("template-list");
   const emptyState = document.getElementById("empty-state");
   const allTemplates = await getTemplates();
-  const templates = allTemplates.slice().sort((a, b) => {
-    if (!a.lastUsedAt && !b.lastUsedAt) return 0;
-    if (!a.lastUsedAt) return 1;
-    if (!b.lastUsedAt) return -1;
-    return b.lastUsedAt.localeCompare(a.lastUsedAt);
-  });
+  const currentIdentityId = await getCurrentIdentityId();
+
+  const templates = allTemplates
+    .filter((t) => {
+      if (!t.identities || t.identities.length === 0) return true;
+      return t.identities.includes(currentIdentityId);
+    })
+    .slice()
+    .sort((a, b) => {
+      if (!a.lastUsedAt && !b.lastUsedAt) return 0;
+      if (!a.lastUsedAt) return 1;
+      if (!b.lastUsedAt) return -1;
+      return b.lastUsedAt.localeCompare(a.lastUsedAt);
+    });
 
   list.replaceChildren();
 

@@ -140,6 +140,31 @@ function generateAttId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 }
 
+async function loadIdentities() {
+  const select = document.getElementById("editor-identities");
+  select.replaceChildren();
+
+  try {
+    const accounts = await messenger.accounts.list();
+    for (const account of accounts) {
+      if (account.identities) {
+        for (const identity of account.identities) {
+          const option = document.createElement("option");
+          option.value = identity.id;
+          const label = identity.name
+            ? `${identity.name} (${identity.email})`
+            : identity.email;
+          option.textContent = label;
+          option.title = identity.email;
+          select.appendChild(option);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("TemplateWing: could not load identities", err);
+  }
+}
+
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -209,12 +234,15 @@ async function openEditor(id, prefill = null) {
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
+  const identitiesSelect = document.getElementById("editor-identities");
   const subjectInput = document.getElementById("editor-subject");
   const toInput = document.getElementById("editor-to");
   const ccInput = document.getElementById("editor-cc");
   const bccInput = document.getElementById("editor-bcc");
   const insertModeSelect = document.getElementById("editor-insert-mode");
   const bodyEditor = document.getElementById("editor-body");
+
+  await loadIdentities();
 
   if (id) {
     title.textContent = messenger.i18n.getMessage("optionsEditTemplate");
@@ -233,6 +261,10 @@ async function openEditor(id, prefill = null) {
         bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
       }
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
+      const selectedIdentities = template.identities || [];
+      for (const option of identitiesSelect.options) {
+        option.selected = selectedIdentities.includes(option.value);
+      }
     }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
@@ -273,12 +305,15 @@ async function duplicateTemplate(id) {
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
+  const identitiesSelect = document.getElementById("editor-identities");
   const subjectInput = document.getElementById("editor-subject");
   const toInput = document.getElementById("editor-to");
   const ccInput = document.getElementById("editor-cc");
   const bccInput = document.getElementById("editor-bcc");
   const insertModeSelect = document.getElementById("editor-insert-mode");
   const bodyEditor = document.getElementById("editor-body");
+
+  await loadIdentities();
 
   title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
   nameInput.value = messenger.i18n.getMessage("optionsDuplicateName", template.name);
@@ -293,6 +328,11 @@ async function duplicateTemplate(id) {
   if (template.body) {
     const parsed = new DOMParser().parseFromString(template.body, "text/html");
     bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+  }
+
+  const selectedIdentities = template.identities || [];
+  for (const option of identitiesSelect.options) {
+    option.selected = selectedIdentities.includes(option.value);
   }
 
   await populateCategorySuggestions();
@@ -326,6 +366,9 @@ async function handleSave() {
 
   const insertMode = document.getElementById("editor-insert-mode").value;
 
+  const identitiesSelect = document.getElementById("editor-identities");
+  const identities = Array.from(identitiesSelect.selectedOptions).map((opt) => opt.value);
+
   const template = {
     id: editingId || undefined,
     name,
@@ -337,6 +380,7 @@ async function handleSave() {
     body,
     insertMode,
     attachments: pendingAttachments,
+    identities,
   };
 
   try {

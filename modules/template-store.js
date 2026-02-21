@@ -35,6 +35,7 @@ export async function saveTemplate(template) {
     template.to = template.to || [];
     template.cc = template.cc || [];
     template.bcc = template.bcc || [];
+    template.identities = template.identities || [];
     templates.push(template);
   }
 

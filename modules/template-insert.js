@@ -32,6 +32,59 @@ async function replaceVariables(text, tabId) {
 }
 
 /**
+ * Resolve nested template includes in text.
+ * Syntax: {{template:Template Name}} or {{templateid:abc123}}
+ * @param {string} text - Text containing template includes
+ * @param {Set} visited - Set of visited template IDs to detect circular references
+ * @param {Map} templatesById - Map of template ID to template object
+ * @param {Map} templatesByName - Map of template name (lowercase) to template object
+ * @returns {Promise<string>} Text with includes resolved
+ */
+async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
+  if (!text) return text;
+
+  const includeRegex = /\{\{template(id)?:([^}]+)\}\}/gi;
+  let match;
+  let resolved = text;
+
+  while ((match = includeRegex.exec(text)) !== null) {
+    const [, useId, identifier] = match;
+    const key = identifier.trim();
+    let nestedTemplate = null;
+
+    if (useId) {
+      nestedTemplate = templatesById.get(key);
+    } else {
+      nestedTemplate = templatesByName.get(key.toLowerCase());
+    }
+
+    if (!nestedTemplate) {
+      console.warn(`TemplateWing: referenced template not found: ${key}`);
+      continue;
+    }
+
+    if (visited.has(nestedTemplate.id)) {
+      console.error(`TemplateWing: circular reference detected for template: ${nestedTemplate.name}`);
+      throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
+    }
+
+    visited.add(nestedTemplate.id);
+    const nestedContent = await resolveNestedTemplates(
+      nestedTemplate.body,
+      visited,
+      templatesById,
+      templatesByName
+    );
+    visited.delete(nestedTemplate.id);
+
+    resolved = resolved.replace(match[0], nestedContent);
+    includeRegex.lastIndex = 0;
+  }
+
+  return resolved;
+}
+
+/**
  * Insert a template into a compose tab.
  * @param {number} tabId - The compose tab ID
  * @param {object} template - Template object from storage
@@ -40,8 +93,31 @@ export async function insertTemplateIntoTab(tabId, template) {
   const mode = template.insertMode || "append";
   const details = {};
 
-  if (template.body) {
-    const body = await replaceVariables(template.body, tabId);
+  let resolvedBody = template.body;
+  if (template.body && template.body.includes("{{template:")) {
+    try {
+      const { getTemplates } = await import("./template-store.js");
+      const allTemplates = await getTemplates();
+      const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
+      const templatesByName = new Map(
+        allTemplates.map((t) => [t.name.toLowerCase(), t])
+      );
+      const visited = new Set([template.id]);
+      resolvedBody = await resolveNestedTemplates(
+        template.body,
+        visited,
+        templatesById,
+        templatesByName
+      );
+    } catch (err) {
+      console.error("TemplateWing: error resolving nested templates", err);
+      alert("Error: " + err.message);
+      return;
+    }
+  }
+
+  if (resolvedBody) {
+    const body = await replaceVariables(resolvedBody, tabId);
     if (mode === "replace") {
       details.body = body;
     } else {

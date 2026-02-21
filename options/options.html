@@ -52,6 +52,12 @@
                data-i18n-placeholder="optionsCategoryPlaceholder">
         <datalist id="category-suggestions"></datalist>
 
+        <label data-i18n="optionsLabelAccounts"></label>
+        <select id="editor-identities" multiple class="identities-select">
+          <!-- Filled dynamically -->
+        </select>
+        <div class="account-help" data-i18n="optionsAccountsHelp"></div>
+
         <label data-i18n="optionsLabelSubject"></label>
         <input type="text" id="editor-subject">
 
@@ -98,6 +104,11 @@
             <span class="variable-item" data-i18n="optionsVariableSenderName"></span>
             <span class="variable-item" data-i18n="optionsVariableSenderEmail"></span>
           </div>
+        </div>
+
+        <div class="nested-templates-help">
+          <label data-i18n="optionsLabelNestedTemplates"></label>
+          <div class="nested-templates-info" data-i18n="optionsNestedTemplatesHelp"></div>
         </div>
 
         <div class="attachment-section">

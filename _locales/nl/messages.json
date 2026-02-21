@@ -254,5 +254,27 @@
   "optionsImportError": {
     "message": "Ongeldig bestand. Selecteer een geldig TemplateWing JSON-bestand.",
     "description": "Error message when an invalid file is imported"
+  },
+
+  "optionsLabelAccounts": {
+    "message": "Accounts (optioneel)",
+    "description": "Label for accounts/identities selection"
+  },
+  "optionsAccountsHelp": {
+    "message": "Laat leeg om dit sjabloon voor alle accounts te tonen. Selecteer specifieke accounts om te beperken wanneer dit sjabloon verschijnt.",
+    "description": "Help text for accounts field"
+  },
+  "optionsAllAccounts": {
+    "message": "Alle accounts",
+    "description": "Option to show template for all accounts"
+  },
+
+  "optionsLabelNestedTemplates": {
+    "message": "Geneste sjablonen",
+    "description": "Label for nested template help section"
+  },
+  "optionsNestedTemplatesHelp": {
+    "message": "Neem een ander sjabloon op met {{template:Sjabloonnaam}} of {{templateid:abc123}}. Circulaire referenties worden gedetecteerd en voorkomen.",
+    "description": "Help text for nested template syntax"
   }
 }
