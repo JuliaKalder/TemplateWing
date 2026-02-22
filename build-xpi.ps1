@@ -29,6 +29,11 @@ $files = @(
     "images/icon-128.png"
     "_locales/en/messages.json"
     "_locales/de/messages.json"
+    "_locales/fr/messages.json"
+    "_locales/es/messages.json"
+    "_locales/it/messages.json"
+    "_locales/nl/messages.json"
+    "_locales/pt/messages.json"
 )
 
 foreach ($f in $files) {

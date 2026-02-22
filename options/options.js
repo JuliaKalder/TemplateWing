@@ -356,6 +356,7 @@ async function duplicateTemplate(id) {
   const bodyEditor = document.getElementById("editor-body");
 
   await loadIdentities();
+  await loadNestedTemplateOptions(null);
 
   title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
   nameInput.value = messenger.i18n.getMessage("optionsDuplicateName", template.name);
@@ -441,7 +442,7 @@ async function handleSave() {
 async function handleExport() {
   const templates = await getTemplates();
   const payload = {
-    version: "1.3",
+    version: "2.0",
     exportedAt: new Date().toISOString(),
     templates,
   };

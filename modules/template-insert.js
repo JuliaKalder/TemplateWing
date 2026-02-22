@@ -99,7 +99,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   const details = {};
 
   let resolvedBody = template.body;
-  if (template.body && template.body.includes("{{template:")) {
+  if (template.body && (template.body.includes("{{template:") || template.body.includes("{{templateid:"))) {
     try {
       const { getTemplates } = await import("./template-store.js");
       const allTemplates = await getTemplates();
