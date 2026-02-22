@@ -44,22 +44,28 @@ async function resolveNestedTemplates(text, visited, templatesById, templatesByN
   if (!text) return text;
 
   const includeRegex = /\{\{template(id)?:([^}]+)\}\}/gi;
-  let match;
-  let resolved = text;
 
+  let resolved = text;
+  let match;
+  const matches = [];
   while ((match = includeRegex.exec(text)) !== null) {
-    const [, useId, identifier] = match;
-    const key = identifier.trim();
+    matches.push(match);
+  }
+
+  for (const m of matches) {
+    const fullMatch = m[0];
+    const useId = m[1];
+    const identifier = m[2].trim();
     let nestedTemplate = null;
 
     if (useId) {
-      nestedTemplate = templatesById.get(key);
+      nestedTemplate = templatesById.get(identifier);
     } else {
-      nestedTemplate = templatesByName.get(key.toLowerCase());
+      nestedTemplate = templatesByName.get(identifier.toLowerCase());
     }
 
     if (!nestedTemplate) {
-      console.warn(`TemplateWing: referenced template not found: ${key}`);
+      console.warn(`TemplateWing: referenced template not found: ${identifier}`);
       continue;
     }
 
@@ -70,15 +76,14 @@ async function resolveNestedTemplates(text, visited, templatesById, templatesByN
 
     visited.add(nestedTemplate.id);
     const nestedContent = await resolveNestedTemplates(
-      nestedTemplate.body,
+      nestedTemplate.body || "",
       visited,
       templatesById,
       templatesByName
     );
     visited.delete(nestedTemplate.id);
 
-    resolved = resolved.replace(match[0], nestedContent);
-    includeRegex.lastIndex = 0;
+    resolved = resolved.replace(fullMatch, nestedContent);
   }
 
   return resolved;

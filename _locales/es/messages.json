@@ -276,5 +276,13 @@
   "optionsNestedTemplatesHelp": {
     "message": "Incluir otra plantilla usando {{template:Nombre de la plantilla}} o {{templateid:abc123}}. Las referencias circulares se detectan y previenen.",
     "description": "Help text for nested template syntax"
+  },
+  "optionsInsertNested": {
+    "message": "Insertar plantilla",
+    "description": "Button to insert nested template"
+  },
+  "optionsSelectNestedTemplate": {
+    "message": "Selecciona una plantilla para anidar…",
+    "description": "Placeholder for nested template dropdown"
   }
 }

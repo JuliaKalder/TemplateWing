@@ -165,6 +165,47 @@ async function loadIdentities() {
   }
 }
 
+async function loadNestedTemplateOptions(excludeId = null) {
+  const select = document.getElementById("nested-template-select");
+  select.replaceChildren();
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = messenger.i18n.getMessage("optionsSelectNestedTemplate");
+  select.appendChild(defaultOption);
+
+  const templates = await getTemplates();
+  for (const t of templates) {
+    if (t.id === excludeId) continue;
+    const option = document.createElement("option");
+    option.value = t.name;
+    option.textContent = t.name;
+    select.appendChild(option);
+  }
+}
+
+function insertNestedTemplate() {
+  const select = document.getElementById("nested-template-select");
+  const templateName = select.value;
+  if (!templateName) return;
+
+  const editor = document.getElementById("editor-body");
+  const includeText = `{{template:${templateName}}}`;
+  editor.focus();
+
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(includeText));
+    range.collapse(false);
+  } else {
+    editor.innerHTML += includeText;
+  }
+
+  select.value = "";
+}
+
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -243,6 +284,7 @@ async function openEditor(id, prefill = null) {
   const bodyEditor = document.getElementById("editor-body");
 
   await loadIdentities();
+  await loadNestedTemplateOptions(id || null);
 
   if (id) {
     title.textContent = messenger.i18n.getMessage("optionsEditTemplate");
@@ -474,6 +516,7 @@ document.getElementById("btn-add").addEventListener("click", () => openEditor())
 document.getElementById("btn-save").addEventListener("click", handleSave);
 document.getElementById("btn-cancel").addEventListener("click", closeEditor);
 document.getElementById("btn-back").addEventListener("click", closeEditor);
+document.getElementById("btn-insert-nested").addEventListener("click", insertNestedTemplate);
 
 document.getElementById("btn-export").addEventListener("click", handleExport);
 

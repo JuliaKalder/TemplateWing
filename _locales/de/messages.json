@@ -276,5 +276,13 @@
   "optionsNestedTemplatesHelp": {
     "message": "Andere Vorlage einbinden mit {{template:Vorlagenname}} oder {{templateid:abc123}}. Zirkuläre Verweise werden erkannt und verhindert.",
     "description": "Help text for nested template syntax"
+  },
+  "optionsInsertNested": {
+    "message": "Vorlage einfügen",
+    "description": "Button to insert nested template"
+  },
+  "optionsSelectNestedTemplate": {
+    "message": "Vorlage zum Verschachteln auswählen…",
+    "description": "Placeholder for nested template dropdown"
   }
 }

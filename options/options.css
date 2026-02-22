@@ -490,6 +490,49 @@ h1 {
   font-family: monospace;
 }
 
+/* Nested templates insert row */
+.nested-templates-insert {
+  margin-top: 12px;
+}
+
+.nested-templates-insert label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--color-text-label);
+}
+
+.nested-templates-row {
+  display: flex;
+  gap: 8px;
+}
+
+.nested-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.btn-insert-nested {
+  padding: 6px 14px;
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  background: var(--color-bg-highlight);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-insert-nested:hover {
+  background: var(--color-bg-highlight-hover);
+}
+
 /* Import/Export toolbar buttons */
 #btn-export,
 #btn-import {

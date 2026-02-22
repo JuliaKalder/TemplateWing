@@ -276,5 +276,13 @@
   "optionsNestedTemplatesHelp": {
     "message": "Inclure un autre modèle avec {{template:Nom du modèle}} ou {{templateid:abc123}}. Les références circulaires sont détectées et évitées.",
     "description": "Help text for nested template syntax"
+  },
+  "optionsInsertNested": {
+    "message": "Insérer un modèle",
+    "description": "Button to insert nested template"
+  },
+  "optionsSelectNestedTemplate": {
+    "message": "Sélectionnez un modèle à imbriquer…",
+    "description": "Placeholder for nested template dropdown"
   }
 }

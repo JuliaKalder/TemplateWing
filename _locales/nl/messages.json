@@ -276,5 +276,13 @@
   "optionsNestedTemplatesHelp": {
     "message": "Neem een ander sjabloon op met {{template:Sjabloonnaam}} of {{templateid:abc123}}. Circulaire referenties worden gedetecteerd en voorkomen.",
     "description": "Help text for nested template syntax"
+  },
+  "optionsInsertNested": {
+    "message": "Sjabloon invoegen",
+    "description": "Button to insert nested template"
+  },
+  "optionsSelectNestedTemplate": {
+    "message": "Selecteer een sjabloon om te nesten…",
+    "description": "Placeholder for nested template dropdown"
   }
 }

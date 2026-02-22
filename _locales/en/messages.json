@@ -276,5 +276,13 @@
   "optionsNestedTemplatesHelp": {
     "message": "Include another template using {{template:Template Name}} or {{templateid:abc123}}. Circular references are detected and prevented.",
     "description": "Help text for nested template syntax"
+  },
+  "optionsInsertNested": {
+    "message": "Insert Template",
+    "description": "Button to insert nested template"
+  },
+  "optionsSelectNestedTemplate": {
+    "message": "Select a template to nest…",
+    "description": "Placeholder for nested template dropdown"
   }
 }
