@@ -130,8 +130,18 @@ async function insertTemplate(id) {
     currentWindow: true,
   });
   if (tabs.length === 0) return;
+  const currentIdentityId = await getCurrentIdentityId();
+  if (template.identities && template.identities.length > 0 && !template.identities.includes(currentIdentityId)) {
+    return;
+  }
 
-  await insertTemplateIntoTab(tabs[0].id, template);
+  try {
+    await insertTemplateIntoTab(tabs[0].id, template);
+  } catch (err) {
+    console.error("TemplateWing: insert failed", err);
+    alert(err.message);
+    return;
+  }
   await trackUsage(id);
   window.close();
 }

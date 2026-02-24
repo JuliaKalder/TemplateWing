@@ -200,7 +200,7 @@ function insertNestedTemplate() {
     range.insertNode(document.createTextNode(includeText));
     range.collapse(false);
   } else {
-    editor.innerHTML += includeText;
+    editor.append(document.createTextNode(includeText));
   }
 
   select.value = "";

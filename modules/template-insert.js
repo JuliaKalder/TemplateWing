@@ -99,7 +99,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   const details = {};
 
   let resolvedBody = template.body;
-  if (template.body && (template.body.includes("{{template:") || template.body.includes("{{templateid:"))) {
+  if (template.body && /\{\{template(id)?:/i.test(template.body)) {
     try {
       const { getTemplates } = await import("./template-store.js");
       const allTemplates = await getTemplates();
@@ -116,8 +116,7 @@ export async function insertTemplateIntoTab(tabId, template) {
       );
     } catch (err) {
       console.error("TemplateWing: error resolving nested templates", err);
-      alert("Error: " + err.message);
-      return;
+      throw err;
     }
   }
 

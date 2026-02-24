@@ -25,7 +25,7 @@ function getSortedTemplates(templates) {
   });
 }
 
-async function buildContextMenu() {
+async function buildContextMenu(identityId = null) {
   await messenger.menus.removeAll();
 
   messenger.menus.create({
@@ -40,7 +40,9 @@ async function buildContextMenu() {
     contexts: ["message_list"],
   });
 
-  const templates = await getTemplates();
+  const templates = (await getTemplates()).filter((t) =>
+    isTemplateAllowedForIdentity(t, identityId)
+  );
 
   if (templates.length === 0) {
     messenger.menus.create({
@@ -155,8 +157,12 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
     return;
   }
 
-  await insertTemplateIntoTab(tab.id, template);
-  await trackUsage(templateId);
+  try {
+    await insertTemplateIntoTab(tab.id, template);
+    await trackUsage(templateId);
+  } catch (err) {
+    console.error("TemplateWing: insert failed from context menu", err);
+  }
 });
 
 messenger.commands.onCommand.addListener(async (commandName) => {
@@ -182,7 +188,12 @@ messenger.commands.onCommand.addListener(async (commandName) => {
 
   const template = templates[index];
 
-  await insertTemplateIntoTab(tabs[0].id, template);
+  try {
+    await insertTemplateIntoTab(tabs[0].id, template);
+    await trackUsage(template.id);
+  } catch (err) {
+    console.error("TemplateWing: insert failed from keyboard shortcut", err);
+  }
 });
 
 messenger.runtime.onMessage.addListener((message) => {
@@ -195,6 +206,15 @@ messenger.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes.templates) {
     buildContextMenu();
   }
+});
+
+messenger.menus.onShown.addListener(async (info, tab) => {
+  if (!info.contexts || !info.contexts.includes("compose_body") || !tab || !tab.id) {
+    return;
+  }
+  const identityId = await getCurrentIdentityId(tab.id);
+  await buildContextMenu(identityId);
+  messenger.menus.refresh();
 });
 
 buildContextMenu();
