@@ -1,102 +1,115 @@
 # TemplateWing Roadmap Beyond v2.0
 
-Time horizon: **February 18, 2026 to April 18, 2026** (next 2 months)  
-Planning baseline date: **February 18, 2026**
+Time horizon: **February 24, 2026 to June 30, 2026**
+Planning baseline date: **February 24, 2026**
 
-## Inputs Used
+## Current Baseline
 
-- Current codebase state (`manifest.json` currently at version `1.3.0`, vanilla ES modules, no test suite in repo)
-- Open GitHub issues (all labeled `v2.0`):
-  - #13 Account-specific templates: https://github.com/JuliaKalder/TemplateWing/issues/13
-  - #14 Nested templates / reusable blocks: https://github.com/JuliaKalder/TemplateWing/issues/14
-  - #15 Additional localizations (FR, ES, IT, ...): https://github.com/JuliaKalder/TemplateWing/issues/15
+- Current extension version: `2.0.0` (`manifest.json`)
+- v2.0 issues delivered and closed:
+  - #13 Account-specific templates
+  - #14 Nested templates / reusable blocks (with cycle detection)
+  - #15 Additional localizations (FR, ES, IT, PT, NL)
+- Fresh hardening pass already pushed to `main` (`7884c1a`):
+  - Identity-aware compose context menu rendering
+  - Shortcut insertion usage tracking consistency
+  - More robust nested-include detection/error flow
+  - Safer nested-template insertion in editor (no dynamic `innerHTML +=`)
 
 ## Strategy
 
-All open issues are currently scoped to **v2.0**.  
-For the period after v2.0, the priority should be:
+1. Keep v2.0 stable for Thunderbird shop handoff.
+2. Prioritize low-risk reliability and validation improvements in v2.1.
+3. Add productivity features in v2.2 without increasing support burden.
+4. Start targeted UX and ecosystem features in v2.3 only after regression coverage exists.
 
-1. Stabilize and harden core flows (edit, import/export, insert, attachments).
-2. Add low-risk UX improvements that reduce support load.
-3. Prepare the architecture for larger post-2.0 feature work (without trying to land another major feature set immediately).
+## Release Plan
 
-## Release Plan (Post-v2.0)
+## v2.1 (Target: March 2026)
 
-## v2.1 (Target window: March 9, 2026 to March 29, 2026)
+Theme: **Stabilization + guardrails**
 
-Theme: **Reliability + safety + quality**
-
-### Scope
-
-1. Import guardrails and merge options
+1. Import guardrails and merge modes
 - Add import modes: `append`, `skip duplicates`, `replace by name`.
-- Show pre-import validation summary (valid templates, skipped entries, duplicates).
-- Preserve deterministic behavior for malformed data.
+- Pre-import validation summary with counts.
 
 2. Recipient and template validation
-- Validate email-like recipient entries (`to/cc/bcc`) before save.
-- Validate required fields and show inline errors consistently.
-- Prevent empty or whitespace-only template body when configured as replace mode (optional warning).
+- Validate recipient format consistently for `to`, `cc`, `bcc`.
+- Add save-time validation for invalid or incomplete templates.
 
-3. Attachment handling hardening
-- Add per-file and per-template size warnings.
-- Gracefully handle attachment decode failures during insert with clear user feedback.
-- Track and surface attachment import errors.
+3. Attachment hardening
+- Add size warning thresholds and clearer attachment error feedback.
+- Handle attachment decode/insert failure per file with clear messaging.
 
-4. Minimal automated regression checks
-- Add a lightweight test layer for pure modules (e.g., `template-store` data operations and parsing helpers).
-- Add a CI-level smoke check (lint + unit tests) to prevent regressions.
+4. Minimal automated checks
+- Add unit tests for pure helper logic.
+- Add CI smoke run (lint + tests).
 
-### Exit Criteria
+Exit criteria:
+- No critical regressions in save/import/insert flows.
+- At least one automated CI gate prevents broken mainline commits.
 
-- No data-loss bugs in save/import/export flows during manual QA.
-- Import failures become actionable (user can see what failed and why).
-- At least one automated check runs in CI for core logic.
-
-## v2.2 (Target window: March 30, 2026 to April 18, 2026)
+## v2.2 (Target: April to May 2026)
 
 Theme: **Productivity + maintainability**
 
-### Scope
-
-1. Variable system expansion (safe incremental)
-- Add user-facing variable picker in editor.
-- Add 3-5 new deterministic variables (e.g., `{DATETIME}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`, `{WEEKDAY}`, `{YEAR}`).
-- Keep variable resolution centralized in one helper module.
+1. Variable system expansion
+- Add variable picker in editor.
+- Add deterministic variables (`{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`).
 
 2. Editor UX upgrades
-- Add plain-text paste option / sanitize-paste command for cleaner templates.
-- Improve toolbar state feedback (active bold/italic/list indicators where feasible).
-- Add duplicate-name warning before save.
+- Paste sanitization mode.
+- Toolbar active-state feedback.
+- Duplicate template name warning before save.
 
-3. Performance and state consistency
-- Cache categories/templates per view render cycle to reduce repeated storage reads.
-- Ensure popup/options/context menu stay in sync after mutations (single source update event strategy).
+3. State consistency/performance
+- Reduce repeated storage reads in popup/options render cycles.
+- Keep popup/options/context menu in sync through a clear refresh strategy.
 
-4. Post-v2.0 architecture prep
-- Refactor storage model with explicit schema version field and migration hook.
-- Document extension data schema and migration rules in `docs/`.
+4. Storage schema versioning
+- Add schema version field and migration hooks.
+- Document schema and migration rules.
 
-### Exit Criteria
+Exit criteria:
+- Faster, predictable editing/insertion behavior under manual QA.
+- Versioned storage supports forward migration safely.
 
-- Template editing and insertion feel faster and more predictable in manual compose tests.
-- New variables are documented and covered by regression checks.
-- Storage schema versioning exists and can support future migrations without data loss.
+## v2.3 (Target: June 2026)
 
-## Backlog Candidate (Do not commit in this 2-month window unless capacity appears)
+Theme: **Power-user features with low risk**
 
-1. Cross-device sync option (`storage.sync`) with conflict strategy.
-2. Snippet analytics (local only) for template optimization insights.
-3. Keyboard shortcut customization UI.
+1. Insert-position controls
+- Add explicit insert-at-cursor / top / end behavior (building on issue #24 direction).
 
-## Dependencies and Risks
+2. Smart template chooser
+- Optional favorites and pinning.
+- Recent + favorites hybrid sort mode.
 
-1. Thunderbird API constraints (compose/message APIs differ by version) may impact account and variable features.
-2. Attachment size growth in `storage.local` can create performance pressure; warnings are needed before hard limits are hit.
-3. No current formal test harness increases regression risk; v2.1 should prioritize this.
+3. Better import/export interoperability
+- Import preview with conflict resolution UI.
+- Optional per-template export.
 
-## Suggested Tracking Setup
+Exit criteria:
+- Power-user controls are available without increasing default-flow complexity.
 
-1. Create milestones: `v2.1` and `v2.2`.
-2. Convert each scope bullet into GitHub issues labeled `post-v2.0`.
-3. Keep #13, #14, #15 in `v2.0`; do not slip them into post-v2.0 stabilization unless v2.0 scope changes.
+## Proposed Future Features (Candidates Beyond v2.3)
+
+1. Optional sync profile (`storage.sync`) with conflict policy.
+2. Account-level default signatures via nested template blocks.
+3. Template linting assistant (detect unresolved variables/includes before save).
+4. Shortcut customization UI in options.
+5. Optional plain-text-only template mode for strict clients.
+6. Bulk template operations (multi-select delete/category move/export).
+7. Local usage insights dashboard (fully on-device, no telemetry).
+
+## Risks and Constraints
+
+1. Thunderbird compose/message API behavior can vary by version.
+2. Attachment-heavy templates can pressure `storage.local` size/performance.
+3. Without automated regression coverage, feature velocity increases break risk.
+
+## Tracking Setup
+
+1. Maintain milestones: `v2.1`, `v2.2`, `v2.3`.
+2. Keep roadmap issues labeled with `post-v2.0` and their target version label.
+3. Gate new feature work on passing CI smoke checks once v2.1 testing lands.
