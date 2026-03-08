@@ -284,5 +284,136 @@
   "optionsSelectNestedTemplate": {
     "message": "Sélectionnez un modèle à imbriquer…",
     "description": "Placeholder for nested template dropdown"
+  },
+
+  "importDialogTitle": {
+    "message": "Résumé de l'importation",
+    "description": "Title of the import confirmation dialog"
+  },
+  "importModeLabel": {
+    "message": "Mode d'importation",
+    "description": "Legend for the import mode radio buttons"
+  },
+  "importDialogTotal": {
+    "message": "$COUNT$ modèle(s) trouvé(s) dans le fichier",
+    "description": "Total templates found in the import file",
+    "placeholders": {
+      "count": { "content": "$1", "example": "5" }
+    }
+  },
+  "importDialogInvalid": {
+    "message": "$COUNT$ invalide(s) (seront ignoré(s))",
+    "description": "Number of invalid entries in the import file",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1" }
+    }
+  },
+  "importDialogDuplicates": {
+    "message": "$COUNT$ avec des noms existants",
+    "description": "Number of templates with names that already exist",
+    "placeholders": {
+      "count": { "content": "$1", "example": "2" }
+    }
+  },
+  "importModeAppend": {
+    "message": "Tout ajouter comme nouveau",
+    "description": "Import mode: add all valid templates as new entries"
+  },
+  "importModeAppendDesc": {
+    "message": "Importer tous les modèles valides, même si un modèle avec le même nom existe déjà.",
+    "description": "Description for append import mode"
+  },
+  "importModeSkip": {
+    "message": "Ignorer les noms existants",
+    "description": "Import mode: skip templates whose names already exist"
+  },
+  "importModeSkipDesc": {
+    "message": "N'importer que les modèles dont le nom n'existe pas encore.",
+    "description": "Description for skip-duplicates import mode"
+  },
+  "importModeReplace": {
+    "message": "Mettre à jour les existants par nom",
+    "description": "Import mode: replace existing templates with same name"
+  },
+  "importModeReplaceDesc": {
+    "message": "Écraser les modèles existants portant le même nom ; ajouter les nouveaux.",
+    "description": "Description for replace-by-name import mode"
+  },
+  "importDialogConfirm": {
+    "message": "Importer",
+    "description": "Confirm button in import dialog"
+  },
+  "importDialogCancel": {
+    "message": "Annuler",
+    "description": "Cancel button in import dialog"
+  },
+  "importResultSummary": {
+    "message": "$ADDED$ ajouté(s), $SKIPPED$ ignoré(s), $REPLACED$ remplacé(s).",
+    "description": "Result message after import completes",
+    "placeholders": {
+      "added": { "content": "$1", "example": "3" },
+      "skipped": { "content": "$2", "example": "1" },
+      "replaced": { "content": "$3", "example": "0" }
+    }
+  },
+
+  "validationNameRequired": {
+    "message": "Le nom du modèle est requis.",
+    "description": "Error when template name is empty"
+  },
+  "validationInvalidRecipients": {
+    "message": "Destinataire(s) invalide(s) : $LIST$",
+    "description": "Error when recipient email format is invalid",
+    "placeholders": {
+      "list": { "content": "$1", "example": "bad-email, another" }
+    }
+  },
+
+  "attachmentSizeWarning": {
+    "message": "Fichier volumineux",
+    "description": "Short warning shown next to a large attachment"
+  },
+  "attachmentTotalWarning": {
+    "message": "La taille totale des pièces jointes ($SIZE$) est importante. Cela peut augmenter considérablement l'utilisation du stockage.",
+    "description": "Warning when total attachment size exceeds threshold",
+    "placeholders": {
+      "size": { "content": "$1", "example": "12.5 MB" }
+    }
+  },
+  "attachmentReadError": {
+    "message": "Impossible de lire le fichier « $NAME$ ».",
+    "description": "Error when a file cannot be read during attachment",
+    "placeholders": {
+      "name": { "content": "$1", "example": "document.pdf" }
+    }
+  },
+
+  "optionsVariableDatetime": {
+    "message": "{DATETIME} — Date et heure actuelles",
+    "description": "Describes DATETIME variable"
+  },
+  "optionsVariableYear": {
+    "message": "{YEAR} — Année en cours",
+    "description": "Describes YEAR variable"
+  },
+  "optionsVariableWeekday": {
+    "message": "{WEEKDAY} — Jour de la semaine",
+    "description": "Describes WEEKDAY variable"
+  },
+  "optionsVariableAccountName": {
+    "message": "{ACCOUNT_NAME} — Nom du compte",
+    "description": "Describes ACCOUNT_NAME variable"
+  },
+  "optionsVariableAccountEmail": {
+    "message": "{ACCOUNT_EMAIL} — Adresse e-mail du compte",
+    "description": "Describes ACCOUNT_EMAIL variable"
+  },
+  "optionsPastePlainText": {
+    "message": "Coller en texte brut",
+    "description": "Label for the paste sanitization toggle in the editor toolbar"
+  },
+  "validationDuplicateName": {
+    "message": "Un modèle avec ce nom existe déjà.",
+    "description": "Error when trying to save a template with a duplicate name"
   }
 }

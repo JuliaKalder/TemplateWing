@@ -284,5 +284,136 @@
   "optionsSelectNestedTemplate": {
     "message": "Selecteer een sjabloon om te nesten…",
     "description": "Placeholder for nested template dropdown"
+  },
+
+  "importDialogTitle": {
+    "message": "Import-overzicht",
+    "description": "Title of the import confirmation dialog"
+  },
+  "importModeLabel": {
+    "message": "Importmodus",
+    "description": "Legend for the import mode radio buttons"
+  },
+  "importDialogTotal": {
+    "message": "$COUNT$ sjabloon/sjablonen gevonden in bestand",
+    "description": "Total templates found in the import file",
+    "placeholders": {
+      "count": { "content": "$1", "example": "5" }
+    }
+  },
+  "importDialogInvalid": {
+    "message": "$COUNT$ ongeldig (worden overgeslagen)",
+    "description": "Number of invalid entries in the import file",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1" }
+    }
+  },
+  "importDialogDuplicates": {
+    "message": "$COUNT$ met bestaande namen",
+    "description": "Number of templates with names that already exist",
+    "placeholders": {
+      "count": { "content": "$1", "example": "2" }
+    }
+  },
+  "importModeAppend": {
+    "message": "Alles als nieuw toevoegen",
+    "description": "Import mode: add all valid templates as new entries"
+  },
+  "importModeAppendDesc": {
+    "message": "Alle geldige sjablonen importeren, zelfs als er al een met dezelfde naam bestaat.",
+    "description": "Description for append import mode"
+  },
+  "importModeSkip": {
+    "message": "Bestaande namen overslaan",
+    "description": "Import mode: skip templates whose names already exist"
+  },
+  "importModeSkipDesc": {
+    "message": "Alleen sjablonen importeren waarvan de naam nog niet bestaat.",
+    "description": "Description for skip-duplicates import mode"
+  },
+  "importModeReplace": {
+    "message": "Bestaande bijwerken op naam",
+    "description": "Import mode: replace existing templates with same name"
+  },
+  "importModeReplaceDesc": {
+    "message": "Bestaande sjablonen met dezelfde naam overschrijven; nieuwe toevoegen.",
+    "description": "Description for replace-by-name import mode"
+  },
+  "importDialogConfirm": {
+    "message": "Importeren",
+    "description": "Confirm button in import dialog"
+  },
+  "importDialogCancel": {
+    "message": "Annuleren",
+    "description": "Cancel button in import dialog"
+  },
+  "importResultSummary": {
+    "message": "$ADDED$ toegevoegd, $SKIPPED$ overgeslagen, $REPLACED$ vervangen.",
+    "description": "Result message after import completes",
+    "placeholders": {
+      "added": { "content": "$1", "example": "3" },
+      "skipped": { "content": "$2", "example": "1" },
+      "replaced": { "content": "$3", "example": "0" }
+    }
+  },
+
+  "validationNameRequired": {
+    "message": "Sjabloonnaam is vereist.",
+    "description": "Error when template name is empty"
+  },
+  "validationInvalidRecipients": {
+    "message": "Ongeldige ontvanger(s): $LIST$",
+    "description": "Error when recipient email format is invalid",
+    "placeholders": {
+      "list": { "content": "$1", "example": "bad-email, another" }
+    }
+  },
+
+  "attachmentSizeWarning": {
+    "message": "Groot bestand",
+    "description": "Short warning shown next to a large attachment"
+  },
+  "attachmentTotalWarning": {
+    "message": "De totale grootte van de bijlagen ($SIZE$) is groot. Dit kan het opslaggebruik aanzienlijk verhogen.",
+    "description": "Warning when total attachment size exceeds threshold",
+    "placeholders": {
+      "size": { "content": "$1", "example": "12.5 MB" }
+    }
+  },
+  "attachmentReadError": {
+    "message": "Kan bestand «$NAME$» niet lezen.",
+    "description": "Error when a file cannot be read during attachment",
+    "placeholders": {
+      "name": { "content": "$1", "example": "document.pdf" }
+    }
+  },
+
+  "optionsVariableDatetime": {
+    "message": "{DATETIME} — Huidige datum en tijd",
+    "description": "Describes DATETIME variable"
+  },
+  "optionsVariableYear": {
+    "message": "{YEAR} — Huidig jaar",
+    "description": "Describes YEAR variable"
+  },
+  "optionsVariableWeekday": {
+    "message": "{WEEKDAY} — Dag van de week",
+    "description": "Describes WEEKDAY variable"
+  },
+  "optionsVariableAccountName": {
+    "message": "{ACCOUNT_NAME} — Accountnaam",
+    "description": "Describes ACCOUNT_NAME variable"
+  },
+  "optionsVariableAccountEmail": {
+    "message": "{ACCOUNT_EMAIL} — E-mailadres van het account",
+    "description": "Describes ACCOUNT_EMAIL variable"
+  },
+  "optionsPastePlainText": {
+    "message": "Plakken als platte tekst",
+    "description": "Label for the paste sanitization toggle in the editor toolbar"
+  },
+  "validationDuplicateName": {
+    "message": "Er bestaat al een sjabloon met deze naam.",
+    "description": "Error when trying to save a template with a duplicate name"
   }
 }

@@ -9,13 +9,15 @@ TemplateWing is a Thunderbird 128+ MailExtension (WebExtension-based) that allow
 - **Vanilla JavaScript (ES6 Modules)**: No bundlers, transpilers, or external libraries.
 - **Thunderbird MailExtension APIs**: Uses the `messenger.*` namespace (e.g., `messenger.compose`, `messenger.storage`).
 - **Storage**: `messenger.storage.local` with `unlimitedStorage` permission.
-- **I18n**: Support for English (`en`) and German (`de`) via `_locales`.
+- **I18n**: Support for 7 languages via `_locales` (en, de, fr, es, it, pt, nl).
 - **UI**: Standard HTML/CSS for the popup and options (management) pages.
 
 ### Architecture
 - **`manifest.json`**: Manifest V2 configuration, targeting Thunderbird 128.0+.
 - **`background.js` / `background.html`**: Service layer for context menus and storage listeners.
 - **`modules/template-store.js`**: Core data access layer (CRUD) for templates.
+- **`modules/template-insert.js`**: Template insertion logic with variable replacement and nested template resolution.
+- **`modules/validation.js`**: Pure validation helpers (recipient format, import analysis, file sizes).
 - **`popup/`**: The "Compose Action" interface for selecting and inserting templates.
 - **`options/`**: The management interface for creating and editing templates.
 
@@ -61,7 +63,7 @@ Rigorously maintain the "vanilla" nature of the project. Do not introduce npm pa
 
 ### 4. Internationalization (i18n)
 - All user-facing strings must be localized.
-- Update both `_locales/en/messages.json` and `_locales/de/messages.json` for every new string.
+- Update all 7 locale files under `_locales/` for every new string. Run `npm run lint` to verify consistency.
 - Use `messenger.i18n.getMessage()` in JS or `data-i18n` attributes in HTML (if the project's helper script supports it).
 
 ### 5. CSP & Security

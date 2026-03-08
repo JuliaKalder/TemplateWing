@@ -93,6 +93,11 @@
             <option value="h3">Heading 3</option>
             <option value="blockquote">Quote</option>
           </select>
+          <span class="toolbar-sep"></span>
+          <label class="toolbar-toggle" title="Paste as plain text">
+            <input type="checkbox" id="paste-plain-toggle">
+            <span data-i18n="optionsPastePlainText"></span>
+          </label>
         </div>
         <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
 
@@ -108,11 +113,16 @@
 
         <div class="variables-help">
           <label data-i18n="optionsLabelVariables"></label>
-          <div class="variables-info">
-            <span class="variable-item" data-i18n="optionsVariableDate"></span>
-            <span class="variable-item" data-i18n="optionsVariableTime"></span>
-            <span class="variable-item" data-i18n="optionsVariableSenderName"></span>
-            <span class="variable-item" data-i18n="optionsVariableSenderEmail"></span>
+          <div class="variable-picker">
+            <button type="button" class="variable-chip" data-var="{DATE}" data-i18n-title="optionsVariableDate">{DATE}</button>
+            <button type="button" class="variable-chip" data-var="{TIME}" data-i18n-title="optionsVariableTime">{TIME}</button>
+            <button type="button" class="variable-chip" data-var="{DATETIME}" data-i18n-title="optionsVariableDatetime">{DATETIME}</button>
+            <button type="button" class="variable-chip" data-var="{YEAR}" data-i18n-title="optionsVariableYear">{YEAR}</button>
+            <button type="button" class="variable-chip" data-var="{WEEKDAY}" data-i18n-title="optionsVariableWeekday">{WEEKDAY}</button>
+            <button type="button" class="variable-chip" data-var="{SENDER_NAME}" data-i18n-title="optionsVariableSenderName">{SENDER_NAME}</button>
+            <button type="button" class="variable-chip" data-var="{SENDER_EMAIL}" data-i18n-title="optionsVariableSenderEmail">{SENDER_EMAIL}</button>
+            <button type="button" class="variable-chip" data-var="{ACCOUNT_NAME}" data-i18n-title="optionsVariableAccountName">{ACCOUNT_NAME}</button>
+            <button type="button" class="variable-chip" data-var="{ACCOUNT_EMAIL}" data-i18n-title="optionsVariableAccountEmail">{ACCOUNT_EMAIL}</button>
           </div>
         </div>
 
@@ -136,6 +146,42 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Import dialog modal -->
+  <div id="import-dialog" class="modal-overlay" hidden>
+    <div class="modal-dialog">
+      <h3 data-i18n="importDialogTitle"></h3>
+      <div id="import-summary" class="import-summary"></div>
+      <fieldset class="import-mode-fieldset">
+        <legend data-i18n="importModeLabel"></legend>
+        <label class="import-mode-option">
+          <input type="radio" name="import-mode" value="append" checked>
+          <span>
+            <strong data-i18n="importModeAppend"></strong>
+            <small data-i18n="importModeAppendDesc"></small>
+          </span>
+        </label>
+        <label class="import-mode-option">
+          <input type="radio" name="import-mode" value="skip">
+          <span>
+            <strong data-i18n="importModeSkip"></strong>
+            <small data-i18n="importModeSkipDesc"></small>
+          </span>
+        </label>
+        <label class="import-mode-option">
+          <input type="radio" name="import-mode" value="replace">
+          <span>
+            <strong data-i18n="importModeReplace"></strong>
+            <small data-i18n="importModeReplaceDesc"></small>
+          </span>
+        </label>
+      </fieldset>
+      <div class="modal-actions">
+        <button id="import-confirm" class="btn-primary" data-i18n="importDialogConfirm"></button>
+        <button id="import-cancel" data-i18n="importDialogCancel"></button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="options.js"></script>

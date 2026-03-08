@@ -19,6 +19,7 @@ $files = @(
     "LICENSE"
     "modules/template-store.js"
     "modules/template-insert.js"
+    "modules/validation.js"
     "popup/popup.html"
     "popup/popup.css"
     "popup/popup.js"
@@ -32,6 +33,14 @@ $files = @(
     "images/icon-128.png"
     "_locales/en/messages.json"
     "_locales/de/messages.json"
+    "_locales/fr/messages.json"
+    "_locales/es/messages.json"
+    "_locales/it/messages.json"
+    "_locales/nl/messages.json"
+    "_locales/pt/messages.json"
+    "package.json"
+    "tests/validation.test.js"
+    "scripts/lint-locales.js"
 )
 
 foreach ($f in $files) {

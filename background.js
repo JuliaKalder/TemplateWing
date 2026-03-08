@@ -25,6 +25,11 @@ function getSortedTemplates(templates) {
   });
 }
 
+function getCategoryMenuId(category, index) {
+  const slug = category.replace(/[^a-zA-Z0-9]/g, "_") || "uncategorized";
+  return `templatewing-cat-${slug}-${index}`;
+}
+
 async function buildContextMenu(identityId = null) {
   await messenger.menus.removeAll();
 
@@ -71,8 +76,8 @@ async function buildContextMenu(identityId = null) {
 
   const sortedCategories = Object.keys(categorized).sort();
 
-  for (const category of sortedCategories) {
-    const categoryId = `templatewing-cat-${category.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  for (const [index, category] of sortedCategories.entries()) {
+    const categoryId = getCategoryMenuId(category, index);
     messenger.menus.create({
       id: categoryId,
       title: category,

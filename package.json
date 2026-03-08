@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "templatewing",
+  "version": "2.2.0",
+  "description": "Thunderbird add-on: manage and insert email templates with attachments",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "lint": "node scripts/lint-locales.js"
+  }
+}

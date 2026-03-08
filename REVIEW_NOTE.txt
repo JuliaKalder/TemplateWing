@@ -1,0 +1,88 @@
+TemplateWing — Review Notes for ATN Review Team
+=================================================
+
+Submitted version: 2.2.0 (bundled v2.1 + v2.2 release)
+Minimum Thunderbird version: 128.0
+License: Mozilla Public License 2.0
+
+Overview
+--------
+TemplateWing is a compose-window add-on that lets users save, manage, and
+insert reusable email templates — including rich-text bodies, file attachments,
+recipients, and subject lines.
+
+Changes since last published version (2.0.0)
+---------------------------------------------
+
+v2.1 — Stabilisation & Guardrails
+  1. Import guardrails: Import dialog now shows a pre-import validation summary
+     (total / invalid / duplicate counts) and offers three merge modes:
+     "Add all as new", "Skip existing names", "Update existing by name".
+  2. Recipient validation: To/Cc/Bcc fields are validated for correct email
+     format on save. Invalid entries are highlighted with a field error state.
+  3. Attachment hardening: Per-file size warning (>=5 MB), total size warning
+     (>=10 MB), and per-file error handling during insertion so a single
+     attachment failure does not block the entire template.
+  4. Automated checks: 25 unit tests (Node.js built-in test runner, zero
+     external dependencies) and a locale consistency lint that verifies all
+     7 locale files share the same set of message keys. GitHub Actions CI
+     runs both on every push/PR.
+
+v2.2 — Productivity & Maintainability
+  1. Variable system expansion: Five new variables ({DATETIME}, {YEAR},
+     {WEEKDAY}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}). Clickable variable picker
+     chips in the editor toolbar insert variables at the cursor position.
+  2. Editor UX upgrades: "Paste as plain text" toggle strips HTML formatting
+     from clipboard. Toolbar active-state feedback (bold/italic/underline
+     buttons highlight when active). Duplicate template name check on save.
+  3. State consistency: In-memory template cache eliminates repeated storage
+     reads. Cache invalidated automatically via storage.onChanged listener.
+  4. Storage schema versioning: Schema version field in storage.local with
+     sequential migration hooks for forward-compatible data upgrades.
+
+Permissions used
+----------------
+- compose        — Read/write compose window details (subject, body, recipients)
+- storage        — Persist templates in local storage
+- unlimitedStorage — Templates may contain base64-encoded file attachments
+- menus          — Context menu for inserting templates from compose body
+                   and "Save as Template" from message list
+- messagesRead   — Read message body when saving an email as a template
+- accountsRead   — List account identities for account-specific template
+                   filtering and {ACCOUNT_NAME}/{ACCOUNT_EMAIL} variables
+
+No remote connections
+---------------------
+TemplateWing does not make any network requests. All data stays on the user's
+device in messenger.storage.local. No telemetry, no analytics, no external APIs.
+
+Source code
+-----------
+The full source is included in the source zip archive. The project uses vanilla
+ES6 modules with no build step, no bundler, and no external dependencies.
+The code in the XPI is identical to the source files.
+
+Build instructions
+------------------
+The XPI can be reproduced by running:
+
+  PowerShell:  ./build-xpi.ps1
+  Bash:        zip -r templatewing.xpi manifest.json background.html \
+                 background.js LICENSE modules/ popup/ options/ images/ \
+                 _locales/ -x ".*" -x "*.md"
+
+Testing
+-------
+  npm test       — 25 unit tests for validation helpers
+  npm run lint   — Locale file consistency check (87 keys across 7 locales)
+
+Manual QA covers: template CRUD, insert via popup / context menu / keyboard
+shortcut, import/export with all three merge modes, attachment add/remove,
+variable replacement (all 9 variables), nested template resolution,
+identity-based filtering, paste sanitization, duplicate name detection,
+toolbar active-state feedback, schema migration on first load.
+
+Contact
+-------
+Julia Kalder <mail@julia-kalder.de>
+https://github.com/JuliaKalder/TemplateWing

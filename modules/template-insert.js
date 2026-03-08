@@ -10,6 +10,8 @@ async function replaceVariables(text, tabId) {
   const now = new Date();
   let senderName = "";
   let senderEmail = "";
+  let accountName = "";
+  let accountEmail = "";
 
   try {
     const details = await messenger.compose.getComposeDetails(tabId);
@@ -18,17 +20,36 @@ async function replaceVariables(text, tabId) {
       if (identity) {
         senderName = identity.name || "";
         senderEmail = identity.email || "";
+        accountEmail = identity.email || "";
       }
+      // Resolve account name from the identity's parent account
+      try {
+        const accounts = await messenger.accounts.list();
+        for (const acct of accounts) {
+          if (acct.identities && acct.identities.some((id) => id.id === details.identityId)) {
+            accountName = acct.name || "";
+            break;
+          }
+        }
+      } catch { /* accountsRead may not be available */ }
     }
   } catch (err) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
+  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const weekday = weekdayNames[now.getDay()];
+
   return text
     .replace(/\{DATE\}/gi, now.toLocaleDateString())
     .replace(/\{TIME\}/gi, now.toLocaleTimeString())
+    .replace(/\{DATETIME\}/gi, now.toLocaleDateString() + " " + now.toLocaleTimeString())
+    .replace(/\{YEAR\}/gi, String(now.getFullYear()))
+    .replace(/\{WEEKDAY\}/gi, weekday)
     .replace(/\{SENDER_NAME\}/gi, senderName)
-    .replace(/\{SENDER_EMAIL\}/gi, senderEmail);
+    .replace(/\{SENDER_EMAIL\}/gi, senderEmail)
+    .replace(/\{ACCOUNT_NAME\}/gi, accountName)
+    .replace(/\{ACCOUNT_EMAIL\}/gi, accountEmail);
 }
 
 /**
@@ -147,12 +168,23 @@ export async function insertTemplateIntoTab(tabId, template) {
   await messenger.compose.setComposeDetails(tabId, details);
 
   if (template.attachments && template.attachments.length > 0) {
+    const attachmentErrors = [];
     for (const att of template.attachments) {
-      const binary = atob(att.data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const file = new File([bytes], att.name, { type: att.type });
-      await messenger.compose.addAttachment(tabId, { file, name: att.name });
+      try {
+        const binary = atob(att.data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const file = new File([bytes], att.name, { type: att.type });
+        await messenger.compose.addAttachment(tabId, { file, name: att.name });
+      } catch (err) {
+        console.error(`TemplateWing: failed to attach "${att.name}"`, err);
+        attachmentErrors.push(att.name);
+      }
+    }
+    if (attachmentErrors.length > 0) {
+      throw new Error(
+        `Could not attach: ${attachmentErrors.join(", ")}`
+      );
     }
   }
 }

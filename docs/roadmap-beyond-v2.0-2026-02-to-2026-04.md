@@ -5,7 +5,7 @@ Planning baseline date: **February 24, 2026**
 
 ## Current Baseline
 
-- Current extension version: `2.0.0` (`manifest.json`)
+- Current extension version: `2.2.0` (`manifest.json`)
 - v2.0 issues delivered and closed:
   - #13 Account-specific templates
   - #14 Nested templates / reusable blocks (with cycle detection)
@@ -25,54 +25,64 @@ Planning baseline date: **February 24, 2026**
 
 ## Release Plan
 
-## v2.1 (Target: March 2026)
+## v2.1 (Delivered: March 2026) ✓
 
 Theme: **Stabilization + guardrails**
 
-1. Import guardrails and merge modes
-- Add import modes: `append`, `skip duplicates`, `replace by name`.
-- Pre-import validation summary with counts.
+All items delivered:
 
-2. Recipient and template validation
-- Validate recipient format consistently for `to`, `cc`, `bcc`.
-- Add save-time validation for invalid or incomplete templates.
+1. ✓ Import guardrails and merge modes
+   - Import modal with pre-import validation summary (total, invalid, duplicates).
+   - Three import modes: *Add all as new*, *Skip existing names*, *Update existing by name*.
+   - Detailed result message (added/skipped/replaced).
 
-3. Attachment hardening
-- Add size warning thresholds and clearer attachment error feedback.
-- Handle attachment decode/insert failure per file with clear messaging.
+2. ✓ Recipient and template validation
+   - Save-time email format validation for To, Cc, Bcc fields.
+   - Required-name validation with field highlighting.
+   - Extracted pure validation module (`modules/validation.js`).
 
-4. Minimal automated checks
-- Add unit tests for pure helper logic.
-- Add CI smoke run (lint + tests).
+3. ✓ Attachment hardening
+   - Per-file size warning (≥5 MB) and total size warning (≥10 MB).
+   - Per-file error handling during attachment insertion.
+   - File read error feedback in editor.
 
-Exit criteria:
+4. ✓ Minimal automated checks
+   - 25 unit tests for validation helpers (Node.js built-in test runner, zero dependencies).
+   - Locale consistency lint script.
+   - GitHub Actions CI workflow (tests + locale lint).
+
+Exit criteria met:
 - No critical regressions in save/import/insert flows.
-- At least one automated CI gate prevents broken mainline commits.
+- CI gate in place: tests + locale lint run on every push/PR to main.
 
-## v2.2 (Target: April to May 2026)
+## v2.2 (Delivered: March 2026) ✓
 
 Theme: **Productivity + maintainability**
 
-1. Variable system expansion
-- Add variable picker in editor.
-- Add deterministic variables (`{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`).
+All items delivered:
 
-2. Editor UX upgrades
-- Paste sanitization mode.
-- Toolbar active-state feedback.
-- Duplicate template name warning before save.
+1. ✓ Variable system expansion
+   - Clickable variable picker chips in the editor toolbar.
+   - Five new deterministic variables: `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`.
+   - Variables are resolved at insertion time; account variables resolved from `messenger.accounts.list()`.
 
-3. State consistency/performance
-- Reduce repeated storage reads in popup/options render cycles.
-- Keep popup/options/context menu in sync through a clear refresh strategy.
+2. ✓ Editor UX upgrades
+   - Paste sanitization toggle ("Paste as plain text") strips HTML formatting from clipboard.
+   - Toolbar active-state feedback: bold/italic/underline buttons highlight when active at cursor.
+   - Duplicate template name warning prevents saving templates with conflicting names.
 
-4. Storage schema versioning
-- Add schema version field and migration hooks.
-- Document schema and migration rules.
+3. ✓ State consistency/performance
+   - In-memory template cache eliminates repeated `storage.local.get()` calls.
+   - Cache invalidation via `messenger.storage.onChanged` keeps popup, options, and background in sync.
 
-Exit criteria:
-- Faster, predictable editing/insertion behavior under manual QA.
-- Versioned storage supports forward migration safely.
+4. ✓ Storage schema versioning
+   - Schema version field (`schemaVersion`) persisted in `storage.local`.
+   - Sequential migration hooks ensure forward compatibility (migration 0→1 normalises template fields).
+   - `migrateIfNeeded()` runs on first read per session.
+
+Exit criteria met:
+- All editor interactions are faster due to cached reads.
+- Schema versioning supports safe forward migration on add-on updates.
 
 ## v2.3 (Target: June 2026)
 
