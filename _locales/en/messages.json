@@ -148,6 +148,10 @@
     "message": "Append to existing content",
     "description": "Option to append template body to existing email body"
   },
+  "optionsInsertModePrepend": {
+    "message": "Insert at beginning",
+    "description": "Option to insert template body at the beginning of existing email body"
+  },
   "optionsInsertModeReplace": {
     "message": "Replace existing content",
     "description": "Option to replace existing email body with template body"
