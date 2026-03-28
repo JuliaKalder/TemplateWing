@@ -1,6 +1,10 @@
+import {
+  CURRENT_SCHEMA,
+  SCHEMA_KEY,
+  runMigrations,
+} from "./schema-migrations.js";
+
 const STORAGE_KEY = "templates";
-const SCHEMA_KEY = "schemaVersion";
-const CURRENT_SCHEMA = 1;
 
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
@@ -38,23 +42,6 @@ if (typeof messenger !== "undefined" && messenger.storage) {
 
 // ---- Schema migrations ----
 
-const migrations = [
-  // Migration 0 → 1: ensure every template has all v2.2 fields
-  async function migrateV0toV1(templates) {
-    let changed = false;
-    for (const t of templates) {
-      if (!t.category && t.category !== "") { t.category = ""; changed = true; }
-      if (!Array.isArray(t.to)) { t.to = []; changed = true; }
-      if (!Array.isArray(t.cc)) { t.cc = []; changed = true; }
-      if (!Array.isArray(t.bcc)) { t.bcc = []; changed = true; }
-      if (!Array.isArray(t.identities)) { t.identities = []; changed = true; }
-      if (!t.insertMode) { t.insertMode = "append"; changed = true; }
-      if (!Array.isArray(t.attachments)) { t.attachments = []; changed = true; }
-    }
-    return { templates, changed };
-  },
-];
-
 async function migrateIfNeeded() {
   const result = await messenger.storage.local.get({ [SCHEMA_KEY]: 0 });
   let version = result[SCHEMA_KEY];
@@ -64,16 +51,11 @@ async function migrateIfNeeded() {
   const raw = await messenger.storage.local.get({ [STORAGE_KEY]: [] });
   let templates = raw[STORAGE_KEY];
 
-  while (version < CURRENT_SCHEMA) {
-    const migration = migrations[version];
-    if (migration) {
-      const migrationResult = await migration(templates);
-      templates = migrationResult.templates;
-      if (migrationResult.changed) {
-        console.log(`TemplateWing: migrated schema from v${version} to v${version + 1}`);
-      }
-    }
-    version++;
+  const migrationResult = await runMigrations(templates, version);
+  templates = migrationResult.templates;
+
+  if (migrationResult.anyChanged) {
+    console.log(`TemplateWing: migrated schema from v${version} to v${migrationResult.finalVersion}`);
   }
 
   await messenger.storage.local.set({
