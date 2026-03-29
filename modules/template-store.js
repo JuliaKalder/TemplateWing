@@ -9,9 +9,11 @@ function generateId() {
 // ---- In-memory cache ----
 
 let _cache = null;
+let _categoriesCache = null;
 
 function invalidateCache() {
   _cache = null;
+  _categoriesCache = null;
 }
 
 async function loadTemplates() {
@@ -24,6 +26,7 @@ async function loadTemplates() {
 
 async function persistTemplates(templates) {
   _cache = templates;
+  _categoriesCache = null; // Invalidate categories cache since templates changed
   await messenger.storage.local.set({ [STORAGE_KEY]: templates });
 }
 
@@ -123,13 +126,14 @@ export async function saveTemplate(template) {
 }
 
 export async function getCategories() {
+  if (_categoriesCache !== null) return _categoriesCache;
   const templates = await getTemplates();
-  const categories = templates
+  _categoriesCache = templates
     .map((t) => t.category)
     .filter(Boolean)
     .filter((cat, idx, arr) => arr.indexOf(cat) === idx)
     .sort();
-  return categories;
+  return _categoriesCache;
 }
 
 export async function deleteTemplate(id) {
