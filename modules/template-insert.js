@@ -195,6 +195,7 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   await messenger.compose.setComposeDetails(tabId, details);
 
+  // Issue #18: Per-file decode error handling -- failures collected, not fatal
   if (template.attachments && template.attachments.length > 0) {
     const attachmentErrors = [];
     for (const att of template.attachments) {
