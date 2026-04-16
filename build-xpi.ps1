@@ -18,6 +18,7 @@ $files = @(
     "modules/template-store.js"
     "modules/template-insert.js"
     "modules/validation.js"
+    "modules/compose-script.js"
     "popup/popup.html"
     "popup/popup.css"
     "popup/popup.js"
