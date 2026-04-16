@@ -226,9 +226,29 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   }
 });
 
-messenger.runtime.onMessage.addListener((message) => {
+messenger.runtime.onMessage.addListener(async (message) => {
+  if (!message || !message.action) return;
+
   if (message.action === "templatesChanged") {
     buildContextMenu();
+    return;
+  }
+
+  // Popup delegates cursor-mode insertion here so it can close first and
+  // return focus to the compose window before execCommand runs.
+  if (message.action === "templatewing:insertTemplate") {
+    // Give the popup a tick to tear down so the compose window is focused
+    // when we forward the insert request to the compose script.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    try {
+      const template = await getTemplate(message.templateId);
+      if (!template) return;
+      await insertTemplateIntoTab(message.tabId, template);
+      await trackUsage(message.templateId);
+    } catch (err) {
+      console.error("TemplateWing: insert failed from popup delegation", err);
+      await notifyInsertFailure(err);
+    }
   }
 });
 
