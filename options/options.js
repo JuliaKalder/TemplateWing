@@ -618,20 +618,26 @@ function showImportDialog(analysis, validTemplates) {
 
   const totalLine = document.createElement("div");
   totalLine.className = "summary-line";
-  totalLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogTotal", String(validTemplates.length + analysis.invalid))}</span>`;
+  const totalSpan = document.createElement("span");
+  totalSpan.textContent = messenger.i18n.getMessage("importDialogTotal", String(validTemplates.length + analysis.invalid));
+  totalLine.appendChild(totalSpan);
   summaryEl.appendChild(totalLine);
 
   if (analysis.invalid > 0) {
     const invalidLine = document.createElement("div");
     invalidLine.className = "summary-line summary-warn";
-    invalidLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogInvalid", String(analysis.invalid))}</span>`;
+    const invalidSpan = document.createElement("span");
+    invalidSpan.textContent = messenger.i18n.getMessage("importDialogInvalid", String(analysis.invalid));
+    invalidLine.appendChild(invalidSpan);
     summaryEl.appendChild(invalidLine);
   }
 
   if (analysis.duplicates.size > 0) {
     const dupLine = document.createElement("div");
     dupLine.className = "summary-line summary-warn";
-    dupLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogDuplicates", String(analysis.duplicates.size))}</span>`;
+    const dupSpan = document.createElement("span");
+    dupSpan.textContent = messenger.i18n.getMessage("importDialogDuplicates", String(analysis.duplicates.size));
+    dupLine.appendChild(dupSpan);
     summaryEl.appendChild(dupLine);
   }
 
