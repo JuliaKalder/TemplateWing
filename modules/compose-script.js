@@ -54,30 +54,28 @@
 
   // selectionchange is the canonical event but doesn't always fire during
   // focus transitions in Gecko; mouseup/keyup/focusout cover the gaps.
+  // We intentionally do NOT snapshot at load/DOMContentLoaded: the editor's
+  // pre-positioned caret is at body,0, and seeding lastRange with that
+  // value would cause cursor-mode inserts to land at the start whenever
+  // the user opens the popup without first clicking into the body.
   document.addEventListener("selectionchange", snapshotSelection);
   document.addEventListener("mouseup", snapshotSelection, true);
   document.addEventListener("keyup", snapshotSelection, true);
   document.addEventListener("focusout", snapshotSelection, true);
 
-  // The editor pre-positions the cursor when the compose window opens.
-  // The compose script may load after that initial event, so capture the
-  // current selection explicitly once the document is ready.
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", snapshotSelection);
-  } else {
-    snapshotSelection();
-  }
-  window.addEventListener("load", snapshotSelection);
-
   function getInsertRange() {
     if (!document.body) return null;
+    // Prefer the snapshot over the live selection: opening the popup
+    // causes focus to leave the compose window, and the live Selection
+    // often collapses to body,0 on the return trip. The snapshot captured
+    // on real user activity is the authoritative caret.
+    if (lastRange && rangeInBody(lastRange)) {
+      return lastRange.cloneRange();
+    }
     const sel = document.getSelection();
     if (sel && sel.rangeCount > 0) {
       const r = sel.getRangeAt(0);
       if (rangeInBody(r)) return r.cloneRange();
-    }
-    if (lastRange && rangeInBody(lastRange)) {
-      return lastRange.cloneRange();
     }
     return null;
   }
@@ -128,14 +126,22 @@
 
     if (!document.body) return { ok: false, error: "no-body" };
 
-    try { window.focus(); } catch (_) { /* ignore */ }
-    try { if (document.body.focus) document.body.focus(); } catch (_) { /* ignore */ }
-
     const range = getInsertRange();
     if (!range) {
       try { console.warn(TAG, "no usable range — caller will fall back"); } catch (_) {}
       return { ok: false, error: "no-range" };
     }
+
+    // Restore the snapshot into the live Selection before inserting. We
+    // avoid focusing the body beforehand because focus() on a designMode
+    // body collapses the selection to body,0.
+    try {
+      const sel = document.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch (_) { /* ignore */ }
 
     try {
       const lastNode = message.isPlainText

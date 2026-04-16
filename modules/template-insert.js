@@ -199,21 +199,25 @@ export async function insertTemplateIntoTab(tabId, template) {
         insertedAtCursor = true;
       } else {
         console.warn(
-          "TemplateWing: cursor insertion failed, falling back to prepend",
+          "TemplateWing: cursor insertion failed, falling back to append",
           response && response.error
         );
       }
     } catch (err) {
       // Compose script not loaded yet (e.g. old compose window opened before
-      // add-on upgrade). Fall back to prepend so the signature is preserved.
+      // add-on upgrade). Fall back to append so the existing body and
+      // signature stay intact above the inserted template.
       console.warn(
-        "TemplateWing: compose script unavailable, falling back to prepend",
+        "TemplateWing: compose script unavailable, falling back to append",
         err
       );
     }
 
     if (!insertedAtCursor) {
-      details.body = body + (existing.body || "");
+      // Append rather than prepend: when the caret is unknown, landing at
+      // the end is the sane default for "cursor" mode. Prepending produced
+      // the "always inserts at start" symptom that motivated issue #33.
+      details.body = (existing.body || "") + body;
     }
   } else if (resolvedBody) {
     const body = await replaceVariables(resolvedBody, tabId);
