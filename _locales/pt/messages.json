@@ -419,5 +419,23 @@
   "validationDuplicateName": {
     "message": "Já existe um modelo com este nome.",
     "description": "Error when trying to save a template with a duplicate name"
+  },
+  "notificationInsertFailedTitle": {
+    "message": "Falha ao inserir modelo",
+    "description": "Title for the notification shown when template insertion fails"
+  },
+  "notificationAttachmentFailed": {
+    "message": "Não foi possível anexar: $NAMES$",
+    "description": "Notification body when one or more attachments failed to attach",
+    "placeholders": {
+      "names": {
+        "content": "$1",
+        "example": "logo.png, report.pdf"
+      }
+    }
+  },
+  "notificationInsertFailedGeneric": {
+    "message": "Não foi possível inserir o modelo. Consulte o console de erros para mais detalhes.",
+    "description": "Notification body for a generic template insertion failure"
   }
 }

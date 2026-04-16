@@ -1,6 +1,29 @@
 import { getTemplates, getTemplate, trackUsage } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
+async function notifyInsertFailure(err) {
+  try {
+    const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
+    let message;
+    if (err && err.code === "ATTACHMENT_FAILED" && Array.isArray(err.failedNames)) {
+      message = messenger.i18n.getMessage(
+        "notificationAttachmentFailed",
+        err.failedNames.join(", ")
+      );
+    } else {
+      message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
+    }
+    await messenger.notifications.create({
+      type: "basic",
+      iconUrl: messenger.runtime.getURL("images/icon-64.png"),
+      title,
+      message,
+    });
+  } catch (notifyErr) {
+    console.error("TemplateWing: could not show notification", notifyErr);
+  }
+}
+
 async function getCurrentIdentityId(tabId) {
   try {
     const details = await messenger.compose.getComposeDetails(tabId);
@@ -167,6 +190,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
     await trackUsage(templateId);
   } catch (err) {
     console.error("TemplateWing: insert failed from context menu", err);
+    await notifyInsertFailure(err);
   }
 });
 
@@ -198,6 +222,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
     await trackUsage(template.id);
   } catch (err) {
     console.error("TemplateWing: insert failed from keyboard shortcut", err);
+    await notifyInsertFailure(err);
   }
 });
 

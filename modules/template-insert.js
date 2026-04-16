@@ -211,9 +211,10 @@ export async function insertTemplateIntoTab(tabId, template) {
       }
     }
     if (attachmentErrors.length > 0) {
-      throw new Error(
-        `Could not attach: ${attachmentErrors.join(", ")}`
-      );
+      const err = new Error(`Could not attach: ${attachmentErrors.join(", ")}`);
+      err.code = "ATTACHMENT_FAILED";
+      err.failedNames = attachmentErrors;
+      throw err;
     }
   }
 }
