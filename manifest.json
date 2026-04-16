@@ -45,7 +45,8 @@
     "menus",
     "messagesRead",
     "unlimitedStorage",
-    "accountsRead"
+    "accountsRead",
+    "notifications"
   ],
 
   "commands": {

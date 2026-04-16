@@ -221,6 +221,7 @@ function getTotalAttachmentSize() {
   return pendingAttachments.reduce((sum, a) => sum + (a.size || 0), 0);
 }
 
+// Issue #18: Renders per-file (>=5MB badge) and total (>=10MB) attachment warnings
 function renderAttachments() {
   const list = document.getElementById("attachment-list");
   list.replaceChildren();

@@ -37,6 +37,7 @@ export function formatFileSize(bytes) {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
+// Issue #18: v2.1 -- per-file and total attachment size warnings
 /** Per-file attachment size warning threshold (5 MB). */
 export const ATTACHMENT_WARN_SIZE = 5 * 1024 * 1024;
 

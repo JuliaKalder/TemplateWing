@@ -419,5 +419,23 @@
   "validationDuplicateName": {
     "message": "Er bestaat al een sjabloon met deze naam.",
     "description": "Error when trying to save a template with a duplicate name"
+  },
+  "notificationInsertFailedTitle": {
+    "message": "Invoegen van sjabloon mislukt",
+    "description": "Title for the notification shown when template insertion fails"
+  },
+  "notificationAttachmentFailed": {
+    "message": "Kan niet als bijlage toevoegen: $NAMES$",
+    "description": "Notification body when one or more attachments failed to attach",
+    "placeholders": {
+      "names": {
+        "content": "$1",
+        "example": "logo.png, report.pdf"
+      }
+    }
+  },
+  "notificationInsertFailedGeneric": {
+    "message": "Het sjabloon kon niet worden ingevoegd. Raadpleeg de foutconsole voor details.",
+    "description": "Notification body for a generic template insertion failure"
   }
 }

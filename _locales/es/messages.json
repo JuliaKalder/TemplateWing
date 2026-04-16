@@ -419,5 +419,23 @@
   "validationDuplicateName": {
     "message": "Ya existe una plantilla con este nombre.",
     "description": "Error when trying to save a template with a duplicate name"
+  },
+  "notificationInsertFailedTitle": {
+    "message": "No se pudo insertar la plantilla",
+    "description": "Title for the notification shown when template insertion fails"
+  },
+  "notificationAttachmentFailed": {
+    "message": "No se pudo adjuntar: $NAMES$",
+    "description": "Notification body when one or more attachments failed to attach",
+    "placeholders": {
+      "names": {
+        "content": "$1",
+        "example": "logo.png, report.pdf"
+      }
+    }
+  },
+  "notificationInsertFailedGeneric": {
+    "message": "No se pudo insertar la plantilla. Consulta la consola de errores para más detalles.",
+    "description": "Notification body for a generic template insertion failure"
   }
 }
