@@ -151,6 +151,10 @@
     "message": "Bestehenden Inhalt ersetzen",
     "description": "Option: bestehenden E-Mail-Inhalt durch Vorlage ersetzen"
   },
+  "optionsInsertModeCursor": {
+    "message": "An Cursorposition einfügen",
+    "description": "Option: Vorlageninhalt an der aktuellen Cursorposition einfügen, Signatur und bestehender Text bleiben erhalten"
+  },
   "popupAttachmentCount": {
     "message": "$COUNT$ Anhang/Anhänge",
     "description": "Anzahl der Anhänge im Popup",

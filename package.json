@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "templatewing",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "description": "Thunderbird add-on: manage and insert email templates with attachments",
   "type": "module",
   "scripts": {

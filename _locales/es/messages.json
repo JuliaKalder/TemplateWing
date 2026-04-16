@@ -151,6 +151,10 @@
     "message": "Reemplazar contenido existente",
     "description": "Option to replace existing email body with template body"
   },
+  "optionsInsertModeCursor": {
+    "message": "Insertar en la posición del cursor",
+    "description": "Option to insert template body at the current cursor position, preserving signature and existing text"
+  },
   "popupAttachmentCount": {
     "message": "$COUNT$ archivo(s) adjunto(s)",
     "description": "Attachment count shown in popup",

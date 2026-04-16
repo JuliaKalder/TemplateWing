@@ -136,6 +136,18 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
 }
 
 /**
+ * Strip HTML tags and decode entities to plain text. Used when inserting a
+ * template body into a compose window that is in plain-text mode.
+ * @param {string} html
+ * @returns {string}
+ */
+export function htmlToPlainText(html) {
+  if (!html) return "";
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body ? doc.body.textContent || "" : "";
+}
+
+/**
  * Insert a template into a compose tab.
  * @param {number} tabId - The compose tab ID
  * @param {object} template - Template object from storage
@@ -166,7 +178,42 @@ export async function insertTemplateIntoTab(tabId, template) {
     }
   }
 
-  if (resolvedBody) {
+  // "cursor" mode is delivered via a compose script message rather than by
+  // rewriting the whole body, so the signature and any text the user has
+  // already typed stay intact (issue #33).
+  let insertedAtCursor = false;
+  if (resolvedBody && mode === "cursor") {
+    const body = await replaceVariables(resolvedBody, tabId);
+    const existing = await messenger.compose.getComposeDetails(tabId);
+    const isPlainText = !!existing.isPlainText;
+    try {
+      const response = await messenger.tabs.sendMessage(tabId, {
+        action: "templatewing:insertAtCursor",
+        html: body,
+        text: htmlToPlainText(body),
+        isPlainText,
+      });
+      if (response && response.ok) {
+        insertedAtCursor = true;
+      } else {
+        console.warn(
+          "TemplateWing: cursor insertion failed, falling back to prepend",
+          response && response.error
+        );
+      }
+    } catch (err) {
+      // Compose script not loaded yet (e.g. old compose window opened before
+      // add-on upgrade). Fall back to prepend so the signature is preserved.
+      console.warn(
+        "TemplateWing: compose script unavailable, falling back to prepend",
+        err
+      );
+    }
+
+    if (!insertedAtCursor) {
+      details.body = body + (existing.body || "");
+    }
+  } else if (resolvedBody) {
     const body = await replaceVariables(resolvedBody, tabId);
     if (mode === "replace") {
       details.body = body;

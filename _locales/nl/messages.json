@@ -151,6 +151,10 @@
     "message": "Bestaande inhoud vervangen",
     "description": "Option to replace existing email body with template body"
   },
+  "optionsInsertModeCursor": {
+    "message": "Invoegen op cursorpositie",
+    "description": "Option to insert template body at the current cursor position, preserving signature and existing text"
+  },
   "popupAttachmentCount": {
     "message": "$COUNT$ bijlage(n)",
     "description": "Attachment count shown in popup",
