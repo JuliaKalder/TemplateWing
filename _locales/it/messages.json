@@ -11,7 +11,6 @@
     "message": "Modelli",
     "description": "Tooltip for the compose action button"
   },
-
   "menuInsertTemplate": {
     "message": "Inserisci modello",
     "description": "Context menu root item in compose body"
@@ -24,7 +23,6 @@
     "message": "Salva come modello",
     "description": "Context menu item on a message in the message list"
   },
-
   "popupTitle": {
     "message": "Modelli",
     "description": "Popup heading"
@@ -41,7 +39,6 @@
     "message": "Gestisci modelli…",
     "description": "Button to open options page"
   },
-
   "optionsTitle": {
     "message": "TemplateWing — Gestisci modelli",
     "description": "Options page heading"
@@ -75,7 +72,7 @@
     "description": "Label for body textarea"
   },
   "optionsBack": {
-    "message": "\u2190 Indietro",
+    "message": "← Indietro",
     "description": "Back button to return to template list"
   },
   "optionsSave": {
@@ -104,12 +101,10 @@
       }
     }
   },
-
   "optionsSaveError": {
     "message": "Impossibile salvare il modello. Lo storage potrebbe essere pieno — prova a ridurre la dimensione degli allegati o a eliminare vecchi modelli.",
     "description": "Error message when saving fails"
   },
-
   "optionsLabelAttachments": {
     "message": "Allegati",
     "description": "Label for attachments section in editor"
@@ -156,7 +151,6 @@
     "message": "Sostituisci contenuto esistente",
     "description": "Option to replace existing email body with template body"
   },
-
   "popupAttachmentCount": {
     "message": "$COUNT$ allegato(i)",
     "description": "Attachment count shown in popup",
@@ -167,7 +161,6 @@
       }
     }
   },
-
   "optionsLabelCategory": {
     "message": "Categoria (opzionale)",
     "description": "Label for category input"
@@ -184,7 +177,6 @@
     "message": "Tutti",
     "description": "Option to show all categories in popup filter"
   },
-
   "optionsLabelTo": {
     "message": "A (Destinatari)",
     "description": "Label for To field"
@@ -201,7 +193,6 @@
     "message": "Separa più destinatari con virgole. Esempio: mario@esempio.it, Mario Rossi <mario@esempio.it>",
     "description": "Help text for recipient fields"
   },
-
   "optionsLabelVariables": {
     "message": "Variabili disponibili",
     "description": "Label for variables help section"
@@ -222,7 +213,6 @@
     "message": "{SENDER_EMAIL} — La tua email",
     "description": "Describes SENDER_EMAIL variable"
   },
-
   "optionsUsageCount": {
     "message": "Usato $COUNT$ volta/e",
     "description": "Usage count shown on template card",
@@ -259,7 +249,6 @@
     "message": "File non valido. Seleziona un file JSON TemplateWing valido.",
     "description": "Error message when an invalid file is imported"
   },
-
   "optionsLabelAccounts": {
     "message": "Account (opzionale)",
     "description": "Label for accounts/identities selection"
@@ -272,7 +261,6 @@
     "message": "Tutti gli account",
     "description": "Option to show template for all accounts"
   },
-
   "optionsLabelNestedTemplates": {
     "message": "Modelli annidati",
     "description": "Label for nested template help section"
@@ -289,7 +277,6 @@
     "message": "Seleziona un modello da annidare…",
     "description": "Placeholder for nested template dropdown"
   },
-
   "importDialogTitle": {
     "message": "Riepilogo importazione",
     "description": "Title of the import confirmation dialog"
@@ -302,21 +289,30 @@
     "message": "$COUNT$ modello(i) trovato(i) nel file",
     "description": "Total templates found in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "5" }
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
     }
   },
   "importDialogInvalid": {
     "message": "$COUNT$ non valido(i) (verranno saltati)",
     "description": "Number of invalid entries in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "1" }
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
     }
   },
   "importDialogDuplicates": {
     "message": "$COUNT$ con nomi già esistenti",
     "description": "Number of templates with names that already exist",
     "placeholders": {
-      "count": { "content": "$1", "example": "2" }
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
     }
   },
   "importModeAppend": {
@@ -355,12 +351,20 @@
     "message": "$ADDED$ aggiunto(i), $SKIPPED$ saltato(i), $REPLACED$ sostituito(i).",
     "description": "Result message after import completes",
     "placeholders": {
-      "added": { "content": "$1", "example": "3" },
-      "skipped": { "content": "$2", "example": "1" },
-      "replaced": { "content": "$3", "example": "0" }
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "skipped": {
+        "content": "$2",
+        "example": "1"
+      },
+      "replaced": {
+        "content": "$3",
+        "example": "0"
+      }
     }
   },
-
   "validationNameRequired": {
     "message": "Il nome del modello è obbligatorio.",
     "description": "Error when template name is empty"
@@ -369,10 +373,12 @@
     "message": "Destinatario(i) non valido(i): $LIST$",
     "description": "Error when recipient email format is invalid",
     "placeholders": {
-      "list": { "content": "$1", "example": "bad-email, another" }
+      "list": {
+        "content": "$1",
+        "example": "bad-email, another"
+      }
     }
   },
-
   "attachmentSizeWarning": {
     "message": "File grande",
     "description": "Short warning shown next to a large attachment"
@@ -381,17 +387,22 @@
     "message": "La dimensione totale degli allegati ($SIZE$) è grande. Questo può aumentare significativamente l'uso dello storage.",
     "description": "Warning when total attachment size exceeds threshold",
     "placeholders": {
-      "size": { "content": "$1", "example": "12.5 MB" }
+      "size": {
+        "content": "$1",
+        "example": "12.5 MB"
+      }
     }
   },
   "attachmentReadError": {
     "message": "Impossibile leggere il file «$NAME$».",
     "description": "Error when a file cannot be read during attachment",
     "placeholders": {
-      "name": { "content": "$1", "example": "document.pdf" }
+      "name": {
+        "content": "$1",
+        "example": "document.pdf"
+      }
     }
   },
-
   "optionsVariableDatetime": {
     "message": "{DATETIME} — Data e ora attuali",
     "description": "Describes DATETIME variable"
@@ -437,5 +448,9 @@
   "notificationInsertFailedGeneric": {
     "message": "Impossibile inserire il modello. Consulta la console degli errori per i dettagli.",
     "description": "Notification body for a generic template insertion failure"
+  },
+  "validationBodyEmptyReplace": {
+    "message": "Avvertimento: il corpo è vuoto. La modalità sostituzione rimuoverà il contenuto del messaggio originale.",
+    "description": "Warning shown when body is empty/whitespace in replace insert mode"
   }
 }

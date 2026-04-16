@@ -11,7 +11,6 @@
     "message": "Templates",
     "description": "Tooltip for the compose action button"
   },
-
   "menuInsertTemplate": {
     "message": "Insert Template",
     "description": "Context menu root item in compose body"
@@ -24,7 +23,6 @@
     "message": "Save as Template",
     "description": "Context menu item on a message in the message list"
   },
-
   "popupTitle": {
     "message": "Templates",
     "description": "Popup heading"
@@ -41,7 +39,6 @@
     "message": "Manage Templates…",
     "description": "Button to open options page"
   },
-
   "optionsTitle": {
     "message": "TemplateWing — Manage Templates",
     "description": "Options page heading"
@@ -75,7 +72,7 @@
     "description": "Label for body textarea"
   },
   "optionsBack": {
-    "message": "\u2190 Back",
+    "message": "← Back",
     "description": "Back button to return to template list"
   },
   "optionsSave": {
@@ -104,12 +101,10 @@
       }
     }
   },
-
   "optionsSaveError": {
     "message": "Could not save template. Storage may be full — try reducing attachment sizes or deleting old templates.",
     "description": "Error message when saving fails"
   },
-
   "optionsLabelAttachments": {
     "message": "Attachments",
     "description": "Label for attachments section in editor"
@@ -156,7 +151,6 @@
     "message": "Replace existing content",
     "description": "Option to replace existing email body with template body"
   },
-
   "popupAttachmentCount": {
     "message": "$COUNT$ attachment(s)",
     "description": "Attachment count shown in popup",
@@ -167,7 +161,6 @@
       }
     }
   },
-
   "optionsLabelCategory": {
     "message": "Category (optional)",
     "description": "Label for category input"
@@ -184,7 +177,6 @@
     "message": "All",
     "description": "Option to show all categories in popup filter"
   },
-
   "optionsLabelTo": {
     "message": "To (Recipients)",
     "description": "Label for To field"
@@ -201,7 +193,6 @@
     "message": "Separate multiple recipients with commas. Example: john@example.com, Jane Doe <jane@example.com>",
     "description": "Help text for recipient fields"
   },
-
   "optionsLabelVariables": {
     "message": "Available Variables",
     "description": "Label for variables help section"
@@ -222,7 +213,6 @@
     "message": "{SENDER_EMAIL} — Your email",
     "description": "Describes SENDER_EMAIL variable"
   },
-
   "optionsUsageCount": {
     "message": "Used $COUNT$ time(s)",
     "description": "Usage count shown on template card",
@@ -259,7 +249,6 @@
     "message": "Invalid file. Please select a valid TemplateWing JSON export.",
     "description": "Error message when an invalid file is imported"
   },
-
   "optionsLabelAccounts": {
     "message": "Accounts (optional)",
     "description": "Label for accounts/identities selection"
@@ -272,7 +261,6 @@
     "message": "All Accounts",
     "description": "Option to show template for all accounts"
   },
-
   "optionsLabelNestedTemplates": {
     "message": "Nested Templates",
     "description": "Label for nested template help section"
@@ -289,7 +277,6 @@
     "message": "Select a template to nest…",
     "description": "Placeholder for nested template dropdown"
   },
-
   "importDialogTitle": {
     "message": "Import Summary",
     "description": "Title of the import confirmation dialog"
@@ -302,21 +289,30 @@
     "message": "$COUNT$ template(s) found in file",
     "description": "Total templates found in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "5" }
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
     }
   },
   "importDialogInvalid": {
     "message": "$COUNT$ invalid (will be skipped)",
     "description": "Number of invalid entries in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "1" }
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
     }
   },
   "importDialogDuplicates": {
     "message": "$COUNT$ with existing name(s)",
     "description": "Number of templates with names that already exist",
     "placeholders": {
-      "count": { "content": "$1", "example": "2" }
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
     }
   },
   "importModeAppend": {
@@ -355,12 +351,20 @@
     "message": "$ADDED$ added, $SKIPPED$ skipped, $REPLACED$ replaced.",
     "description": "Result message after import completes",
     "placeholders": {
-      "added": { "content": "$1", "example": "3" },
-      "skipped": { "content": "$2", "example": "1" },
-      "replaced": { "content": "$3", "example": "0" }
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "skipped": {
+        "content": "$2",
+        "example": "1"
+      },
+      "replaced": {
+        "content": "$3",
+        "example": "0"
+      }
     }
   },
-
   "validationNameRequired": {
     "message": "Template name is required.",
     "description": "Error when template name is empty"
@@ -369,10 +373,12 @@
     "message": "Invalid recipient(s): $LIST$",
     "description": "Error when recipient email format is invalid",
     "placeholders": {
-      "list": { "content": "$1", "example": "bad-email, another" }
+      "list": {
+        "content": "$1",
+        "example": "bad-email, another"
+      }
     }
   },
-
   "attachmentSizeWarning": {
     "message": "Large file",
     "description": "Short warning shown next to a large attachment"
@@ -381,17 +387,22 @@
     "message": "Total attachment size ($SIZE$) is large. This may increase storage usage significantly.",
     "description": "Warning when total attachment size exceeds threshold",
     "placeholders": {
-      "size": { "content": "$1", "example": "12.5 MB" }
+      "size": {
+        "content": "$1",
+        "example": "12.5 MB"
+      }
     }
   },
   "attachmentReadError": {
     "message": "Could not read file \"$NAME$\".",
     "description": "Error when a file cannot be read during attachment",
     "placeholders": {
-      "name": { "content": "$1", "example": "document.pdf" }
+      "name": {
+        "content": "$1",
+        "example": "document.pdf"
+      }
     }
   },
-
   "optionsVariableDatetime": {
     "message": "{DATETIME} — Current date and time",
     "description": "Describes DATETIME variable"
@@ -437,5 +448,9 @@
   "notificationInsertFailedGeneric": {
     "message": "The template could not be inserted. See the error console for details.",
     "description": "Notification body for a generic template insertion failure"
+  },
+  "validationBodyEmptyReplace": {
+    "message": "Warning: Body is empty. The replace mode will remove the original message content.",
+    "description": "Warning shown when body is empty/whitespace in replace insert mode"
   }
 }

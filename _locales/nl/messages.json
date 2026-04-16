@@ -11,7 +11,6 @@
     "message": "Sjablonen",
     "description": "Tooltip for the compose action button"
   },
-
   "menuInsertTemplate": {
     "message": "Sjabloon invoegen",
     "description": "Context menu root item in compose body"
@@ -24,7 +23,6 @@
     "message": "Opslaan als sjabloon",
     "description": "Context menu item on a message in the message list"
   },
-
   "popupTitle": {
     "message": "Sjablonen",
     "description": "Popup heading"
@@ -41,7 +39,6 @@
     "message": "Sjablonen beheren…",
     "description": "Button to open options page"
   },
-
   "optionsTitle": {
     "message": "TemplateWing — Sjablonen beheren",
     "description": "Options page heading"
@@ -75,7 +72,7 @@
     "description": "Label for body textarea"
   },
   "optionsBack": {
-    "message": "\u2190 Terug",
+    "message": "← Terug",
     "description": "Back button to return to template list"
   },
   "optionsSave": {
@@ -104,12 +101,10 @@
       }
     }
   },
-
   "optionsSaveError": {
     "message": "Sjabloon kon niet worden opgeslagen. Opslagruimte is mogelijk vol — probeer bijlagen te verkleinen of oude sjablonen te verwijderen.",
     "description": "Error message when saving fails"
   },
-
   "optionsLabelAttachments": {
     "message": "Bijlagen",
     "description": "Label for attachments section in editor"
@@ -156,7 +151,6 @@
     "message": "Bestaande inhoud vervangen",
     "description": "Option to replace existing email body with template body"
   },
-
   "popupAttachmentCount": {
     "message": "$COUNT$ bijlage(n)",
     "description": "Attachment count shown in popup",
@@ -167,7 +161,6 @@
       }
     }
   },
-
   "optionsLabelCategory": {
     "message": "Categorie (optioneel)",
     "description": "Label for category input"
@@ -184,7 +177,6 @@
     "message": "Alle",
     "description": "Option to show all categories in popup filter"
   },
-
   "optionsLabelTo": {
     "message": "Aan (Ontvangers)",
     "description": "Label for To field"
@@ -201,7 +193,6 @@
     "message": "Meerdere ontvangers scheiden met komma's. Voorbeeld: jan@voorbeeld.nl, Jan de Vries <jan@voorbeeld.nl>",
     "description": "Help text for recipient fields"
   },
-
   "optionsLabelVariables": {
     "message": "Beschikbare variabelen",
     "description": "Label for variables help section"
@@ -222,7 +213,6 @@
     "message": "{SENDER_EMAIL} — Uw e-mail",
     "description": "Describes SENDER_EMAIL variable"
   },
-
   "optionsUsageCount": {
     "message": "$COUNT$ keer gebruikt",
     "description": "Usage count shown on template card",
@@ -259,7 +249,6 @@
     "message": "Ongeldig bestand. Selecteer een geldig TemplateWing JSON-bestand.",
     "description": "Error message when an invalid file is imported"
   },
-
   "optionsLabelAccounts": {
     "message": "Accounts (optioneel)",
     "description": "Label for accounts/identities selection"
@@ -272,7 +261,6 @@
     "message": "Alle accounts",
     "description": "Option to show template for all accounts"
   },
-
   "optionsLabelNestedTemplates": {
     "message": "Geneste sjablonen",
     "description": "Label for nested template help section"
@@ -289,7 +277,6 @@
     "message": "Selecteer een sjabloon om te nesten…",
     "description": "Placeholder for nested template dropdown"
   },
-
   "importDialogTitle": {
     "message": "Import-overzicht",
     "description": "Title of the import confirmation dialog"
@@ -302,21 +289,30 @@
     "message": "$COUNT$ sjabloon/sjablonen gevonden in bestand",
     "description": "Total templates found in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "5" }
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
     }
   },
   "importDialogInvalid": {
     "message": "$COUNT$ ongeldig (worden overgeslagen)",
     "description": "Number of invalid entries in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "1" }
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
     }
   },
   "importDialogDuplicates": {
     "message": "$COUNT$ met bestaande namen",
     "description": "Number of templates with names that already exist",
     "placeholders": {
-      "count": { "content": "$1", "example": "2" }
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
     }
   },
   "importModeAppend": {
@@ -355,12 +351,20 @@
     "message": "$ADDED$ toegevoegd, $SKIPPED$ overgeslagen, $REPLACED$ vervangen.",
     "description": "Result message after import completes",
     "placeholders": {
-      "added": { "content": "$1", "example": "3" },
-      "skipped": { "content": "$2", "example": "1" },
-      "replaced": { "content": "$3", "example": "0" }
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "skipped": {
+        "content": "$2",
+        "example": "1"
+      },
+      "replaced": {
+        "content": "$3",
+        "example": "0"
+      }
     }
   },
-
   "validationNameRequired": {
     "message": "Sjabloonnaam is vereist.",
     "description": "Error when template name is empty"
@@ -369,10 +373,12 @@
     "message": "Ongeldige ontvanger(s): $LIST$",
     "description": "Error when recipient email format is invalid",
     "placeholders": {
-      "list": { "content": "$1", "example": "bad-email, another" }
+      "list": {
+        "content": "$1",
+        "example": "bad-email, another"
+      }
     }
   },
-
   "attachmentSizeWarning": {
     "message": "Groot bestand",
     "description": "Short warning shown next to a large attachment"
@@ -381,17 +387,22 @@
     "message": "De totale grootte van de bijlagen ($SIZE$) is groot. Dit kan het opslaggebruik aanzienlijk verhogen.",
     "description": "Warning when total attachment size exceeds threshold",
     "placeholders": {
-      "size": { "content": "$1", "example": "12.5 MB" }
+      "size": {
+        "content": "$1",
+        "example": "12.5 MB"
+      }
     }
   },
   "attachmentReadError": {
     "message": "Kan bestand «$NAME$» niet lezen.",
     "description": "Error when a file cannot be read during attachment",
     "placeholders": {
-      "name": { "content": "$1", "example": "document.pdf" }
+      "name": {
+        "content": "$1",
+        "example": "document.pdf"
+      }
     }
   },
-
   "optionsVariableDatetime": {
     "message": "{DATETIME} — Huidige datum en tijd",
     "description": "Describes DATETIME variable"
@@ -437,5 +448,9 @@
   "notificationInsertFailedGeneric": {
     "message": "Het sjabloon kon niet worden ingevoegd. Raadpleeg de foutconsole voor details.",
     "description": "Notification body for a generic template insertion failure"
+  },
+  "validationBodyEmptyReplace": {
+    "message": "Waarschuwing: de body is leeg. De vervangingsmodus verwijdert de oorspronkelijke berichtinhoud.",
+    "description": "Warning shown when body is empty/whitespace in replace insert mode"
   }
 }

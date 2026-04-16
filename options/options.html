@@ -46,6 +46,7 @@
       <div class="editor-form">
         <label data-i18n="optionsLabelName"></label>
         <input type="text" id="editor-name">
+        <div id="editor-name-error" class="inline-error" hidden></div>
 
         <label data-i18n="optionsLabelCategory"></label>
         <input type="text" id="editor-category" list="category-suggestions"
@@ -63,12 +64,15 @@
 
         <label data-i18n="optionsLabelTo"></label>
         <input type="text" id="editor-to" placeholder="recipient@example.com, Name <email@example.com>">
+        <div id="editor-to-error" class="inline-error" hidden></div>
 
         <label data-i18n="optionsLabelCc"></label>
         <input type="text" id="editor-cc" placeholder="recipient@example.com">
+        <div id="editor-cc-error" class="inline-error" hidden></div>
 
         <label data-i18n="optionsLabelBcc"></label>
         <input type="text" id="editor-bcc" placeholder="recipient@example.com">
+        <div id="editor-bcc-error" class="inline-error" hidden></div>
 
         <div class="recipient-help" data-i18n="optionsRecipientHelp"></div>
 
@@ -80,6 +84,7 @@
         </select>
 
         <label data-i18n="optionsLabelBody"></label>
+        <div id="editor-body-warning" class="editor-warning" hidden></div>
         <div class="editor-toolbar">
           <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold"><b>B</b></button>
           <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic"><i>I</i></button>

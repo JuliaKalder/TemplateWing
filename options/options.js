@@ -15,6 +15,7 @@ import {
 
 let editingId = null;
 let pendingAttachments = [];
+let bodyEmptyAcknowledged = false;
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
@@ -221,7 +222,6 @@ function getTotalAttachmentSize() {
   return pendingAttachments.reduce((sum, a) => sum + (a.size || 0), 0);
 }
 
-// Issue #18: Renders per-file (>=5MB badge) and total (>=10MB) attachment warnings
 function renderAttachments() {
   const list = document.getElementById("attachment-list");
   list.replaceChildren();
@@ -314,6 +314,7 @@ async function addFiles(files) {
 async function openEditor(id, prefill = null) {
   editingId = id || null;
   pendingAttachments = [];
+  bodyEmptyAcknowledged = false;
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
@@ -377,6 +378,7 @@ async function openEditor(id, prefill = null) {
 function closeEditor() {
   editingId = null;
   pendingAttachments = [];
+  bodyEmptyAcknowledged = false;
   document.getElementById("search-input").value = "";
   showView("list");
 }
@@ -387,6 +389,7 @@ async function duplicateTemplate(id) {
 
   editingId = null;
   pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
+  bodyEmptyAcknowledged = false;
 
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
@@ -443,12 +446,31 @@ function showEditorError(message) {
   errorEl.hidden = false;
 }
 
+function showInlineError(fieldId, message) {
+  const errorEl = document.getElementById(`${fieldId}-error`);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+}
+
 function clearEditorErrors() {
   const errorEl = document.getElementById("editor-error");
   errorEl.hidden = true;
   errorEl.textContent = "";
   for (const el of document.querySelectorAll(".field-error")) {
     el.classList.remove("field-error");
+  }
+  // Clear inline errors
+  for (const el of document.querySelectorAll(".inline-error")) {
+    el.hidden = true;
+    el.textContent = "";
+  }
+  // Clear body warning
+  const bodyWarning = document.getElementById("editor-body-warning");
+  if (bodyWarning) {
+    bodyWarning.hidden = true;
+    bodyWarning.textContent = "";
   }
 }
 
@@ -467,7 +489,7 @@ async function handleSave() {
   // Validate name
   if (!name) {
     nameInput.classList.add("field-error");
-    showEditorError(messenger.i18n.getMessage("validationNameRequired"));
+    showInlineError("editor-name", messenger.i18n.getMessage("validationNameRequired"));
     nameInput.focus();
     return;
   }
@@ -479,7 +501,7 @@ async function handleSave() {
   );
   if (duplicate) {
     nameInput.classList.add("field-error");
-    showEditorError(messenger.i18n.getMessage("validationDuplicateName"));
+    showInlineError("editor-name", messenger.i18n.getMessage("validationDuplicateName"));
     nameInput.focus();
     return;
   }
@@ -495,12 +517,18 @@ async function handleSave() {
     ...bccResult.invalid,
   ];
   if (allInvalid.length > 0) {
-    if (toResult.invalid.length) toInput.classList.add("field-error");
-    if (ccResult.invalid.length) ccInput.classList.add("field-error");
-    if (bccResult.invalid.length) bccInput.classList.add("field-error");
-    showEditorError(
-      messenger.i18n.getMessage("validationInvalidRecipients", allInvalid.join(", "))
-    );
+    if (toResult.invalid.length) {
+      toInput.classList.add("field-error");
+      showInlineError("editor-to", messenger.i18n.getMessage("validationInvalidRecipients", toResult.invalid.join(", ")));
+    }
+    if (ccResult.invalid.length) {
+      ccInput.classList.add("field-error");
+      showInlineError("editor-cc", messenger.i18n.getMessage("validationInvalidRecipients", ccResult.invalid.join(", ")));
+    }
+    if (bccResult.invalid.length) {
+      bccInput.classList.add("field-error");
+      showInlineError("editor-bcc", messenger.i18n.getMessage("validationInvalidRecipients", bccResult.invalid.join(", ")));
+    }
     return;
   }
 
@@ -509,6 +537,18 @@ async function handleSave() {
   const bcc = parseRecipients(bccInput.value);
 
   const insertMode = document.getElementById("editor-insert-mode").value;
+
+  // Block save on empty body in replace mode, unless user has already confirmed.
+  if (insertMode === "replace") {
+    const bodyText = document.getElementById("editor-body").innerText.trim();
+    if (!bodyText && !bodyEmptyAcknowledged) {
+      const bodyWarning = document.getElementById("editor-body-warning");
+      bodyWarning.textContent = messenger.i18n.getMessage("validationBodyEmptyReplace");
+      bodyWarning.hidden = false;
+      bodyEmptyAcknowledged = true;
+      return;
+    }
+  }
 
   const identitiesSelect = document.getElementById("editor-identities");
   const identities = Array.from(identitiesSelect.selectedOptions).map((opt) => opt.value);
@@ -792,6 +832,11 @@ document.addEventListener("selectionchange", () => {
 });
 
 document.getElementById("editor-body").addEventListener("keyup", updateToolbarState);
+
+document.getElementById("editor-body").addEventListener("input", () => {
+  const warning = document.getElementById("editor-body-warning");
+  if (warning && !warning.hidden) warning.hidden = true;
+});
 
 // ---- v2.2: Paste sanitization mode ----
 
