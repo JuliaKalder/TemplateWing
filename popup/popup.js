@@ -135,12 +135,13 @@ async function insertTemplate(id) {
     return;
   }
 
-  // Cursor-mode insertion calls execCommand inside the compose document, which
-  // requires the compose window to hold focus. While the popup is open, focus
-  // sits with the popup and the insert lands at the wrong place (or falls back
-  // to prepend). Delegate to the background page so the popup can close first;
-  // the background then runs the insert against an already-focused compose
-  // window. Other modes use setComposeDetails and don't need focus.
+  // Cursor-mode insertion runs in the compose-script (Range API) and needs
+  // the compose window to hold focus / have a live selection. While the popup
+  // is open, focus sits with the popup and the editor's selection collapses,
+  // so the insert lands at the wrong place (or falls back to prepend).
+  // Delegate to the background page so the popup can close first; the
+  // background then runs the insert against the focused compose window.
+  // Other modes use setComposeDetails and don't need focus.
   if (template.insertMode === "cursor") {
     messenger.runtime.sendMessage({
       action: "templatewing:insertTemplate",

@@ -1,97 +1,173 @@
-// Runs inside the Thunderbird compose window (registered via `compose_scripts`
-// in manifest.json). Its sole purpose is to insert a template at the current
-// cursor position without touching the rest of the message body — preserving
-// the user's signature and any text they have already typed. See GitHub
+// Runs inside the Thunderbird compose editor (registered via
+// `compose_scripts` in manifest.json). Inserts a template body at the
+// user's caret position without touching the rest of the message body —
+// preserving the signature and any text already typed. See GitHub
 // issue #33.
 //
-// Important: Thunderbird's compose editor is not a plain `contenteditable`
-// element; it uses `document.designMode="on"`, so we cannot rely on
-// `isContentEditable`. Instead we operate on `document.body` directly and
-// trust that `document.execCommand` acts on the current selection.
+// Thunderbird-specific notes:
+//  - The compose editor sets `document.designMode = "on"` on the iframe
+//    document rather than using element-level `contenteditable`, so
+//    walking the DOM for `isContentEditable` is unreliable. We operate
+//    on `document.body` directly.
+//  - `document.execCommand("insertHTML"|"insertText")` exists in Gecko's
+//    nsEditor but can silently no-op in compose contexts (the editor's
+//    internal selection state diverges from the DOM Selection API). We
+//    use the Range API (`deleteContents` + `insertNode`) instead, which
+//    is deterministic.
+//  - When the toolbar popup opens, the editor loses focus and the live
+//    Selection may collapse. We snapshot the user's range on every
+//    meaningful event so we can restore it before insert.
 
 (function () {
   "use strict";
 
-  // Snapshot of the last caret/selection inside the body. When the user opens
-  // the toolbar popup the compose window loses focus and the selection may
-  // collapse; we restore from this before execCommand so the insert lands
-  // where the caret was.
+  const TAG = "TemplateWing[compose]";
+  try {
+    console.log(TAG, "loaded", {
+      url: location.href,
+      designMode: document.designMode,
+      readyState: document.readyState,
+    });
+  } catch (_) { /* console may be unavailable */ }
+
   let lastRange = null;
 
   function rangeInBody(range) {
     return !!(
       range &&
       range.startContainer &&
+      range.endContainer &&
       document.body &&
-      document.body.contains(range.startContainer)
+      document.body.contains(range.startContainer) &&
+      document.body.contains(range.endContainer)
     );
   }
 
-  document.addEventListener("selectionchange", () => {
+  function snapshotSelection() {
+    if (!document.body) return;
     const sel = document.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if (!rangeInBody(range)) return;
     lastRange = range.cloneRange();
-  });
+  }
 
-  function ensureSelectionInBody() {
-    if (!document.body) return false;
+  // selectionchange is the canonical event but doesn't always fire during
+  // focus transitions in Gecko; mouseup/keyup/focusout cover the gaps.
+  document.addEventListener("selectionchange", snapshotSelection);
+  document.addEventListener("mouseup", snapshotSelection, true);
+  document.addEventListener("keyup", snapshotSelection, true);
+  document.addEventListener("focusout", snapshotSelection, true);
+
+  // The editor pre-positions the cursor when the compose window opens.
+  // The compose script may load after that initial event, so capture the
+  // current selection explicitly once the document is ready.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", snapshotSelection);
+  } else {
+    snapshotSelection();
+  }
+  window.addEventListener("load", snapshotSelection);
+
+  function getInsertRange() {
+    if (!document.body) return null;
     const sel = document.getSelection();
-    if (!sel) return false;
-
-    if (sel.rangeCount > 0 && rangeInBody(sel.getRangeAt(0))) {
-      return true;
+    if (sel && sel.rangeCount > 0) {
+      const r = sel.getRangeAt(0);
+      if (rangeInBody(r)) return r.cloneRange();
     }
-
     if (lastRange && rangeInBody(lastRange)) {
-      sel.removeAllRanges();
-      sel.addRange(lastRange);
-      return true;
+      return lastRange.cloneRange();
     }
+    return null;
+  }
 
-    // No usable selection — collapse to the start of the body so we at least
-    // land somewhere deterministic. This matches the old "prepend" behaviour
-    // for users who trigger an insert without ever having placed their caret.
+  function insertHtmlAtRange(range, html) {
+    const frag = range.createContextualFragment(html || "");
+    const lastNode = frag.lastChild;
+    range.deleteContents();
+    range.insertNode(frag);
+    return lastNode;
+  }
+
+  function insertTextAtRange(range, text) {
+    const lines = (text || "").split(/\r?\n/);
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < lines.length; i++) {
+      if (i > 0) frag.appendChild(document.createElement("br"));
+      if (lines[i]) frag.appendChild(document.createTextNode(lines[i]));
+    }
+    const lastNode = frag.lastChild;
+    range.deleteContents();
+    range.insertNode(frag);
+    return lastNode;
+  }
+
+  function moveCaretAfter(node) {
+    if (!node) return;
+    const sel = document.getSelection();
+    if (!sel) return;
     const range = document.createRange();
-    range.selectNodeContents(document.body);
+    range.setStartAfter(node);
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
-    return true;
+    lastRange = range.cloneRange();
   }
 
   function insertAtCursor(message) {
-    if (!document.body) {
-      return { ok: false, error: "no-body" };
-    }
+    try {
+      console.log(TAG, "insertAtCursor request", {
+        isPlainText: !!message.isPlainText,
+        hasHtml: !!message.html,
+        hasText: !!message.text,
+        hasLastRange: !!lastRange,
+        liveRangeCount: (document.getSelection() || {}).rangeCount,
+      });
+    } catch (_) { /* ignore */ }
 
-    // Try to regain focus so execCommand targets this document. In
-    // designMode compose windows this is best-effort; context-menu and
-    // keyboard-shortcut paths already have focus, while the popup path
-    // delegates through the background page after closing.
+    if (!document.body) return { ok: false, error: "no-body" };
+
     try { window.focus(); } catch (_) { /* ignore */ }
     try { if (document.body.focus) document.body.focus(); } catch (_) { /* ignore */ }
 
-    if (!ensureSelectionInBody()) {
-      return { ok: false, error: "no-selection" };
+    const range = getInsertRange();
+    if (!range) {
+      try { console.warn(TAG, "no usable range — caller will fall back"); } catch (_) {}
+      return { ok: false, error: "no-range" };
     }
 
     try {
-      if (message.isPlainText) {
-        document.execCommand("insertText", false, message.text || "");
-      } else {
-        document.execCommand("insertHTML", false, message.html || "");
-      }
+      const lastNode = message.isPlainText
+        ? insertTextAtRange(range, message.text)
+        : insertHtmlAtRange(range, message.html);
+      moveCaretAfter(lastNode);
+      try { console.log(TAG, "insert ok"); } catch (_) {}
       return { ok: true };
     } catch (err) {
+      try { console.error(TAG, "insert threw", err); } catch (_) {}
       return { ok: false, error: String((err && err.message) || err) };
     }
   }
 
   const api = typeof messenger !== "undefined" ? messenger : browser;
   api.runtime.onMessage.addListener((message) => {
-    if (!message || message.action !== "templatewing:insertAtCursor") return;
-    return Promise.resolve(insertAtCursor(message));
+    if (!message || !message.action) return;
+
+    if (message.action === "templatewing:insertAtCursor") {
+      return Promise.resolve(insertAtCursor(message));
+    }
+
+    // Diagnostic: lets the background page verify the script is alive in a
+    // given compose tab and inspect its current state.
+    if (message.action === "templatewing:ping") {
+      return Promise.resolve({
+        ok: true,
+        designMode: document.designMode,
+        hasBody: !!document.body,
+        hasLastRange: !!lastRange,
+        readyState: document.readyState,
+      });
+    }
   });
 })();

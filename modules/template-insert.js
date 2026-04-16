@@ -186,6 +186,7 @@ export async function insertTemplateIntoTab(tabId, template) {
     const body = await replaceVariables(resolvedBody, tabId);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const isPlainText = !!existing.isPlainText;
+    console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
     try {
       const response = await messenger.tabs.sendMessage(tabId, {
         action: "templatewing:insertAtCursor",
@@ -193,6 +194,7 @@ export async function insertTemplateIntoTab(tabId, template) {
         text: htmlToPlainText(body),
         isPlainText,
       });
+      console.log("TemplateWing: cursor mode <- response", response);
       if (response && response.ok) {
         insertedAtCursor = true;
       } else {

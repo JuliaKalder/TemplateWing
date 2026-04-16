@@ -235,11 +235,12 @@ messenger.runtime.onMessage.addListener(async (message) => {
   }
 
   // Popup delegates cursor-mode insertion here so it can close first and
-  // return focus to the compose window before execCommand runs.
+  // return focus to the compose window before the insert runs.
   if (message.action === "templatewing:insertTemplate") {
     // Give the popup a tick to tear down so the compose window is focused
-    // when we forward the insert request to the compose script.
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // when we forward the insert request to the compose script. 150ms is
+    // empirically enough on slow systems while still feeling instant.
+    await new Promise((resolve) => setTimeout(resolve, 150));
     try {
       const template = await getTemplate(message.templateId);
       if (!template) return;
