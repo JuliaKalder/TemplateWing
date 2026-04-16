@@ -43,25 +43,49 @@
     );
   }
 
+  // Gecko's designMode editor frequently collapses the Selection to
+  // (body, 0) on blur/focus-loss. If we let that value overwrite a real
+  // caret captured during editing, cursor-mode inserts land at the start.
+  function isBodyStartCollapsed(range) {
+    return !!(
+      range &&
+      range.collapsed &&
+      document.body &&
+      range.startContainer === document.body &&
+      range.startOffset === 0
+    );
+  }
+
   function snapshotSelection() {
     if (!document.body) return;
     const sel = document.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
     if (!rangeInBody(range)) return;
+    // Preserve a meaningful caret against the focus-loss reset-to-start.
+    if (lastRange && isBodyStartCollapsed(range) && !isBodyStartCollapsed(lastRange)) {
+      return;
+    }
     lastRange = range.cloneRange();
   }
 
   // selectionchange is the canonical event but doesn't always fire during
   // focus transitions in Gecko; mouseup/keyup/focusout cover the gaps.
-  // We intentionally do NOT snapshot at load/DOMContentLoaded: the editor's
-  // pre-positioned caret is at body,0, and seeding lastRange with that
-  // value would cause cursor-mode inserts to land at the start whenever
-  // the user opens the popup without first clicking into the body.
   document.addEventListener("selectionchange", snapshotSelection);
   document.addEventListener("mouseup", snapshotSelection, true);
   document.addEventListener("keyup", snapshotSelection, true);
   document.addEventListener("focusout", snapshotSelection, true);
+
+  // Seed lastRange from the editor's pre-positioned caret so that users
+  // who open the popup without first clicking/typing in the body still
+  // get a usable range. The snapshot guard above protects this seed from
+  // being clobbered by a subsequent focus-loss reset.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", snapshotSelection);
+  } else {
+    snapshotSelection();
+  }
+  window.addEventListener("load", snapshotSelection);
 
   function getInsertRange() {
     if (!document.body) return null;
