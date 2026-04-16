@@ -1,8 +1,8 @@
-const STORAGE_KEY = "templates";
-const SCHEMA_KEY = "schemaVersion";
-const CURRENT_SCHEMA = 1;
+export const STORAGE_KEY = "templates";
+export const SCHEMA_KEY = "schemaVersion";
+export const CURRENT_SCHEMA = 1;
 
-function generateId() {
+export function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 }
 
@@ -38,22 +38,22 @@ if (typeof messenger !== "undefined" && messenger.storage) {
 
 // ---- Schema migrations ----
 
-const migrations = [
-  // Migration 0 → 1: ensure every template has all v2.2 fields
-  async function migrateV0toV1(templates) {
-    let changed = false;
-    for (const t of templates) {
-      if (!t.category && t.category !== "") { t.category = ""; changed = true; }
-      if (!Array.isArray(t.to)) { t.to = []; changed = true; }
-      if (!Array.isArray(t.cc)) { t.cc = []; changed = true; }
-      if (!Array.isArray(t.bcc)) { t.bcc = []; changed = true; }
-      if (!Array.isArray(t.identities)) { t.identities = []; changed = true; }
-      if (!t.insertMode) { t.insertMode = "append"; changed = true; }
-      if (!Array.isArray(t.attachments)) { t.attachments = []; changed = true; }
-    }
-    return { templates, changed };
-  },
-];
+// Migration 0 → 1: ensure every template has all v2.2 fields
+export async function migrateV0toV1(templates) {
+  let changed = false;
+  for (const t of templates) {
+    if (!t.category && t.category !== "") { t.category = ""; changed = true; }
+    if (!Array.isArray(t.to)) { t.to = []; changed = true; }
+    if (!Array.isArray(t.cc)) { t.cc = []; changed = true; }
+    if (!Array.isArray(t.bcc)) { t.bcc = []; changed = true; }
+    if (!Array.isArray(t.identities)) { t.identities = []; changed = true; }
+    if (!t.insertMode) { t.insertMode = "append"; changed = true; }
+    if (!Array.isArray(t.attachments)) { t.attachments = []; changed = true; }
+  }
+  return { templates, changed };
+}
+
+const migrations = [migrateV0toV1];
 
 async function migrateIfNeeded() {
   const result = await messenger.storage.local.get({ [SCHEMA_KEY]: 0 });
@@ -147,4 +147,8 @@ export async function trackUsage(id) {
   await persistTemplates(templates);
 }
 
-export { CURRENT_SCHEMA, SCHEMA_KEY };
+// Test-only: reset the in-memory cache so tests using a fresh messenger stub
+// are not poisoned by state from earlier tests.
+export function _resetCacheForTests() {
+  _cache = null;
+}

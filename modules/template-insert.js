@@ -1,10 +1,34 @@
+export const WEEKDAY_NAMES = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+];
+
+/**
+ * Pure helper: substitute the supported variable tokens in `text`.
+ * Does not touch messenger.* or Date; all values are provided by the caller.
+ * @param {string} text
+ * @param {object} vars - { date, time, datetime, year, weekday, senderName, senderEmail, accountName, accountEmail }
+ */
+export function applyVariables(text, vars) {
+  if (!text) return text;
+  return text
+    .replace(/\{DATE\}/gi, vars.date)
+    .replace(/\{TIME\}/gi, vars.time)
+    .replace(/\{DATETIME\}/gi, vars.datetime)
+    .replace(/\{YEAR\}/gi, String(vars.year))
+    .replace(/\{WEEKDAY\}/gi, vars.weekday)
+    .replace(/\{SENDER_NAME\}/gi, vars.senderName)
+    .replace(/\{SENDER_EMAIL\}/gi, vars.senderEmail)
+    .replace(/\{ACCOUNT_NAME\}/gi, vars.accountName)
+    .replace(/\{ACCOUNT_EMAIL\}/gi, vars.accountEmail);
+}
+
 /**
  * Replace template variables in text.
  * @param {string} text - Text containing placeholders
  * @param {number} tabId - The compose tab ID (used to resolve sender identity)
  * @returns {Promise<string>} Text with placeholders replaced
  */
-async function replaceVariables(text, tabId) {
+export async function replaceVariables(text, tabId) {
   if (!text) return text;
 
   const now = new Date();
@@ -37,20 +61,20 @@ async function replaceVariables(text, tabId) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
-  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const weekday = weekdayNames[now.getDay()];
-
-  return text
-    .replace(/\{DATE\}/gi, now.toLocaleDateString())
-    .replace(/\{TIME\}/gi, now.toLocaleTimeString())
-    .replace(/\{DATETIME\}/gi, now.toLocaleDateString() + " " + now.toLocaleTimeString())
-    .replace(/\{YEAR\}/gi, String(now.getFullYear()))
-    .replace(/\{WEEKDAY\}/gi, weekday)
-    .replace(/\{SENDER_NAME\}/gi, senderName)
-    .replace(/\{SENDER_EMAIL\}/gi, senderEmail)
-    .replace(/\{ACCOUNT_NAME\}/gi, accountName)
-    .replace(/\{ACCOUNT_EMAIL\}/gi, accountEmail);
+  return applyVariables(text, {
+    date: now.toLocaleDateString(),
+    time: now.toLocaleTimeString(),
+    datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
+    year: now.getFullYear(),
+    weekday: WEEKDAY_NAMES[now.getDay()],
+    senderName,
+    senderEmail,
+    accountName,
+    accountEmail,
+  });
 }
+
+export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
 
 /**
  * Resolve nested template includes in text.
@@ -61,10 +85,11 @@ async function replaceVariables(text, tabId) {
  * @param {Map} templatesByName - Map of template name (lowercase) to template object
  * @returns {Promise<string>} Text with includes resolved
  */
-async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
+export async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
   if (!text) return text;
 
-  const includeRegex = /\{\{template(id)?:([^}]+)\}\}/gi;
+  // Use a fresh regex per call to avoid lastIndex state on the shared exported one.
+  const includeRegex = new RegExp(TEMPLATE_INCLUDE_REGEX.source, TEMPLATE_INCLUDE_REGEX.flags);
 
   let resolved = text;
   let match;

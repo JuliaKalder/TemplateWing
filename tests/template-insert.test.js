@@ -1,296 +1,231 @@
-import { describe, it } from "node:test";
+import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
+import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.js";
 
-// Test the template inclusion and variable replacement patterns from template-insert.js
-// We test the regex patterns and cycle detection logic directly.
+// The module installs a storage listener at import time; install the mock first.
+installMessengerMock();
+
+const {
+  TEMPLATE_INCLUDE_REGEX,
+  WEEKDAY_NAMES,
+  applyVariables,
+  resolveNestedTemplates,
+} = await import("../modules/template-insert.js");
+
+after(() => uninstallMessengerMock());
 
 // ---- Template include regex ----
-// From template-insert.js: /\{\{template(id)?:([^}]+)\}\}/gi
-const includeRegex = /\{\{template(id)?:([^}]+)\}\}/gi;
 
-describe("template include regex", () => {
+describe("TEMPLATE_INCLUDE_REGEX", () => {
+  function matchAll(text) {
+    const r = new RegExp(TEMPLATE_INCLUDE_REGEX.source, TEMPLATE_INCLUDE_REGEX.flags);
+    return [...text.matchAll(r)];
+  }
+
   it("matches {{template:Name}} syntax", () => {
-    const text = "Hello {{template:My Template}} how are you?";
-    const matches = [...text.matchAll(includeRegex)];
+    const matches = matchAll("Hello {{template:My Template}} how are you?");
     assert.strictEqual(matches.length, 1);
     assert.strictEqual(matches[0][2], "My Template");
-    assert.strictEqual(matches[0][1], undefined); // no id flag
+    assert.strictEqual(matches[0][1], undefined);
   });
 
   it("matches {{templateid:abc123}} syntax", () => {
-    const text = "Including {{templateid:abc123}} now";
-    const matches = [...text.matchAll(includeRegex)];
+    const matches = matchAll("Including {{templateid:abc123}} now");
     assert.strictEqual(matches.length, 1);
     assert.strictEqual(matches[0][2], "abc123");
-    assert.strictEqual(matches[0][1], "id"); // has id flag
+    assert.strictEqual(matches[0][1], "id");
   });
 
   it("matches multiple includes in same text", () => {
-    const text = "{{template:First}} and {{template:Second}} and {{templateid:id123}}";
-    const matches = [...text.matchAll(includeRegex)];
+    const matches = matchAll("{{template:First}} and {{template:Second}} and {{templateid:id123}}");
     assert.strictEqual(matches.length, 3);
-    assert.strictEqual(matches[0][2], "First");
-    assert.strictEqual(matches[1][2], "Second");
-    assert.strictEqual(matches[2][2], "id123");
-  });
-
-  it("handles whitespace in template name", () => {
-    const text = "{{template:  My Template  }}";
-    const matches = [...text.matchAll(includeRegex)];
-    assert.strictEqual(matches.length, 1);
-    assert.strictEqual(matches[0][2], "  My Template  ");
-  });
-
-  it("returns empty array when no matches", () => {
-    const text = "No template includes here";
-    const matches = [...text.matchAll(includeRegex)];
-    assert.strictEqual(matches.length, 0);
+    assert.deepStrictEqual(matches.map((m) => m[2]), ["First", "Second", "id123"]);
   });
 
   it("is case-insensitive for the template keyword", () => {
-    const text = "{{TEMPLATE:Name}} and {{TemplateId:id123}}";
-    const matches = [...text.matchAll(includeRegex)];
+    const matches = matchAll("{{TEMPLATE:Name}} and {{TemplateId:id123}}");
     assert.strictEqual(matches.length, 2);
+  });
+
+  it("returns no matches for plain text", () => {
+    assert.strictEqual(matchAll("No template includes here").length, 0);
   });
 });
 
-// ---- Variable replacement patterns ----
-// From template-insert.js: .replace(/\{DATE\}/gi, ...)
-// These patterns are used in replaceVariables
+// ---- Variable replacement ----
 
-describe("variable replacement patterns", () => {
-  const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-  // Helper to simulate replaceVariables without the async Thunderbird API calls
-  function replaceVariablesSync(text, now = new Date()) {
-    const weekday = weekdayNames[now.getDay()];
-    return text
-      .replace(/\{DATE\}/gi, now.toLocaleDateString())
-      .replace(/\{TIME\}/gi, now.toLocaleTimeString())
-      .replace(/\{DATETIME\}/gi, now.toLocaleDateString() + " " + now.toLocaleTimeString())
-      .replace(/\{YEAR\}/gi, String(now.getFullYear()))
-      .replace(/\{WEEKDAY\}/gi, weekday)
-      .replace(/\{SENDER_NAME\}/gi, "Jane Doe")
-      .replace(/\{SENDER_EMAIL\}/gi, "jane@example.com")
-      .replace(/\{ACCOUNT_NAME\}/gi, "My Account")
-      .replace(/\{ACCOUNT_EMAIL\}/gi, "account@example.com");
-  }
+describe("applyVariables", () => {
+  const fixed = {
+    date: "2026-04-06",
+    time: "10:30:00",
+    datetime: "2026-04-06 10:30:00",
+    year: 2026,
+    weekday: "Monday",
+    senderName: "Jane Doe",
+    senderEmail: "jane@example.com",
+    accountName: "Work",
+    accountEmail: "jane.work@example.com",
+  };
 
   it("replaces {DATE}", () => {
-    const now = new Date("2026-04-06T10:00:00");
-    const result = replaceVariablesSync("Date: {DATE}", now);
-    assert.ok(result.includes("6.4.2026") || result.includes("4/6/2026")); // locale-dependent
+    assert.strictEqual(applyVariables("Date: {DATE}", fixed), "Date: 2026-04-06");
   });
 
-  it("replaces {YEAR}", () => {
-    const now = new Date("2026-04-06T10:00:00");
-    const result = replaceVariablesSync("Year: {YEAR}", now);
-    assert.ok(result.includes("2026"));
+  it("replaces {YEAR} numerically", () => {
+    assert.strictEqual(applyVariables("Year: {YEAR}", fixed), "Year: 2026");
   });
 
   it("replaces {WEEKDAY}", () => {
-    const now = new Date("2026-04-06T10:00:00"); // Monday
-    const result = replaceVariablesSync("Day: {WEEKDAY}", now);
-    assert.ok(result.includes("Monday"));
+    assert.strictEqual(applyVariables("Day: {WEEKDAY}", fixed), "Day: Monday");
   });
 
-  it("replaces {SENDER_NAME}", () => {
-    const result = replaceVariablesSync("From: {SENDER_NAME}");
-    assert.ok(result.includes("Jane Doe"));
+  it("replaces {SENDER_NAME} and {SENDER_EMAIL}", () => {
+    assert.strictEqual(
+      applyVariables("From: {SENDER_NAME} <{SENDER_EMAIL}>", fixed),
+      "From: Jane Doe <jane@example.com>"
+    );
   });
 
-  it("replaces multiple variables", () => {
-    const result = replaceVariablesSync("{DATE} {TIME} from {SENDER_EMAIL}");
-    // Should not contain any {VARIABLE} placeholders
-    assert.ok(!result.includes("{DATE}"));
-    assert.ok(!result.includes("{TIME}"));
-    assert.ok(!result.includes("{SENDER_EMAIL}"));
+  it("replaces {ACCOUNT_NAME} and {ACCOUNT_EMAIL}", () => {
+    assert.strictEqual(
+      applyVariables("Acct: {ACCOUNT_NAME} / {ACCOUNT_EMAIL}", fixed),
+      "Acct: Work / jane.work@example.com"
+    );
+  });
+
+  it("is case-insensitive", () => {
+    assert.strictEqual(applyVariables("{date} {Date} {DATE}", fixed), "2026-04-06 2026-04-06 2026-04-06");
   });
 
   it("leaves text without variables unchanged", () => {
-    const result = replaceVariablesSync("Plain text only");
-    assert.strictEqual(result, "Plain text only");
+    assert.strictEqual(applyVariables("Plain text only", fixed), "Plain text only");
   });
 
-  it("is case-insensitive for variable names", () => {
-    const result = replaceVariablesSync("{date} {Date} {DATE}");
-    // None of these should remain
-    assert.ok(!result.includes("{date}"));
-    assert.ok(!result.includes("{Date}"));
-    assert.ok(!result.includes("{DATE}"));
+  it("replaces multiple variables in one pass", () => {
+    const result = applyVariables("{DATE} {TIME} from {SENDER_EMAIL}", fixed);
+    assert.strictEqual(result, "2026-04-06 10:30:00 from jane@example.com");
+  });
+
+  it("returns empty string unchanged", () => {
+    assert.strictEqual(applyVariables("", fixed), "");
+  });
+
+  it("handles null/undefined input", () => {
+    assert.strictEqual(applyVariables(null, fixed), null);
+    assert.strictEqual(applyVariables(undefined, fixed), undefined);
   });
 });
 
-// ---- Resolve nested templates (cycle detection) ----
-// We test the cycle detection logic directly
+describe("WEEKDAY_NAMES", () => {
+  it("has seven English weekday names starting with Sunday", () => {
+    assert.strictEqual(WEEKDAY_NAMES.length, 7);
+    assert.strictEqual(WEEKDAY_NAMES[0], "Sunday");
+    assert.strictEqual(WEEKDAY_NAMES[6], "Saturday");
+  });
+});
 
-function createMockResolve(behavior) {
-  return async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
-    if (!text) return text;
+// ---- Nested template resolution + cycle detection ----
 
-    const includeRegex = /\{\{template(id)?:([^}]+)\}\}/gi;
-    let resolved = text;
-    let match;
-    const matches = [];
-    while ((match = includeRegex.exec(text)) !== null) {
-      matches.push(match);
-    }
+describe("resolveNestedTemplates", () => {
+  function buildMaps(templates) {
+    const byId = new Map(templates.map((t) => [t.id, t]));
+    const byName = new Map(templates.map((t) => [t.name.toLowerCase(), t]));
+    return { byId, byName };
+  }
 
-    for (const m of matches) {
-      const fullMatch = m[0];
-      const useId = m[1];
-      const identifier = m[2].trim();
-      let nestedTemplate = null;
-
-      if (useId) {
-        nestedTemplate = templatesById.get(identifier);
-      } else {
-        nestedTemplate = templatesByName.get(identifier.toLowerCase());
-      }
-
-      if (!nestedTemplate) {
-        console.warn(`TemplateWing: referenced template not found: ${identifier}`);
-        continue;
-      }
-
-      if (visited.has(nestedTemplate.id)) {
-        throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
-      }
-
-      visited.add(nestedTemplate.id);
-      const nestedContent = await resolveNestedTemplates(
-        nestedTemplate.body || "",
-        visited,
-        templatesById,
-        templatesByName
-      );
-      visited.delete(nestedTemplate.id);
-
-      resolved = resolved.replace(fullMatch, nestedContent);
-    }
-
-    return resolved;
-  };
-}
-
-describe("resolveNestedTemplates cycle detection", () => {
-  // The actual implementation starts with visited = new Set([template.id]) in insertTemplateIntoTab,
-  // then calls resolveNestedTemplates(template.body, visited, ...).
-  // The function itself does NOT add the initial template to visited.
-  // So we pass an EMPTY visited set to match how the function is actually called.
-
-  it("resolves simple template include", async () => {
-    const templatesById = new Map([["t1", { id: "t1", name: "Template 1", body: "Hello {NAME}" }]]);
-    const templatesByName = new Map([["template 1", { id: "t1", name: "Template 1", body: "Hello {NAME}" }]]);
-    const resolve = createMockResolve("resolve");
-
-    const result = await resolve("{{template:Template 1}}", new Set(), templatesById, templatesByName);
+  it("resolves a simple template include", async () => {
+    const { byId, byName } = buildMaps([
+      { id: "t1", name: "Template 1", body: "Hello {NAME}" },
+    ]);
+    const result = await resolveNestedTemplates("{{template:Template 1}}", new Set(), byId, byName);
     assert.strictEqual(result, "Hello {NAME}");
   });
 
-  it("detects direct circular reference (template includes itself)", async () => {
-    // Template A includes itself directly
-    const templatesById = new Map([["tA", { id: "tA", name: "A", body: "{{templateid:tA}}" }]]);
-    const templatesByName = new Map([["a", { id: "tA", name: "A", body: "{{templateid:tA}}" }]]);
-    const resolve = createMockResolve("resolve");
-
+  it("detects direct self-reference", async () => {
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "{{templateid:tA}}" },
+    ]);
     await assert.rejects(
-      async () => resolve("{{templateid:tA}}", new Set(), templatesById, templatesByName),
+      resolveNestedTemplates("{{templateid:tA}}", new Set(), byId, byName),
       /Circular reference detected/
     );
   });
 
-  it("detects indirect circular reference A -> B -> A", async () => {
-    // A includes B, B includes A
-    const templatesById = new Map([
-      ["tA", { id: "tA", name: "A", body: "Start {{template:B}}" }],
-      ["tB", { id: "tB", name: "B", body: "{{templateid:tA}}" }],
+  it("detects indirect cycle A -> B -> A", async () => {
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "Start {{template:B}}" },
+      { id: "tB", name: "B", body: "{{templateid:tA}}" },
     ]);
-    const templatesByName = new Map([
-      ["a", { id: "tA", name: "A", body: "Start {{template:B}}" }],
-      ["b", { id: "tB", name: "B", body: "{{templateid:tA}}" }],
-    ]);
-    const resolve = createMockResolve("resolve");
-
     await assert.rejects(
-      async () => resolve("{{template:A}}", new Set(), templatesById, templatesByName),
+      resolveNestedTemplates("{{template:A}}", new Set(), byId, byName),
       /Circular reference detected/
     );
   });
 
-  it("detects circular reference through three levels A -> B -> C -> A", async () => {
-    const templatesById = new Map([
-      ["tA", { id: "tA", name: "A", body: "{{template:B}}" }],
-      ["tB", { id: "tB", name: "B", body: "{{template:C}}" }],
-      ["tC", { id: "tC", name: "C", body: "{{templateid:tA}}" }],
+  it("detects three-level cycle A -> B -> C -> A", async () => {
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "{{template:B}}" },
+      { id: "tB", name: "B", body: "{{template:C}}" },
+      { id: "tC", name: "C", body: "{{templateid:tA}}" },
     ]);
-    const templatesByName = new Map([
-      ["a", { id: "tA", name: "A", body: "{{template:B}}" }],
-      ["b", { id: "tB", name: "B", body: "{{template:C}}" }],
-      ["c", { id: "tC", name: "C", body: "{{templateid:tA}}" }],
-    ]);
-    const resolve = createMockResolve("resolve");
-
     await assert.rejects(
-      async () => resolve("{{template:A}}", new Set(), templatesById, templatesByName),
+      resolveNestedTemplates("{{template:A}}", new Set(), byId, byName),
       /Circular reference detected/
     );
   });
 
   it("resolves multiple levels without cycle", async () => {
-    const templatesById = new Map([
-      ["tA", { id: "tA", name: "A", body: "Level 1 {{template:B}}" }],
-      ["tB", { id: "tB", name: "B", body: "Level 2 {{template:C}}" }],
-      ["tC", { id: "tC", name: "C", body: "Level 3" }],
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "Level 1 {{template:B}}" },
+      { id: "tB", name: "B", body: "Level 2 {{template:C}}" },
+      { id: "tC", name: "C", body: "Level 3" },
     ]);
-    const templatesByName = new Map([
-      ["a", { id: "tA", name: "A", body: "Level 1 {{template:B}}" }],
-      ["b", { id: "tB", name: "B", body: "Level 2 {{template:C}}" }],
-      ["c", { id: "tC", name: "C", body: "Level 3" }],
-    ]);
-    const resolve = createMockResolve("resolve");
-
-    const result = await resolve("{{template:A}}", new Set(), templatesById, templatesByName);
+    const result = await resolveNestedTemplates("{{template:A}}", new Set(), byId, byName);
     assert.strictEqual(result, "Level 1 Level 2 Level 3");
   });
 
-  it("returns original text when no includes found", async () => {
-    const templatesById = new Map();
-    const templatesByName = new Map();
-    const resolve = createMockResolve("resolve");
-
-    const result = await resolve("Plain text without includes", new Set(), templatesById, templatesByName);
-    assert.strictEqual(result, "Plain text without includes");
-  });
-
-  it("returns empty string for empty input", async () => {
-    const templatesById = new Map();
-    const templatesByName = new Map();
-    const resolve = createMockResolve("resolve");
-
-    const result = await resolve("", new Set(), templatesById, templatesByName);
-    assert.strictEqual(result, "");
-  });
-
-  it("warns and skips missing template references (marker remains)", async () => {
-    const templatesById = new Map();
-    const templatesByName = new Map();
-    const resolve = createMockResolve("resolve");
-
-    // Should not throw, just warn and skip - include marker remains in text
-    const result = await resolve("{{template:NonExistent}}", new Set(), templatesById, templatesByName);
-    // The include marker is NOT replaced when template not found
+  it("leaves include marker in place when template is missing", async () => {
+    const result = await resolveNestedTemplates(
+      "{{template:NonExistent}}",
+      new Set(),
+      new Map(),
+      new Map()
+    );
     assert.strictEqual(result, "{{template:NonExistent}}");
   });
 
-  it("resolves same template included multiple times", async () => {
-    const templatesById = new Map([["tA", { id: "tA", name: "A", body: "[A]" }]]);
-    const templatesByName = new Map([["a", { id: "tA", name: "A", body: "[A]" }]]);
-    const resolve = createMockResolve("resolve");
+  it("returns the text unchanged when it has no includes", async () => {
+    const result = await resolveNestedTemplates("Plain", new Set(), new Map(), new Map());
+    assert.strictEqual(result, "Plain");
+  });
 
-    // First include adds A to visited, resolves [A], removes A from visited
-    // Second include can add A again since it's no longer in visited
-    const result = await resolve("{{template:A}} and {{template:A}}", new Set(), templatesById, templatesByName);
+  it("returns empty string for empty input", async () => {
+    const result = await resolveNestedTemplates("", new Set(), new Map(), new Map());
+    assert.strictEqual(result, "");
+  });
+
+  it("resolves the same template multiple times in one string", async () => {
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "[A]" },
+    ]);
+    const result = await resolveNestedTemplates(
+      "{{template:A}} and {{template:A}}",
+      new Set(),
+      byId,
+      byName
+    );
     assert.strictEqual(result, "[A] and [A]");
+  });
+
+  it("respects an externally-supplied visited set (caller seeds top-level id)", async () => {
+    // The production insertTemplateIntoTab passes `new Set([template.id])` so that a
+    // template including itself by name or id is detected as a cycle at the outermost level.
+    const { byId, byName } = buildMaps([
+      { id: "tA", name: "A", body: "{{template:A}}" },
+    ]);
+    await assert.rejects(
+      resolveNestedTemplates("{{template:A}}", new Set(["tA"]), byId, byName),
+      /Circular reference detected/
+    );
   });
 });
