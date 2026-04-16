@@ -11,7 +11,6 @@
     "message": "Vorlagen",
     "description": "Tooltip für den Compose-Action-Button"
   },
-
   "menuInsertTemplate": {
     "message": "Vorlage einfügen",
     "description": "Kontextmenü-Eintrag im Verfassen-Fenster"
@@ -24,7 +23,6 @@
     "message": "Als Vorlage speichern",
     "description": "Kontextmenü-Eintrag in der Nachrichtenliste"
   },
-
   "popupTitle": {
     "message": "Vorlagen",
     "description": "Popup-Überschrift"
@@ -41,7 +39,6 @@
     "message": "Vorlagen verwalten…",
     "description": "Button zum Öffnen der Einstellungsseite"
   },
-
   "optionsTitle": {
     "message": "TemplateWing — Vorlagen verwalten",
     "description": "Überschrift der Einstellungsseite"
@@ -75,8 +72,8 @@
     "description": "Label für das Textfeld"
   },
   "optionsBack": {
-    "message": "\u2190 Zur\u00fcck",
-    "description": "Zur\u00fcck-Button zur Vorlagenliste"
+    "message": "← Zurück",
+    "description": "Zurück-Button zur Vorlagenliste"
   },
   "optionsSave": {
     "message": "Speichern",
@@ -104,12 +101,10 @@
       }
     }
   },
-
   "optionsSaveError": {
     "message": "Vorlage konnte nicht gespeichert werden. Möglicherweise ist der Speicher voll — versuche, Anhänge zu verkleinern oder alte Vorlagen zu löschen.",
     "description": "Fehlermeldung wenn das Speichern fehlschlägt"
   },
-
   "optionsLabelAttachments": {
     "message": "Anhänge",
     "description": "Label für den Anhänge-Bereich im Editor"
@@ -156,7 +151,6 @@
     "message": "Bestehenden Inhalt ersetzen",
     "description": "Option: bestehenden E-Mail-Inhalt durch Vorlage ersetzen"
   },
-
   "popupAttachmentCount": {
     "message": "$COUNT$ Anhang/Anhänge",
     "description": "Anzahl der Anhänge im Popup",
@@ -167,7 +161,6 @@
       }
     }
   },
-
   "optionsLabelCategory": {
     "message": "Kategorie (optional)",
     "description": "Label für Kategoriefeld"
@@ -184,7 +177,6 @@
     "message": "Alle",
     "description": "Option zum Anzeigen aller Kategorien im Popup-Filter"
   },
-
   "optionsLabelTo": {
     "message": "An (Empfänger)",
     "description": "Label für An-Feld"
@@ -201,7 +193,6 @@
     "message": "Mehrere Empfänger durch Komma trennen. Beispiel: max@beispiel.de, Maria Müller <maria@beispiel.de>",
     "description": "Hilfetext für Empfängerfelder"
   },
-
   "optionsLabelVariables": {
     "message": "Verfügbare Variablen",
     "description": "Label für den Variablen-Hilfebereich"
@@ -222,7 +213,6 @@
     "message": "{SENDER_EMAIL} — Ihre E-Mail",
     "description": "Beschreibt SENDER_EMAIL-Variable"
   },
-
   "optionsUsageCount": {
     "message": "$COUNT$-mal verwendet",
     "description": "Nutzungszähler auf der Vorlagenkarte",
@@ -259,7 +249,6 @@
     "message": "Ungültige Datei. Bitte eine gültige TemplateWing-JSON-Exportdatei wählen.",
     "description": "Fehlermeldung bei ungültiger Importdatei"
   },
-
   "optionsLabelAccounts": {
     "message": "Konten (optional)",
     "description": "Label für die Konten-/Identitätsauswahl"
@@ -272,7 +261,6 @@
     "message": "Alle Konten",
     "description": "Option um Vorlage für alle Konten anzuzeigen"
   },
-
   "optionsLabelNestedTemplates": {
     "message": "Verschachtelte Vorlagen",
     "description": "Label for nested template help section"
@@ -289,7 +277,6 @@
     "message": "Vorlage zum Verschachteln auswählen…",
     "description": "Placeholder for nested template dropdown"
   },
-
   "importDialogTitle": {
     "message": "Import-Zusammenfassung",
     "description": "Title of the import confirmation dialog"
@@ -302,21 +289,30 @@
     "message": "$COUNT$ Vorlage(n) in Datei gefunden",
     "description": "Total templates found in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "5" }
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
     }
   },
   "importDialogInvalid": {
     "message": "$COUNT$ ungültig (werden übersprungen)",
     "description": "Number of invalid entries in the import file",
     "placeholders": {
-      "count": { "content": "$1", "example": "1" }
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
     }
   },
   "importDialogDuplicates": {
     "message": "$COUNT$ mit bereits vorhandenen Namen",
     "description": "Number of templates with names that already exist",
     "placeholders": {
-      "count": { "content": "$1", "example": "2" }
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
     }
   },
   "importModeAppend": {
@@ -355,12 +351,20 @@
     "message": "$ADDED$ hinzugefügt, $SKIPPED$ übersprungen, $REPLACED$ ersetzt.",
     "description": "Result message after import completes",
     "placeholders": {
-      "added": { "content": "$1", "example": "3" },
-      "skipped": { "content": "$2", "example": "1" },
-      "replaced": { "content": "$3", "example": "0" }
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "skipped": {
+        "content": "$2",
+        "example": "1"
+      },
+      "replaced": {
+        "content": "$3",
+        "example": "0"
+      }
     }
   },
-
   "validationNameRequired": {
     "message": "Vorlagenname ist erforderlich.",
     "description": "Error when template name is empty"
@@ -369,10 +373,12 @@
     "message": "Ungültige(r) Empfänger: $LIST$",
     "description": "Error when recipient email format is invalid",
     "placeholders": {
-      "list": { "content": "$1", "example": "bad-email, another" }
+      "list": {
+        "content": "$1",
+        "example": "bad-email, another"
+      }
     }
   },
-
   "attachmentSizeWarning": {
     "message": "Große Datei",
     "description": "Short warning shown next to a large attachment"
@@ -381,17 +387,22 @@
     "message": "Gesamtgröße der Anhänge ($SIZE$) ist groß. Dies kann den Speicherverbrauch erheblich erhöhen.",
     "description": "Warning when total attachment size exceeds threshold",
     "placeholders": {
-      "size": { "content": "$1", "example": "12.5 MB" }
+      "size": {
+        "content": "$1",
+        "example": "12.5 MB"
+      }
     }
   },
   "attachmentReadError": {
     "message": "Datei \"$NAME$\" konnte nicht gelesen werden.",
     "description": "Error when a file cannot be read during attachment",
     "placeholders": {
-      "name": { "content": "$1", "example": "document.pdf" }
+      "name": {
+        "content": "$1",
+        "example": "document.pdf"
+      }
     }
   },
-
   "optionsVariableDatetime": {
     "message": "{DATETIME} — Aktuelles Datum und Uhrzeit",
     "description": "Describes DATETIME variable"
@@ -437,5 +448,9 @@
   "notificationInsertFailedGeneric": {
     "message": "Die Vorlage konnte nicht eingefügt werden. Details finden Sie in der Fehlerkonsole.",
     "description": "Notification body for a generic template insertion failure"
+  },
+  "validationBodyEmptyReplace": {
+    "message": "Warnung: Der Textkörper ist leer. Der Ersetzen-Modus entfernt den ursprünglichen Nachrichteninhalt.",
+    "description": "Warning shown when body is empty/whitespace in replace insert mode"
   }
 }

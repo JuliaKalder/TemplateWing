@@ -342,6 +342,23 @@ h1 {
   font-size: 13px;
 }
 
+.inline-error {
+  color: var(--color-error);
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.editor-warning {
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  color: #92400e;
+  font-size: 13px;
+}
+
 .editor-actions {
   display: flex;
   justify-content: flex-end;
