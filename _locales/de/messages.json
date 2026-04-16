@@ -148,6 +148,10 @@
     "message": "An bestehenden Inhalt anhängen",
     "description": "Option: Vorlageninhalt an bestehende E-Mail anhängen"
   },
+  "optionsInsertModePrepend": {
+    "message": "Am Anfang einfügen",
+    "description": "Option: Vorlageninhalt am Anfang der bestehenden E-Mail einfügen"
+  },
   "optionsInsertModeReplace": {
     "message": "Bestehenden Inhalt ersetzen",
     "description": "Option: bestehenden E-Mail-Inhalt durch Vorlage ersetzen"

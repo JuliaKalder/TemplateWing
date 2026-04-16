@@ -170,6 +170,9 @@ export async function insertTemplateIntoTab(tabId, template) {
     const body = await replaceVariables(resolvedBody, tabId);
     if (mode === "replace") {
       details.body = body;
+    } else if (mode === "prepend") {
+      const existing = await messenger.compose.getComposeDetails(tabId);
+      details.body = body + (existing.body || "");
     } else {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
