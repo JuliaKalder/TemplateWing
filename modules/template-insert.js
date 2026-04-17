@@ -3,6 +3,71 @@ export const WEEKDAY_NAMES = [
 ];
 
 /**
+ * Insert `insertHtml` into `existingBody` at the most user-meaningful
+ * position for a cursor-mode template when the real caret is unknown.
+ * Priority:
+ *   1. Before the Thunderbird reply/forward cite-prefix (`moz-cite-prefix`)
+ *      — that's where the user types their reply, above the quoted message.
+ *   2. Before the signature block (`moz-signature`) — so the template
+ *      lands above the sign-off rather than after it.
+ *   3. At the end of the body — as a last resort.
+ * Uses regex rather than DOMParser to avoid any parse-serialize round-trip
+ * that could reformat the user's in-flight HTML.
+ */
+export function smartInsertHtml(existingBody, insertHtml) {
+  if (!existingBody) return insertHtml || "";
+  if (!insertHtml) return existingBody;
+
+  const citeRe = /<(div|blockquote)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-cite-prefix\b[^"']*["'][^>]*>/i;
+  const sigRe = /<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-signature\b[^"']*["'][^>]*>/i;
+
+  const cite = existingBody.match(citeRe);
+  const sig = existingBody.match(sigRe);
+
+  let idx = -1;
+  if (cite && sig) idx = Math.min(cite.index, sig.index);
+  else if (cite) idx = cite.index;
+  else if (sig) idx = sig.index;
+
+  if (idx >= 0) {
+    return existingBody.slice(0, idx) + insertHtml + existingBody.slice(idx);
+  }
+  return existingBody + insertHtml;
+}
+
+/**
+ * Plaintext equivalent. The standard signature delimiter is a line
+ * consisting of exactly "-- " (dash dash space). Reply quotes in plaintext
+ * usually start with lines prefixed "> ".
+ */
+export function smartInsertPlaintext(existingBody, insertText) {
+  if (!existingBody) return insertText || "";
+  if (!insertText) return existingBody;
+
+  // Match the standalone sig delimiter line.
+  const sigMatch = existingBody.match(/(^|\n)-- \n/);
+  const quoteMatch = existingBody.match(/(^|\n)> /);
+
+  let idx = -1;
+  if (sigMatch && quoteMatch) {
+    idx = Math.min(
+      sigMatch.index + (sigMatch[1] ? 1 : 0),
+      quoteMatch.index + (quoteMatch[1] ? 1 : 0)
+    );
+  } else if (sigMatch) {
+    idx = sigMatch.index + (sigMatch[1] ? 1 : 0);
+  } else if (quoteMatch) {
+    idx = quoteMatch.index + (quoteMatch[1] ? 1 : 0);
+  }
+
+  if (idx >= 0) {
+    const suffix = insertText.endsWith("\n") ? "" : "\n";
+    return existingBody.slice(0, idx) + insertText + suffix + existingBody.slice(idx);
+  }
+  return existingBody + insertText;
+}
+
+/**
  * Pure helper: substitute the supported variable tokens in `text`.
  * Does not touch messenger.* or Date; all values are provided by the caller.
  * @param {string} text
@@ -220,10 +285,20 @@ export async function insertTemplateIntoTab(tabId, template) {
     }
 
     if (!insertedAtCursor) {
-      // Append rather than prepend: when the caret is unknown, landing at
-      // the end is the sane default for "cursor" mode. Prepending produced
-      // the "always inserts at start" symptom that motivated issue #33.
-      details.body = (existing.body || "") + body;
+      // Smart fallback: when the compose-script path could not insert at
+      // the caret (no listener, no usable range, Gecko quirks, etc.),
+      // insert at a user-meaningful anchor rather than blindly appending.
+      // Priority: before cite-prefix (reply quote), before signature,
+      // else append. Keeps the template from landing after the sign-off.
+      if (isPlainText) {
+        details.body = smartInsertPlaintext(existing.body || "", htmlToPlainText(body));
+      } else {
+        details.body = smartInsertHtml(existing.body || "", body);
+      }
+      console.log(
+        "TemplateWing: cursor fallback wrote template",
+        isPlainText ? "as plaintext (smart-insert)" : "as HTML (smart-insert)"
+      );
     }
   } else if (resolvedBody) {
     const body = await replaceVariables(resolvedBody, tabId);

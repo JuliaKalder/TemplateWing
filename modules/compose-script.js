@@ -124,7 +124,24 @@
       const r = sel.getRangeAt(0);
       if (rangeInBody(r)) return r.cloneRange();
     }
-    return null;
+    // Synthesize. No real caret is known (fresh compose, user clicked
+    // toolbar without ever focusing the body). Insert at a user-meaningful
+    // anchor so the template doesn't end up after the signature. Priority
+    // mirrors the smartInsertHtml helper in template-insert.js:
+    //   1. Before first .moz-cite-prefix (reply quote header)
+    //   2. Before first .moz-signature
+    //   3. At end of body
+    const anchor = document.body.querySelector(".moz-cite-prefix, .moz-signature");
+    const r = document.createRange();
+    if (anchor) {
+      r.setStartBefore(anchor);
+    } else {
+      r.selectNodeContents(document.body);
+      r.collapse(false);
+    }
+    r.collapse(true);
+    try { console.log(TAG, "getInsertRange synthesized", { hasAnchor: !!anchor }); } catch (_) {}
+    return r;
   }
 
   function insertHtmlAtRange(range, html) {
