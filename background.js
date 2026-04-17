@@ -270,33 +270,43 @@ messenger.menus.onShown.addListener(async (info, tab) => {
 
 buildContextMenu();
 
-// Declarative `compose_scripts` in manifest.json only inject into compose
-// windows opened *after* the add-on loads. Windows opened earlier (or that
-// survived a reload) have no listener, so `tabs.sendMessage` throws
-// "Could not establish connection" and cursor-mode insert falls back to
-// append. Backfill the script into every already-open compose tab once at
-// startup; idempotency is enforced by the window.__templateWingCompose
-// listener-swap guard in compose-script.js. We don't hook tabs.onCreated /
-// windows.onCreated because the declarative injection already handles
-// future windows — this is purely a catch-up for existing ones.
+// Thunderbird 128's declarative `compose_scripts` in manifest.json is
+// unreliable for newly opened compose windows — in practice it silently
+// no-ops often enough that `tabs.sendMessage` throws "Could not establish
+// connection" and cursor-mode insert degrades to the smart-insert fallback
+// (which itself has no anchor in a blank compose, so the template lands at
+// the end — exactly the v2.3.6 field bug). Don't depend on declarative
+// injection: inject explicitly both at add-on boot (for pre-existing
+// windows) AND whenever a new compose window is created. The
+// window.__templateWingCompose listener-swap in compose-script.js makes
+// re-injection idempotent.
+async function injectComposeScript(tabId) {
+  try {
+    await messenger.tabs.executeScript(tabId, {
+      file: "/modules/compose-script.js",
+    });
+  } catch (err) {
+    // Tab may be mid-teardown, not yet ready, or already have the script
+    // via declarative injection — all benign.
+    console.debug(
+      "TemplateWing: compose-script inject skipped for tab",
+      tabId,
+      err && err.message
+    );
+  }
+}
+
+messenger.tabs.onCreated.addListener((tab) => {
+  if (!tab || tab.type !== "messageCompose" || typeof tab.id !== "number") return;
+  injectComposeScript(tab.id);
+});
+
 (async function backfillComposeScript() {
   try {
     const tabs = await messenger.tabs.query({ windowType: "messageCompose" });
     for (const tab of tabs) {
       if (!tab || typeof tab.id !== "number") continue;
-      try {
-        await messenger.tabs.executeScript(tab.id, {
-          file: "/modules/compose-script.js",
-        });
-      } catch (err) {
-        // Tab may be mid-teardown, not yet ready, or already have the
-        // script via declarative injection — all benign.
-        console.debug(
-          "TemplateWing: compose-script backfill skipped for tab",
-          tab.id,
-          err && err.message
-        );
-      }
+      await injectComposeScript(tab.id);
     }
   } catch (err) {
     console.warn("TemplateWing: compose-script backfill query failed", err);
