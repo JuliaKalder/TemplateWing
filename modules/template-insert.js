@@ -253,18 +253,18 @@ export async function insertTemplateIntoTab(tabId, template) {
     const isPlainText = !!existing.isPlainText;
     console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
 
-    // Safety net: Thunderbird 128's declarative compose_scripts injection
-    // is unreliable. background.js already hooks tabs.onCreated, but if
-    // that fired before the document was ready (or was missed entirely for
-    // this tab), we'd hit "Receiving end does not exist" and lose the
-    // insert to the smart-insert fallback. Explicitly re-inject here; the
-    // listener-swap in compose-script.js makes it idempotent.
+    // Safety net: even with composeScripts.register() set up at boot,
+    // explicitly re-inject here so that if something upstream went wrong
+    // (registration failed, tab opened before register resolved, etc.)
+    // we still have a listener to talk to. Idempotent via the
+    // listener-swap in compose-script.js.
     try {
       await messenger.tabs.executeScript(tabId, {
         file: "/modules/compose-script.js",
       });
+      console.log("TemplateWing: pre-send inject ok", { tabId });
     } catch (err) {
-      console.debug("TemplateWing: pre-send inject skipped", err && err.message);
+      console.warn("TemplateWing: pre-send inject failed", err && err.message);
     }
 
     try {

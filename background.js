@@ -270,38 +270,46 @@ messenger.menus.onShown.addListener(async (info, tab) => {
 
 buildContextMenu();
 
-// Thunderbird 128's declarative `compose_scripts` in manifest.json is
-// unreliable for newly opened compose windows — in practice it silently
-// no-ops often enough that `tabs.sendMessage` throws "Could not establish
-// connection" and cursor-mode insert degrades to the smart-insert fallback
-// (which itself has no anchor in a blank compose, so the template lands at
-// the end — exactly the v2.3.6 field bug). Don't depend on declarative
-// injection: inject explicitly both at add-on boot (for pre-existing
-// windows) AND whenever a new compose window is created. The
-// window.__templateWingCompose listener-swap in compose-script.js makes
-// re-injection idempotent.
+// Thunderbird MV2's official mechanism for compose scripts is the
+// `composeScripts.register()` runtime API, not the `compose_scripts`
+// manifest key. The manifest key produces "unexpected property" schema
+// warnings on TB 128 and — crucially — silently fails to inject in
+// many cases (verified in field logs for v2.3.6 and v2.3.7), which
+// caused cursor-mode inserts to degrade to the smart-insert fallback
+// and append at end of body.
+//
+// Programmatic registration persists for the add-on's lifetime and
+// auto-injects into every compose window that opens *after* the call.
+// For compose windows that were already open when the add-on loaded
+// (or that survived a reload), `register()` does not retroactively
+// inject — we still executeScript those explicitly. Repeated injection
+// is idempotent via the window.__templateWingCompose listener-swap
+// guard in compose-script.js.
 async function injectComposeScript(tabId) {
   try {
     await messenger.tabs.executeScript(tabId, {
       file: "/modules/compose-script.js",
     });
+    console.log("TemplateWing: compose-script injected into tab", tabId);
   } catch (err) {
-    // Tab may be mid-teardown, not yet ready, or already have the script
-    // via declarative injection — all benign.
-    console.debug(
-      "TemplateWing: compose-script inject skipped for tab",
+    console.warn(
+      "TemplateWing: compose-script inject failed for tab",
       tabId,
       err && err.message
     );
   }
 }
 
-messenger.tabs.onCreated.addListener((tab) => {
-  if (!tab || tab.type !== "messageCompose" || typeof tab.id !== "number") return;
-  injectComposeScript(tab.id);
-});
+(async function setupComposeScripts() {
+  try {
+    await messenger.composeScripts.register({
+      js: [{ file: "/modules/compose-script.js" }],
+    });
+    console.log("TemplateWing: composeScripts.register ok");
+  } catch (err) {
+    console.warn("TemplateWing: composeScripts.register failed", err);
+  }
 
-(async function backfillComposeScript() {
   try {
     const tabs = await messenger.tabs.query({ windowType: "messageCompose" });
     for (const tab of tabs) {
