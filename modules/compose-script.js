@@ -21,6 +21,29 @@
 (function () {
   "use strict";
 
+  // The declarative `compose_scripts` injection and the boot-time backfill
+  // in background.js can both target the same tab (e.g. a compose window
+  // that was already open at add-on load *and* stays open across a reload).
+  // Guard against double-registration of the onMessage listener, which
+  // would otherwise cause insertAtCursor to resolve twice.
+  //
+  // We can't use a plain boolean sentinel: the compose window's `window`
+  // object survives add-on reloads, so the property would stay `true` while
+  // the prior extension's listener has already died with its context. On
+  // reload the new script would bail out and never register — leaving the
+  // tab permanently unable to receive messages. Instead, we stash the
+  // currently-registered listener (and its API namespace) on the window so
+  // each new load can de-register the previous one before registering its
+  // own. removeListener on a dead listener is a safe no-op.
+  if (window.__templateWingCompose) {
+    try {
+      const prev = window.__templateWingCompose;
+      if (prev && prev.listener && prev.api) {
+        prev.api.runtime.onMessage.removeListener(prev.listener);
+      }
+    } catch (_) { /* ignore — prior listener may belong to an unloaded extension */ }
+  }
+
   const TAG = "TemplateWing[compose]";
   try {
     console.log(TAG, "loaded", {
@@ -112,19 +135,6 @@
     return lastNode;
   }
 
-  function insertTextAtRange(range, text) {
-    const lines = (text || "").split(/\r?\n/);
-    const frag = document.createDocumentFragment();
-    for (let i = 0; i < lines.length; i++) {
-      if (i > 0) frag.appendChild(document.createElement("br"));
-      if (lines[i]) frag.appendChild(document.createTextNode(lines[i]));
-    }
-    const lastNode = frag.lastChild;
-    range.deleteContents();
-    range.insertNode(frag);
-    return lastNode;
-  }
-
   function moveCaretAfter(node) {
     if (!node) return;
     const sel = document.getSelection();
@@ -167,10 +177,33 @@
       }
     } catch (_) { /* ignore */ }
 
+    // Plaintext compose uses Gecko's designMode editor (not a <textarea>),
+    // but the editor silently coerces/drops Range-API-inserted <br> nodes
+    // on the setComposeDetails round-trip. execCommand("insertText") is
+    // the documented, cooperating path: nsEditor honors it deterministically
+    // and leaves the caret in the correct post-insertion position, so we
+    // skip moveCaretAfter() for this branch. We deliberately do NOT call
+    // document.body.focus() here — focus() on a designMode body collapses
+    // the Selection to (body, 0), undoing the snapshot we just restored
+    // above. execCommand operates on the document's current Selection
+    // regardless of focus state.
+    if (message.isPlainText) {
+      try {
+        const ok = document.execCommand("insertText", false, message.text || "");
+        if (ok) {
+          try { console.log(TAG, "insert ok (execCommand insertText)"); } catch (_) {}
+          return { ok: true };
+        }
+        try { console.warn(TAG, "execCommand insertText returned false"); } catch (_) {}
+        return { ok: false, error: "execCommand-failed" };
+      } catch (err) {
+        try { console.error(TAG, "execCommand insertText threw", err); } catch (_) {}
+        return { ok: false, error: "execCommand-failed" };
+      }
+    }
+
     try {
-      const lastNode = message.isPlainText
-        ? insertTextAtRange(range, message.text)
-        : insertHtmlAtRange(range, message.html);
+      const lastNode = insertHtmlAtRange(range, message.html);
       moveCaretAfter(lastNode);
       try { console.log(TAG, "insert ok"); } catch (_) {}
       return { ok: true };
@@ -181,7 +214,7 @@
   }
 
   const api = typeof messenger !== "undefined" ? messenger : browser;
-  api.runtime.onMessage.addListener((message) => {
+  const onMessageListener = (message) => {
     if (!message || !message.action) return;
 
     if (message.action === "templatewing:insertAtCursor") {
@@ -199,5 +232,7 @@
         readyState: document.readyState,
       });
     }
-  });
+  };
+  api.runtime.onMessage.addListener(onMessageListener);
+  window.__templateWingCompose = { listener: onMessageListener, api };
 })();

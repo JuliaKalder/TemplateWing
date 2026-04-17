@@ -198,18 +198,24 @@ export async function insertTemplateIntoTab(tabId, template) {
       if (response && response.ok) {
         insertedAtCursor = true;
       } else {
+        // Script ran but refused to insert (no usable range, editor
+        // rejected execCommand, DOM exception, etc). `response.error`
+        // carries the specific code from compose-script.js.
+        const code = (response && response.error) || "unknown";
         console.warn(
-          "TemplateWing: cursor insertion failed, falling back to append",
-          response && response.error
+          `TemplateWing: compose-script returned ${code} — falling back to append`
         );
       }
     } catch (err) {
-      // Compose script not loaded yet (e.g. old compose window opened before
-      // add-on upgrade). Fall back to append so the existing body and
-      // signature stay intact above the inserted template.
+      // tabs.sendMessage could not reach a listener in this tab. This is
+      // the structural "script not injected" case: declarative
+      // compose_scripts only run in windows opened after the add-on loads,
+      // so a pre-existing compose window has no listener until the
+      // background-page backfill runs. Fall back to append so the existing
+      // body and signature stay intact above the inserted template.
       console.warn(
-        "TemplateWing: compose script unavailable, falling back to append",
-        err
+        "TemplateWing: compose-script not injected in this tab — falling back to append",
+        err && err.message ? err.message : err
       );
     }
 

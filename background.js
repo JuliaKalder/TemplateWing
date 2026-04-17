@@ -269,3 +269,36 @@ messenger.menus.onShown.addListener(async (info, tab) => {
 });
 
 buildContextMenu();
+
+// Declarative `compose_scripts` in manifest.json only inject into compose
+// windows opened *after* the add-on loads. Windows opened earlier (or that
+// survived a reload) have no listener, so `tabs.sendMessage` throws
+// "Could not establish connection" and cursor-mode insert falls back to
+// append. Backfill the script into every already-open compose tab once at
+// startup; idempotency is enforced by the window.__templateWingCompose
+// listener-swap guard in compose-script.js. We don't hook tabs.onCreated /
+// windows.onCreated because the declarative injection already handles
+// future windows — this is purely a catch-up for existing ones.
+(async function backfillComposeScript() {
+  try {
+    const tabs = await messenger.tabs.query({ windowType: "messageCompose" });
+    for (const tab of tabs) {
+      if (!tab || typeof tab.id !== "number") continue;
+      try {
+        await messenger.tabs.executeScript(tab.id, {
+          file: "/modules/compose-script.js",
+        });
+      } catch (err) {
+        // Tab may be mid-teardown, not yet ready, or already have the
+        // script via declarative injection — all benign.
+        console.debug(
+          "TemplateWing: compose-script backfill skipped for tab",
+          tab.id,
+          err && err.message
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("TemplateWing: compose-script backfill query failed", err);
+  }
+})();
