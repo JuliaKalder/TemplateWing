@@ -52,3 +52,4 @@ cd TemplateWing && zip -r ../templatewing.xpi * -x ".*"
 - Use `messenger.*` API (Thunderbird's namespace), not `browser.*` or `chrome.*`
 - No inline scripts or inline event handlers in HTML (CSP compliance)
 - Keep validation logic in `modules/validation.js` (pure functions, testable without messenger.*)
+
