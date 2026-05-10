@@ -882,10 +882,20 @@ await renderTemplateList();
 await populateCategoryFilter();
 
 messenger.storage.onChanged.addListener(async (changes, area) => {
-  if (area !== "local" || !changes._prefillTemplate || !changes._prefillTemplate.newValue) {
+  if (area !== "local") return;
+
+  if (changes._prefillTemplate && changes._prefillTemplate.newValue) {
+    await consumePrefillTemplate(changes._prefillTemplate.newValue);
     return;
   }
-  await consumePrefillTemplate(changes._prefillTemplate.newValue);
+
+  // Re-render the list when templates change from another surface (background
+  // trackUsage, popup insertion, etc.), but only when the list view is visible
+  // so we don't clobber in-progress edits.
+  if (changes.templates && !document.getElementById("view-list").hidden) {
+    await renderTemplateList();
+    await populateCategoryFilter();
+  }
 });
 
 // Check for pre-fill data from "Save as Template" context menu
