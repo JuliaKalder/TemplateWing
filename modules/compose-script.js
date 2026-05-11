@@ -38,8 +38,8 @@
   if (window.__templateWingCompose) {
     try {
       const prev = window.__templateWingCompose;
-      if (prev && prev.listener && prev.api) {
-        prev.api.runtime.onMessage.removeListener(prev.listener);
+      if (prev && prev.listener && prev.removeListener) {
+        prev.removeListener();
       }
     } catch (_) { /* ignore — prior listener may belong to an unloaded extension */ }
   }
@@ -267,5 +267,9 @@
     }
   };
   api.runtime.onMessage.addListener(onMessageListener);
-  window.__templateWingCompose = { listener: onMessageListener, api };
+  window.__templateWingCompose = {
+    listener: onMessageListener,
+    removeListener: () => api.runtime.onMessage.removeListener(onMessageListener),
+  };
 })();
+
