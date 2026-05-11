@@ -145,7 +145,9 @@ export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
  * Resolve nested template includes in text.
  * Syntax: {{template:Template Name}} or {{templateid:abc123}}
  * @param {string} text - Text containing template includes
- * @param {Set} visited - Set of visited template IDs to detect circular references
+ * @param {Set} visited - Set of visited template IDs to detect circular references.
+ *   Treated as immutable: a new Set copy is passed to each recursive call so the
+ *   caller's Set is never mutated and is never left dirty if recursion throws.
  * @param {Map} templatesById - Map of template ID to template object
  * @param {Map} templatesByName - Map of template name (lowercase) to template object
  * @returns {Promise<string>} Text with includes resolved
@@ -185,14 +187,12 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
       throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
     }
 
-    visited.add(nestedTemplate.id);
     const nestedContent = await resolveNestedTemplates(
       nestedTemplate.body || "",
-      visited,
+      new Set([...visited, nestedTemplate.id]),
       templatesById,
       templatesByName
     );
-    visited.delete(nestedTemplate.id);
 
     resolved = resolved.replace(fullMatch, nestedContent);
   }
