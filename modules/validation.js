@@ -69,6 +69,13 @@ export function analyseImport(importedTemplates, existingTemplates) {
       duplicates.set(key, t);
     }
     seenNames.set(key, t);
+    if (t.body != null && typeof t.body !== "string") { invalid++; continue; }
+    if (t.subject != null && typeof t.subject !== "string") { invalid++; continue; }
+    if (t.to != null && !Array.isArray(t.to)) { invalid++; continue; }
+    if (t.cc != null && !Array.isArray(t.cc)) { invalid++; continue; }
+    if (t.bcc != null && !Array.isArray(t.bcc)) { invalid++; continue; }
+    if (t.identities != null && !Array.isArray(t.identities)) { invalid++; continue; }
+    if (t.attachments != null && !Array.isArray(t.attachments)) { invalid++; continue; }
     valid.push(t);
   }
 
