@@ -176,12 +176,12 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
     }
 
     if (!nestedTemplate) {
-      console.warn(`TemplateWing: referenced template not found: ${identifier}`);
+      console.warn("TemplateWing: referenced template not found:", JSON.stringify(identifier));
       continue;
     }
 
     if (visited.has(nestedTemplate.id)) {
-      console.error(`TemplateWing: circular reference detected for template: ${nestedTemplate.name}`);
+      console.error("TemplateWing: circular reference detected for template:", JSON.stringify(nestedTemplate.name));
       throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
     }
 
@@ -355,7 +355,7 @@ export async function insertTemplateIntoTab(tabId, template) {
         const file = new File([bytes], att.name, { type: att.type });
         await messenger.compose.addAttachment(tabId, { file, name: att.name });
       } catch (err) {
-        console.error(`TemplateWing: failed to attach "${att.name}"`, err);
+        console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
         attachmentErrors.push(att.name);
       }
     }
