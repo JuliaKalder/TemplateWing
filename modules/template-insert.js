@@ -322,7 +322,11 @@ export async function insertTemplateIntoTab(tabId, template) {
     } else if (mode === "prepend") {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = body + (existing.body || "");
+    } else if (mode === "append") {
+      const existing = await messenger.compose.getComposeDetails(tabId);
+      details.body = (existing.body || "") + body;
     } else {
+      console.warn(`TemplateWing: unknown insertMode "${mode}", falling back to append`);
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
     }
