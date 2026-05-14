@@ -179,7 +179,14 @@ function filterTemplates() {
 
 async function populateCategoryFilter() {
   const filter = document.getElementById("category-filter");
-  const categories = await getCategories();
+  const currentIdentityId = await getCurrentIdentityId();
+  const allTemplates = await getTemplates();
+  const visibleTemplates = allTemplates.filter((t) => {
+    if (!t.identities || t.identities.length === 0) return true;
+    return t.identities.includes(currentIdentityId);
+  });
+  const categories = [...new Set(visibleTemplates.map((t) => t.category).filter(Boolean))].sort();
+
   const options = filter.querySelectorAll("option:not(:first-child)");
   options.forEach((opt) => opt.remove());
   for (const cat of categories) {
