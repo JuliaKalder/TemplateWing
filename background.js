@@ -147,6 +147,24 @@ function extractBody(part) {
   return null;
 }
 
+/**
+ * Sanitize email HTML before storing in _prefillTemplate to prevent XSS
+ * via inline event handlers (onerror, onload, etc.) when the content
+ * is later parsed by DOMParser and inserted into the contenteditable editor.
+ */
+function sanitizeEmailBodyForPrefill(html) {
+  const doc = new DOMParser().parseFromString(html || "", "text/html");
+  for (const el of doc.body.querySelectorAll("*")) {
+    // Remove all inline event handlers (onerror, onload, onclick, etc.)
+    for (const attr of [...el.attributes]) {
+      if (attr.name.toLowerCase().startsWith("on")) el.removeAttribute(attr.name);
+    }
+    // Remove dangerous elements entirely
+    if (["SCRIPT", "OBJECT", "EMBED", "IFRAME"].includes(el.tagName)) el.remove();
+  }
+  return doc.body.innerHTML;
+}
+
 messenger.menus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "templatewing-save-as-template") {
     const messages = info.selectedMessages && info.selectedMessages.messages;
@@ -159,7 +177,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
       const extracted = extractBody(full);
       if (extracted) {
         body = extracted.html
-          ? extracted.body
+          ? sanitizeEmailBodyForPrefill(extracted.body)
           : extracted.body.replace(/\n/g, "<br>");
       }
     } catch (e) {
