@@ -67,33 +67,45 @@ export function smartInsertPlaintext(existingBody, insertText) {
   return existingBody + insertText;
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Pure helper: substitute the supported variable tokens in `text`.
  * Does not touch messenger.* or Date; all values are provided by the caller.
  * @param {string} text
  * @param {object} vars - { date, time, datetime, year, weekday, senderName, senderEmail, accountName, accountEmail }
+ * @param {boolean} isHtml - When true, identity-derived values are HTML-entity-encoded before substitution.
  */
-export function applyVariables(text, vars) {
+export function applyVariables(text, vars, isHtml = false) {
   if (!text) return text;
+  const e = isHtml ? escapeHtml : (s) => String(s ?? "");
   return text
     .replace(/\{DATE\}/gi, vars.date)
     .replace(/\{TIME\}/gi, vars.time)
     .replace(/\{DATETIME\}/gi, vars.datetime)
     .replace(/\{YEAR\}/gi, String(vars.year))
     .replace(/\{WEEKDAY\}/gi, vars.weekday)
-    .replace(/\{SENDER_NAME\}/gi, vars.senderName)
-    .replace(/\{SENDER_EMAIL\}/gi, vars.senderEmail)
-    .replace(/\{ACCOUNT_NAME\}/gi, vars.accountName)
-    .replace(/\{ACCOUNT_EMAIL\}/gi, vars.accountEmail);
+    .replace(/\{SENDER_NAME\}/gi, e(vars.senderName))
+    .replace(/\{SENDER_EMAIL\}/gi, e(vars.senderEmail))
+    .replace(/\{ACCOUNT_NAME\}/gi, e(vars.accountName))
+    .replace(/\{ACCOUNT_EMAIL\}/gi, e(vars.accountEmail));
 }
 
 /**
  * Replace template variables in text.
  * @param {string} text - Text containing placeholders
  * @param {number} tabId - The compose tab ID (used to resolve sender identity)
+ * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
  * @returns {Promise<string>} Text with placeholders replaced
  */
-export async function replaceVariables(text, tabId) {
+export async function replaceVariables(text, tabId, isHtml = false) {
   if (!text) return text;
 
   const now = new Date();
@@ -136,7 +148,7 @@ export async function replaceVariables(text, tabId) {
     senderEmail,
     accountName,
     accountEmail,
-  });
+  }, isHtml);
 }
 
 export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
@@ -248,7 +260,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   // already typed stay intact (issue #33).
   let insertedAtCursor = false;
   if (resolvedBody && mode === "cursor") {
-    const body = await replaceVariables(resolvedBody, tabId);
+    const body = await replaceVariables(resolvedBody, tabId, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const isPlainText = !!existing.isPlainText;
     console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
@@ -316,7 +328,7 @@ export async function insertTemplateIntoTab(tabId, template) {
       );
     }
   } else if (resolvedBody) {
-    const body = await replaceVariables(resolvedBody, tabId);
+    const body = await replaceVariables(resolvedBody, tabId, true);
     if (mode === "replace") {
       details.body = body;
     } else if (mode === "prepend") {
