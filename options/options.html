@@ -105,8 +105,11 @@
             <input type="checkbox" id="paste-plain-toggle">
             <span data-i18n="optionsPastePlainText"></span>
           </label>
+          <span class="toolbar-sep"></span>
+          <button type="button" class="toolbar-btn" id="btn-html-toggle" title="Toggle HTML source view">HTML</button>
         </div>
         <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
+        <textarea id="editor-body-html" class="html-source-editor" hidden spellcheck="false"></textarea>
 
         <div class="nested-templates-insert">
           <label data-i18n="optionsLabelNestedTemplates"></label>

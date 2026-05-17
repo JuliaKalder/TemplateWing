@@ -16,6 +16,7 @@ import {
 let editingId = null;
 let pendingAttachments = [];
 let bodyEmptyAcknowledged = false;
+let htmlViewActive = false;
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
@@ -315,6 +316,7 @@ async function openEditor(id, prefill = null) {
   editingId = id || null;
   pendingAttachments = [];
   bodyEmptyAcknowledged = false;
+  resetHtmlView();
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
@@ -379,6 +381,7 @@ function closeEditor() {
   editingId = null;
   pendingAttachments = [];
   bodyEmptyAcknowledged = false;
+  resetHtmlView();
   document.getElementById("search-input").value = "";
   showView("list");
 }
@@ -390,6 +393,7 @@ async function duplicateTemplate(id) {
   editingId = null;
   pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
   bodyEmptyAcknowledged = false;
+  resetHtmlView();
 
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
@@ -474,6 +478,57 @@ function clearEditorErrors() {
   }
 }
 
+function switchToHtmlView() {
+  const bodyEditor = document.getElementById("editor-body");
+  const htmlTextarea = document.getElementById("editor-body-html");
+  const toggleBtn = document.getElementById("btn-html-toggle");
+  const toolbar = document.querySelector(".editor-toolbar");
+
+  htmlTextarea.value = bodyEditor.innerHTML;
+  bodyEditor.hidden = true;
+  htmlTextarea.hidden = false;
+  htmlViewActive = true;
+  toggleBtn.classList.add("active");
+
+  // Disable formatting toolbar buttons while in HTML view
+  for (const btn of toolbar.querySelectorAll(".toolbar-btn:not(#btn-html-toggle)")) {
+    btn.disabled = true;
+  }
+  toolbar.querySelector(".toolbar-select")?.setAttribute("disabled", "");
+  toolbar.querySelector("#paste-plain-toggle")?.setAttribute("disabled", "");
+}
+
+function switchToVisualView() {
+  const bodyEditor = document.getElementById("editor-body");
+  const htmlTextarea = document.getElementById("editor-body-html");
+  const toggleBtn = document.getElementById("btn-html-toggle");
+  const toolbar = document.querySelector(".editor-toolbar");
+
+  const parsed = new DOMParser().parseFromString(htmlTextarea.value, "text/html");
+  bodyEditor.replaceChildren(...document.adoptNode(parsed.body).childNodes);
+  htmlTextarea.hidden = true;
+  bodyEditor.hidden = false;
+  htmlViewActive = false;
+  toggleBtn.classList.remove("active");
+
+  // Re-enable formatting toolbar buttons
+  for (const btn of toolbar.querySelectorAll(".toolbar-btn:not(#btn-html-toggle)")) {
+    btn.disabled = false;
+  }
+  toolbar.querySelector(".toolbar-select")?.removeAttribute("disabled");
+  toolbar.querySelector("#paste-plain-toggle")?.removeAttribute("disabled");
+}
+
+function resetHtmlView() {
+  if (htmlViewActive) {
+    switchToVisualView();
+  }
+  htmlViewActive = false;
+  document.getElementById("editor-body").hidden = false;
+  document.getElementById("editor-body-html").hidden = true;
+  document.getElementById("btn-html-toggle").classList.remove("active");
+}
+
 async function handleSave() {
   const nameInput = document.getElementById("editor-name");
   const name = nameInput.value.trim();
@@ -482,7 +537,9 @@ async function handleSave() {
   const toInput = document.getElementById("editor-to");
   const ccInput = document.getElementById("editor-cc");
   const bccInput = document.getElementById("editor-bcc");
-  const body = document.getElementById("editor-body").innerHTML;
+  const body = htmlViewActive
+    ? document.getElementById("editor-body-html").value
+    : document.getElementById("editor-body").innerHTML;
 
   clearEditorErrors();
 
@@ -540,7 +597,10 @@ async function handleSave() {
 
   // Block save on empty body in replace mode, unless user has already confirmed.
   if (insertMode === "replace") {
-    const bodyText = document.getElementById("editor-body").innerText.trim();
+    const rawBody = htmlViewActive
+      ? document.getElementById("editor-body-html").value
+      : document.getElementById("editor-body").innerHTML;
+    const bodyText = new DOMParser().parseFromString(rawBody, "text/html").body.innerText.trim();
     if (!bodyText && !bodyEmptyAcknowledged) {
       const bodyWarning = document.getElementById("editor-body-warning");
       bodyWarning.textContent = messenger.i18n.getMessage("validationBodyEmptyReplace");
@@ -799,6 +859,15 @@ document.getElementById("file-input").addEventListener("change", (e) => {
   if (e.target.files.length > 0) {
     addFiles(e.target.files);
     e.target.value = "";
+  }
+});
+
+// HTML source toggle
+document.getElementById("btn-html-toggle").addEventListener("click", () => {
+  if (htmlViewActive) {
+    switchToVisualView();
+  } else {
+    switchToHtmlView();
   }
 });
 
