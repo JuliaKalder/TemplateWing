@@ -167,12 +167,7 @@ export async function saveTemplate(template) {
 
 export async function getCategories() {
   const templates = await getTemplates();
-  const categories = templates
-    .map((t) => t.category)
-    .filter(Boolean)
-    .filter((cat, idx, arr) => arr.indexOf(cat) === idx)
-    .sort();
-  return categories;
+  return [...new Set(templates.map((t) => t.category).filter(Boolean))].sort();
 }
 
 export async function deleteTemplate(id) {

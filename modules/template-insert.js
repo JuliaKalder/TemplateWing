@@ -51,20 +51,22 @@ export function smartInsertPlaintext(existingBody, insertText) {
   if (!existingBody) return insertText || "";
   if (!insertText) return existingBody;
 
+  // Skip past the captured \n prefix to get the real start of the delimiter.
+  function matchStart(m) {
+    return m.index + (m[1] ? 1 : 0);
+  }
+
   // Match the standalone sig delimiter line.
   const sigMatch = existingBody.match(/(^|\n)-- \n/);
   const quoteMatch = existingBody.match(/(^|\n)> /);
 
   let idx = -1;
   if (sigMatch && quoteMatch) {
-    idx = Math.min(
-      sigMatch.index + (sigMatch[1] ? 1 : 0),
-      quoteMatch.index + (quoteMatch[1] ? 1 : 0)
-    );
+    idx = Math.min(matchStart(sigMatch), matchStart(quoteMatch));
   } else if (sigMatch) {
-    idx = sigMatch.index + (sigMatch[1] ? 1 : 0);
+    idx = matchStart(sigMatch);
   } else if (quoteMatch) {
-    idx = quoteMatch.index + (quoteMatch[1] ? 1 : 0);
+    idx = matchStart(quoteMatch);
   }
 
   if (idx >= 0) {

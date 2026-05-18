@@ -4,6 +4,7 @@ import {
   saveTemplate,
   deleteTemplate,
   getCategories,
+  generateId,
   consumePrefillTemplate,
   PREFILL_KEY,
 } from "../modules/template-store.js";
@@ -148,9 +149,7 @@ async function populateCategorySuggestions() {
   }
 }
 
-function generateAttId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-}
+const generateAttId = generateId;
 
 async function loadIdentities() {
   const select = document.getElementById("editor-identities");
@@ -278,8 +277,13 @@ function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = reader.result.split(",")[1];
-      resolve(base64);
+      const result = reader.result || "";
+      const commaIdx = result.indexOf(",");
+      if (commaIdx === -1) {
+        reject(new Error("Malformed data URL"));
+        return;
+      }
+      resolve(result.slice(commaIdx + 1));
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -732,7 +736,6 @@ function showImportDialog(analysis, validTemplates) {
   // Reset radio to default
   dialog.querySelector('input[value="append"]').checked = true;
 
-  localize();
   dialog.hidden = false;
 }
 
@@ -768,7 +771,8 @@ async function executeImport() {
   if (!pendingImportData) return;
 
   const { analysis, validTemplates } = pendingImportData;
-  const mode = document.querySelector('input[name="import-mode"]:checked').value;
+  const checkedRadio = document.querySelector('input[name="import-mode"]:checked');
+  const mode = checkedRadio ? checkedRadio.value : "append";
   const existingTemplates = await getTemplates();
   const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 
@@ -929,7 +933,7 @@ document.getElementById("format-block").addEventListener("change", (e) => {
   e.target.value = "p";
 });
 
-// ---- v2.2: Toolbar active-state feedback ----
+// ---- Toolbar active-state feedback ----
 
 function updateToolbarState() {
   const cmds = ["bold", "italic", "underline"];
@@ -955,7 +959,7 @@ document.getElementById("editor-body").addEventListener("input", () => {
   if (warning && !warning.hidden) warning.hidden = true;
 });
 
-// ---- v2.2: Paste sanitization mode ----
+// ---- Paste sanitization mode ----
 
 document.getElementById("editor-body").addEventListener("paste", (e) => {
   const toggle = document.getElementById("paste-plain-toggle");
@@ -966,7 +970,7 @@ document.getElementById("editor-body").addEventListener("paste", (e) => {
   }
 });
 
-// ---- v2.2: Variable picker (click-to-insert) ----
+// ---- Variable picker (click-to-insert) ----
 
 for (const chip of document.querySelectorAll(".variable-chip[data-var]")) {
   chip.addEventListener("click", (e) => {

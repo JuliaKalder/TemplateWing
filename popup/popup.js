@@ -41,7 +41,6 @@ async function renderTemplateList() {
 
   const templates = allTemplates
     .filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
-    .slice()
     .sort((a, b) => {
       if (!a.lastUsedAt && !b.lastUsedAt) return 0;
       if (!a.lastUsedAt) return 1;

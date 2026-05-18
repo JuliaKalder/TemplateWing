@@ -3,3 +3,10 @@ web-ext-artifacts/
 node_modules/
 .DS_Store
 Thumbs.db
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+.web-ext-config.js
+.claude/
