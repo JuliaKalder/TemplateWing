@@ -1,3 +1,5 @@
+import { getTemplates } from "./template-store.js";
+
 export const WEEKDAY_NAMES = Object.freeze([
   "Sunday",
   "Monday",
@@ -289,7 +291,6 @@ export async function insertTemplateIntoTab(tabId, template) {
   let resolvedBody = template.body;
   if (template.body && new RegExp(TEMPLATE_INCLUDE_REGEX.source, "i").test(template.body)) {
     try {
-      const { getTemplates } = await import("./template-store.js");
       const allTemplates = await getTemplates();
       const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
       const templatesByName = new Map(allTemplates.map((t) => [(t.name || "").toLowerCase(), t]));

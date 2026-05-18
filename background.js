@@ -277,11 +277,16 @@ messenger.runtime.onMessage.addListener(async (message, sender) => {
     const POPUP_TEARDOWN_DELAY_MS = 150;
     await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
     try {
+      // Validate tabId is a compose window before acting on it.
+      if (typeof message.tabId !== "number") return;
+      const tabDetails = await messenger.compose.getComposeDetails(message.tabId);
+      if (!tabDetails) return;
+
       const template = await getTemplate(message.templateId);
       if (!template) return;
 
       // Re-validate identity at the enforcement point, not just in the popup UI.
-      const currentIdentityId = await getCurrentIdentityId(message.tabId);
+      const currentIdentityId = tabDetails.identityId || null;
       if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
         console.warn("TemplateWing: templatewing:insertTemplate — identity not allowed");
         return;

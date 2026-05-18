@@ -346,7 +346,8 @@ async function openEditor(id, prefill = null) {
       insertModeSelect.value = template.insertMode || "append";
       bodyEditor.replaceChildren();
       if (template.body) {
-        const parsed = new DOMParser().parseFromString(template.body, "text/html");
+        const safeBody = sanitizeTemplateBody(template.body);
+        const parsed = new DOMParser().parseFromString(safeBody, "text/html");
         bodyEditor.append(
           ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
         );
@@ -368,7 +369,8 @@ async function openEditor(id, prefill = null) {
     insertModeSelect.value = "append";
     bodyEditor.replaceChildren();
     if (prefill && prefill.body) {
-      const parsed = new DOMParser().parseFromString(prefill.body, "text/html");
+      const safeBody = sanitizeTemplateBody(prefill.body);
+      const parsed = new DOMParser().parseFromString(safeBody, "text/html");
       bodyEditor.append(
         ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
       );
@@ -426,7 +428,8 @@ async function duplicateTemplate(id) {
 
   bodyEditor.replaceChildren();
   if (template.body) {
-    const parsed = new DOMParser().parseFromString(template.body, "text/html");
+    const safeBody = sanitizeTemplateBody(template.body);
+    const parsed = new DOMParser().parseFromString(safeBody, "text/html");
     bodyEditor.append(
       ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
     );
@@ -513,7 +516,8 @@ function switchToVisualView() {
   const toggleBtn = document.getElementById("btn-html-toggle");
   const toolbar = document.querySelector(".editor-toolbar");
 
-  const parsed = new DOMParser().parseFromString(htmlTextarea.value, "text/html");
+  const safeHtml = sanitizeTemplateBody(htmlTextarea.value);
+  const parsed = new DOMParser().parseFromString(safeHtml, "text/html");
   bodyEditor.replaceChildren(
     ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
   );

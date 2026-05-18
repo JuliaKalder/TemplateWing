@@ -31,6 +31,10 @@ function localize() {
     const key = el.getAttribute("data-i18n-placeholder");
     el.placeholder = messenger.i18n.getMessage(key);
   }
+  for (const el of document.querySelectorAll("[data-i18n-title]")) {
+    const key = el.getAttribute("data-i18n-title");
+    el.title = messenger.i18n.getMessage(key);
+  }
 }
 
 async function renderTemplateList() {
