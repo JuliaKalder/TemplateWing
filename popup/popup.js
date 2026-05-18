@@ -156,7 +156,16 @@ async function insertTemplate(id) {
     await insertTemplateIntoTab(tabs[0].id, template);
   } catch (err) {
     console.error("TemplateWing: insert failed", err);
-    alert(err.message);
+    try {
+      const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
+      let message;
+      if (err && err.code === "ATTACHMENT_FAILED" && Array.isArray(err.failedNames)) {
+        message = messenger.i18n.getMessage("notificationAttachmentFailed", err.failedNames.join(", "));
+      } else {
+        message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
+      }
+      await messenger.notifications.create({ type: "basic", iconUrl: messenger.runtime.getURL("images/icon-64.png"), title, message });
+    } catch (_) { /* ignore notification failure */ }
     return;
   }
   await trackUsage(id);
