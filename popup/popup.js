@@ -213,4 +213,5 @@ document.getElementById("btn-manage").addEventListener("click", async () => {
 });
 
 localize();
-renderTemplateList().then(() => populateCategoryFilter());
+await renderTemplateList();
+await populateCategoryFilter();
