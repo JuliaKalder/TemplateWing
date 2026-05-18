@@ -110,7 +110,8 @@ async function migrateIfNeeded() {
 // ---- Public API ----
 
 export async function getTemplates() {
-  return loadTemplates();
+  const templates = await loadTemplates();
+  return [...templates];
 }
 
 export async function getTemplate(id) {
