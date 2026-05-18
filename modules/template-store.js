@@ -44,41 +44,23 @@ if (typeof messenger !== "undefined" && messenger.storage) {
 // Migration 0 → 1: backfill name, category, to/cc/bcc, identities, insertMode, attachments
 export async function migrateV0toV1(templates) {
   let changed = false;
-  for (const t of templates) {
-    if (typeof t.name !== "string" || !t.name.trim()) {
-      t.name = "(unnamed)";
+  const migrated = templates.map((t) => {
+    const updates = {};
+    if (typeof t.name !== "string" || !t.name.trim()) updates.name = "(unnamed)";
+    if (!t.category && t.category !== "") updates.category = "";
+    if (!Array.isArray(t.to)) updates.to = [];
+    if (!Array.isArray(t.cc)) updates.cc = [];
+    if (!Array.isArray(t.bcc)) updates.bcc = [];
+    if (!Array.isArray(t.identities)) updates.identities = [];
+    if (!t.insertMode) updates.insertMode = "append";
+    if (!Array.isArray(t.attachments)) updates.attachments = [];
+    if (Object.keys(updates).length > 0) {
       changed = true;
+      return { ...t, ...updates };
     }
-    if (!t.category && t.category !== "") {
-      t.category = "";
-      changed = true;
-    }
-    if (!Array.isArray(t.to)) {
-      t.to = [];
-      changed = true;
-    }
-    if (!Array.isArray(t.cc)) {
-      t.cc = [];
-      changed = true;
-    }
-    if (!Array.isArray(t.bcc)) {
-      t.bcc = [];
-      changed = true;
-    }
-    if (!Array.isArray(t.identities)) {
-      t.identities = [];
-      changed = true;
-    }
-    if (!t.insertMode) {
-      t.insertMode = "append";
-      changed = true;
-    }
-    if (!Array.isArray(t.attachments)) {
-      t.attachments = [];
-      changed = true;
-    }
-  }
-  return { templates, changed };
+    return t;
+  });
+  return { templates: migrated, changed };
 }
 
 const migrations = [migrateV0toV1];

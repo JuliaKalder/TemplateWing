@@ -693,6 +693,14 @@ function showImportFeedback(message, isError) {
   }, FEEDBACK_DISMISS_MS);
 }
 
+function showImportError(message) {
+  showImportFeedback(message, true);
+}
+
+function showImportSuccess(message) {
+  showImportFeedback(message, false);
+}
+
 // ---- Import guardrails ----
 
 let pendingImportData = null;
@@ -825,13 +833,12 @@ async function executeImport() {
 
   hideImportDialog();
 
-  showImportFeedback(
+  showImportSuccess(
     messenger.i18n.getMessage("importResultSummary", [
       String(added),
       String(skipped),
       String(replaced),
-    ]),
-    false
+    ])
   );
   await renderTemplateList();
   await populateCategoryFilter();
@@ -841,7 +848,7 @@ const IMPORT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 async function handleImport(file) {
   if (file.size > IMPORT_MAX_FILE_SIZE) {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
   let parsed;
@@ -849,12 +856,12 @@ async function handleImport(file) {
     const text = await file.text();
     parsed = JSON.parse(text);
   } catch {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
   if (!parsed || !Array.isArray(parsed.templates)) {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
@@ -862,7 +869,7 @@ async function handleImport(file) {
   const analysis = analyseImport(parsed.templates, existingTemplates);
 
   if (analysis.valid.length === 0) {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
