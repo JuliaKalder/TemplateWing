@@ -6,6 +6,7 @@ import {
   isTemplateAllowedForIdentity,
 } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
+import { filterTemplateList } from "../modules/ui-helpers.js";
 
 async function getCurrentIdentityId() {
   try {
@@ -189,15 +190,7 @@ async function insertTemplate(id) {
 }
 
 function filterTemplates() {
-  const query = document.getElementById("search-input").value.toLowerCase().trim();
-  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
-  const items = document.querySelectorAll("#template-list .template-item");
-  for (const item of items) {
-    const matchesSearch =
-      !query || item.dataset.name.includes(query) || item.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
-    item.hidden = !(matchesSearch && matchesCategory);
-  }
+  filterTemplateList("#template-list .template-item");
 }
 
 async function populateCategoryFilter() {
