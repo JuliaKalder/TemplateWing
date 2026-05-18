@@ -196,6 +196,13 @@ export async function trackUsage(id) {
   await persistTemplates(updatedTemplates);
 }
 
+// ---- Identity filtering ----
+
+export function isTemplateAllowedForIdentity(template, identityId) {
+  if (!template.identities || template.identities.length === 0) return true;
+  return template.identities.includes(identityId);
+}
+
 // ---- Prefill template (cross-page channel) ----
 
 const PREFILL_KEY = "_prefillTemplate";

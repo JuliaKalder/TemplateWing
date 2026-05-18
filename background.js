@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate, trackUsage, setPrefillTemplate } from "./modules/template-store.js";
+import { getTemplates, getTemplate, trackUsage, setPrefillTemplate, isTemplateAllowedForIdentity } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
 async function notifyInsertFailure(err) {
@@ -32,11 +32,6 @@ async function getCurrentIdentityId(tabId) {
     console.warn("TemplateWing: could not get current identity", err);
     return null;
   }
-}
-
-function isTemplateAllowedForIdentity(template, identityId) {
-  if (!template.identities || template.identities.length === 0) return true;
-  return template.identities.includes(identityId);
 }
 
 function getSortedTemplates(templates) {

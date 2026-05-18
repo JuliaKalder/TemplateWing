@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate, getCategories, trackUsage } from "../modules/template-store.js";
+import { getTemplates, getTemplate, getCategories, trackUsage, isTemplateAllowedForIdentity } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 async function getCurrentIdentityId() {
@@ -34,10 +34,7 @@ async function renderTemplateList() {
   const currentIdentityId = await getCurrentIdentityId();
 
   const templates = allTemplates
-    .filter((t) => {
-      if (!t.identities || t.identities.length === 0) return true;
-      return t.identities.includes(currentIdentityId);
-    })
+    .filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
     .slice()
     .sort((a, b) => {
       if (!a.lastUsedAt && !b.lastUsedAt) return 0;
@@ -131,7 +128,7 @@ async function insertTemplate(id) {
   });
   if (tabs.length === 0) return;
   const currentIdentityId = await getCurrentIdentityId();
-  if (template.identities && template.identities.length > 0 && !template.identities.includes(currentIdentityId)) {
+  if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
     return;
   }
 
@@ -190,10 +187,7 @@ async function populateCategoryFilter() {
   const filter = document.getElementById("category-filter");
   const currentIdentityId = await getCurrentIdentityId();
   const allTemplates = await getTemplates();
-  const visibleTemplates = allTemplates.filter((t) => {
-    if (!t.identities || t.identities.length === 0) return true;
-    return t.identities.includes(currentIdentityId);
-  });
+  const visibleTemplates = allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId));
   const categories = [...new Set(visibleTemplates.map((t) => t.category).filter(Boolean))].sort();
 
   const options = filter.querySelectorAll("option:not(:first-child)");
