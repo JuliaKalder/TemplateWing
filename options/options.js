@@ -7,6 +7,7 @@ import {
   generateId,
   consumePrefillTemplate,
   PREFILL_KEY,
+  EXPORT_FORMAT_VERSION,
 } from "../modules/template-store.js";
 import {
   validateRecipients,
@@ -14,6 +15,7 @@ import {
   analyseImport,
   ATTACHMENT_WARN_SIZE,
   ATTACHMENT_TOTAL_WARN_SIZE,
+  parseRecipients,
 } from "../modules/validation.js";
 
 let editingId = null;
@@ -447,15 +449,6 @@ async function duplicateTemplate(id) {
   nameInput.select();
 }
 
-function parseRecipients(value) {
-  return value.trim()
-    ? value
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-}
-
 function showEditorError(message) {
   const errorEl = document.getElementById("editor-error");
   errorEl.textContent = message;
@@ -668,8 +661,7 @@ async function handleExport() {
     })
   );
   const payload = {
-    // Export format version (not the extension version); import ignores this field.
-    version: "2.2",
+    version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     templates: safeTemplates,
   };

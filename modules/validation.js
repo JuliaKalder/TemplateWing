@@ -110,3 +110,15 @@ export function analyseImport(importedTemplates, existingTemplates) {
 
   return { valid, invalid, duplicates };
 }
+
+/**
+ * Parse a comma-separated recipient string into an array of trimmed, non-empty entries.
+ */
+export function parseRecipients(value) {
+  return value && value.trim()
+    ? value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+}

@@ -4,6 +4,7 @@ import {
   trackUsage,
   setPrefillTemplate,
   isTemplateAllowedForIdentity,
+  getSortedTemplates,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
@@ -38,15 +39,6 @@ async function getCurrentIdentityId(tabId) {
     console.warn("TemplateWing: could not get current identity", err);
     return null;
   }
-}
-
-function getSortedTemplates(templates) {
-  return [...templates].sort((a, b) => {
-    const catA = (a.category || "").toLowerCase();
-    const catB = (b.category || "").toLowerCase();
-    if (catA !== catB) return catA.localeCompare(catB);
-    return (a.name || "").localeCompare(b.name || "");
-  });
 }
 
 function getCategoryMenuId(category, index) {

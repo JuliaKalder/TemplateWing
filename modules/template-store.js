@@ -1,6 +1,7 @@
 export const STORAGE_KEY = "templates";
 export const SCHEMA_KEY = "schemaVersion";
 export const CURRENT_SCHEMA = 1;
+export const EXPORT_FORMAT_VERSION = "2.2";
 
 export function generateId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -201,6 +202,17 @@ export async function consumePrefillTemplate() {
 }
 
 export { PREFILL_KEY };
+
+// ---- Sorting ----
+
+export function getSortedTemplates(templates) {
+  return [...templates].sort((a, b) => {
+    const catA = (a.category || "").toLowerCase();
+    const catB = (b.category || "").toLowerCase();
+    if (catA !== catB) return catA.localeCompare(catB);
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
 
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub
 // are not poisoned by state from earlier tests.
