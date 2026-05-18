@@ -1,4 +1,4 @@
-import { getTemplates } from "./template-store.js";
+import { getTemplates, INSERT_MODES } from "./template-store.js";
 
 export const WEEKDAY_NAMES = Object.freeze([
   "Sunday",
@@ -285,7 +285,7 @@ export function htmlToPlainText(html) {
  * @param {object} template - Template object from storage
  */
 export async function insertTemplateIntoTab(tabId, template) {
-  const mode = template.insertMode || "append";
+  const mode = template.insertMode || INSERT_MODES.APPEND;
   const details = {};
 
   let resolvedBody = template.body;
@@ -311,7 +311,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   // rewriting the whole body, so the signature and any text the user has
   // already typed stay intact.
   let insertedAtCursor = false;
-  if (resolvedBody && mode === "cursor") {
+  if (resolvedBody && mode === INSERT_MODES.CURSOR) {
     const body = await replaceVariables(resolvedBody, tabId, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const isPlainText = !!existing.isPlainText;
@@ -378,12 +378,12 @@ export async function insertTemplateIntoTab(tabId, template) {
     }
   } else if (resolvedBody) {
     const body = await replaceVariables(resolvedBody, tabId, true);
-    if (mode === "replace") {
+    if (mode === INSERT_MODES.REPLACE) {
       details.body = body;
-    } else if (mode === "prepend") {
+    } else if (mode === INSERT_MODES.PREPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = body + (existing.body || "");
-    } else if (mode === "append") {
+    } else if (mode === INSERT_MODES.APPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
     } else {

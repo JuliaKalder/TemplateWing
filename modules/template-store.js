@@ -3,6 +3,14 @@ export const SCHEMA_KEY = "schemaVersion";
 export const CURRENT_SCHEMA = 1;
 export const EXPORT_FORMAT_VERSION = "2.2";
 
+/** Shared insert mode constants used across popup, options, and template-insert. */
+export const INSERT_MODES = Object.freeze({
+  APPEND: "append",
+  PREPEND: "prepend",
+  REPLACE: "replace",
+  CURSOR: "cursor",
+});
+
 /** Generate a unique ID for a template or attachment. */
 export function generateId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
