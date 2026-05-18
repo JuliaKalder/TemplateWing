@@ -61,7 +61,7 @@ async function renderTemplateList() {
     const template = templates[i];
     const item = document.createElement("div");
     item.className = "template-item";
-    item.dataset.name = template.name.toLowerCase();
+    item.dataset.name = (template.name || "").toLowerCase();
     item.dataset.subject = (template.subject || "").toLowerCase();
     item.dataset.category = (template.category || "").toLowerCase();
 

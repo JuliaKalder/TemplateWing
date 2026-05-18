@@ -52,7 +52,7 @@ export const ATTACHMENT_TOTAL_WARN_SIZE = 10 * 1024 * 1024;
  */
 export function analyseImport(importedTemplates, existingTemplates) {
   const seenNames = new Map(
-    existingTemplates.map((t) => [t.name.toLowerCase(), t])
+    existingTemplates.map((t) => [(t.name || "").toLowerCase(), t])
   );
 
   const valid = [];

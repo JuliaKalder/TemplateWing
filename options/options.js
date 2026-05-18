@@ -57,7 +57,7 @@ async function renderTemplateList() {
   for (const template of templates) {
     const card = document.createElement("div");
     card.className = "template-card";
-    card.dataset.name = template.name.toLowerCase();
+    card.dataset.name = (template.name || "").toLowerCase();
     card.dataset.subject = (template.subject || "").toLowerCase();
     card.dataset.category = (template.category || "").toLowerCase();
 
@@ -725,6 +725,18 @@ async function checkForPrefillTemplate() {
   await consumePrefillTemplate(prefillResult._prefillTemplate);
 }
 
+function sanitizeTemplateBody(html) {
+  if (!html) return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const el of doc.body.querySelectorAll("*")) {
+    for (const attr of [...el.attributes]) {
+      if (attr.name.toLowerCase().startsWith("on")) el.removeAttribute(attr.name);
+    }
+    if (["SCRIPT", "OBJECT", "EMBED", "IFRAME"].includes(el.tagName)) el.remove();
+  }
+  return doc.body.innerHTML;
+}
+
 async function executeImport() {
   if (!pendingImportData) return;
 
@@ -741,6 +753,7 @@ async function executeImport() {
 
   for (const t of validTemplates) {
     const { id, createdAt, updatedAt, usageCount, lastUsedAt, ...rest } = t;
+    rest.body = sanitizeTemplateBody(rest.body);
     const nameKey = t.name.trim().toLowerCase();
     const existing = existingByName.get(nameKey);
 

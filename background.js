@@ -44,7 +44,7 @@ function getSortedTemplates(templates) {
     const catA = (a.category || "").toLowerCase();
     const catB = (b.category || "").toLowerCase();
     if (catA !== catB) return catA.localeCompare(catB);
-    return a.name.localeCompare(b.name);
+    return (a.name || "").localeCompare(b.name || "");
   });
 }
 

@@ -42,6 +42,7 @@ if (typeof messenger !== "undefined" && messenger.storage) {
 export async function migrateV0toV1(templates) {
   let changed = false;
   for (const t of templates) {
+    if (typeof t.name !== "string" || !t.name.trim()) { t.name = "(unnamed)"; changed = true; }
     if (!t.category && t.category !== "") { t.category = ""; changed = true; }
     if (!Array.isArray(t.to)) { t.to = []; changed = true; }
     if (!Array.isArray(t.cc)) { t.cc = []; changed = true; }
@@ -94,6 +95,9 @@ export async function getTemplate(id) {
 }
 
 export async function saveTemplate(template) {
+  if (!template || typeof template.name !== "string" || !template.name.trim()) {
+    throw new TypeError("template.name must be a non-empty string");
+  }
   const templates = await getTemplates();
   const now = new Date().toISOString();
 
