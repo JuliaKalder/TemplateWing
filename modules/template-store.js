@@ -219,6 +219,29 @@ export async function consumePrefillTemplate() {
 
 export { PREFILL_KEY };
 
+// ---- Export ----
+
+/** Serialise all templates into an export payload string. Strips internal-only fields. */
+export async function exportTemplates() {
+  const templates = await getTemplates();
+  const safeTemplates = templates.map(
+    ({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
+      ...t,
+      attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
+    })
+  );
+  return JSON.stringify(
+    {
+      version: EXPORT_FORMAT_VERSION,
+      schemaVersion: CURRENT_SCHEMA,
+      exportedAt: new Date().toISOString(),
+      templates: safeTemplates,
+    },
+    null,
+    2
+  );
+}
+
 // ---- Sorting ----
 
 /** Sort templates by category then by name (case-insensitive). */
