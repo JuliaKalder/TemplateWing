@@ -308,7 +308,7 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   // "cursor" mode is delivered via a compose script message rather than by
   // rewriting the whole body, so the signature and any text the user has
-  // already typed stay intact (issue #33).
+  // already typed stay intact.
   let insertedAtCursor = false;
   if (resolvedBody && mode === "cursor") {
     const body = await replaceVariables(resolvedBody, tabId, true);
@@ -412,7 +412,7 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   await messenger.compose.setComposeDetails(tabId, details);
 
-  // Issue #18: Per-file decode error handling -- failures collected, not fatal
+  // Per-file decode error handling — failures collected, not fatal
   if (template.attachments && template.attachments.length > 0) {
     const attachmentErrors = [];
     for (const att of template.attachments) {

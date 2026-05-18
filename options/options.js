@@ -294,13 +294,16 @@ async function addFiles(files) {
   for (const file of files) {
     try {
       const data = await readFileAsBase64(file);
-      pendingAttachments.push({
-        id: generateAttId(),
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size,
-        data,
-      });
+      pendingAttachments = [
+        ...pendingAttachments,
+        {
+          id: generateAttId(),
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+          data,
+        },
+      ];
     } catch (err) {
       console.error("TemplateWing: could not read file", file.name, err);
       showEditorError(messenger.i18n.getMessage("attachmentReadError", file.name));
@@ -781,7 +784,8 @@ async function executeImport() {
   let replaced = 0;
 
   for (const t of validTemplates) {
-    const { id, createdAt, updatedAt, usageCount, lastUsedAt, ...rest } = t;
+    // Strip internal tracking fields; keep only user-visible template data.
+    const { id: _, createdAt: _1, updatedAt: _2, usageCount: _3, lastUsedAt: _4, ...rest } = t;
     rest.body = sanitizeTemplateBody(rest.body);
     const nameKey = t.name.trim().toLowerCase();
     const existing = existingByName.get(nameKey);
