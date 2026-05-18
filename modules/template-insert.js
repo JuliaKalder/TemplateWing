@@ -164,7 +164,7 @@ export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
  * @param {Map} templatesByName - Map of template name (lowercase) to template object
  * @returns {Promise<string>} Text with includes resolved
  */
-export async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
+export async function resolveNestedTemplates(text, visited, templatesById, templatesByName, memo = new Map()) {
   if (!text) return text;
 
   // Use a fresh regex per call to avoid lastIndex state on the shared exported one.
@@ -199,12 +199,19 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
       throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
     }
 
-    const nestedContent = await resolveNestedTemplates(
-      nestedTemplate.body || "",
-      new Set([...visited, nestedTemplate.id]),
-      templatesById,
-      templatesByName
-    );
+    let nestedContent;
+    if (memo.has(nestedTemplate.id)) {
+      nestedContent = memo.get(nestedTemplate.id);
+    } else {
+      nestedContent = await resolveNestedTemplates(
+        nestedTemplate.body || "",
+        new Set([...visited, nestedTemplate.id]),
+        templatesById,
+        templatesByName,
+        memo
+      );
+      memo.set(nestedTemplate.id, nestedContent);
+    }
 
     resolved = resolved.replace(fullMatch, nestedContent);
   }

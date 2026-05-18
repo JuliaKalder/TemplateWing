@@ -1,4 +1,4 @@
-import { getTemplates, getTemplate, trackUsage } from "./modules/template-store.js";
+import { getTemplates, getTemplate, trackUsage, setPrefillTemplate } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
 async function notifyInsertFailure(err) {
@@ -184,9 +184,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
       console.error("TemplateWing: could not get message body", e);
     }
 
-    await messenger.storage.local.set({
-      _prefillTemplate: { subject: msg.subject || "", body },
-    });
+    await setPrefillTemplate({ subject: msg.subject || "", body });
     await messenger.runtime.openOptionsPage();
     return;
   }
@@ -244,7 +242,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   }
 });
 
-messenger.runtime.onMessage.addListener(async (message) => {
+messenger.runtime.onMessage.addListener(async (message, sender) => {
   if (!message || !message.action) return;
 
   if (message.action === "templatesChanged") {
@@ -255,6 +253,13 @@ messenger.runtime.onMessage.addListener(async (message) => {
   // Popup delegates cursor-mode insertion here so it can close first and
   // return focus to the compose window before the insert runs.
   if (message.action === "templatewing:insertTemplate") {
+    // Only accept this message from the popup page.
+    const expectedUrl = messenger.runtime.getURL("popup/popup.html");
+    if (!sender || sender.url !== expectedUrl) {
+      console.warn("TemplateWing: rejecting templatewing:insertTemplate from untrusted sender", sender && sender.url);
+      return;
+    }
+
     // Give the popup a tick to tear down so the compose window is focused
     // when we forward the insert request to the compose script. 150ms is
     // empirically enough on slow systems while still feeling instant.
@@ -262,6 +267,14 @@ messenger.runtime.onMessage.addListener(async (message) => {
     try {
       const template = await getTemplate(message.templateId);
       if (!template) return;
+
+      // Re-validate identity at the enforcement point, not just in the popup UI.
+      const currentIdentityId = await getCurrentIdentityId(message.tabId);
+      if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
+        console.warn("TemplateWing: templatewing:insertTemplate — identity not allowed");
+        return;
+      }
+
       await insertTemplateIntoTab(message.tabId, template);
       await trackUsage(message.templateId);
     } catch (err) {

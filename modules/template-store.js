@@ -109,17 +109,22 @@ export async function saveTemplate(template) {
       templates.push({ ...template, createdAt: now, updatedAt: now });
     }
   } else {
-    template.id = generateId();
-    template.createdAt = now;
-    template.updatedAt = now;
-    template.attachments = template.attachments || [];
-    template.insertMode = template.insertMode || "append";
-    template.category = template.category || "";
-    template.to = template.to || [];
-    template.cc = template.cc || [];
-    template.bcc = template.bcc || [];
-    template.identities = template.identities || [];
-    templates.push(template);
+    const newTemplate = {
+      id: generateId(),
+      attachments: [],
+      insertMode: "append",
+      category: "",
+      to: [],
+      cc: [],
+      bcc: [],
+      identities: [],
+      ...template,
+      createdAt: now,
+      updatedAt: now,
+    };
+    templates.push(newTemplate);
+    await persistTemplates(templates);
+    return newTemplate;
   }
 
   await persistTemplates(templates);
@@ -150,6 +155,25 @@ export async function trackUsage(id) {
   t.lastUsedAt = new Date().toISOString();
   await persistTemplates(templates);
 }
+
+// ---- Prefill template (cross-page channel) ----
+
+const PREFILL_KEY = "_prefillTemplate";
+
+export async function setPrefillTemplate(data) {
+  await messenger.storage.local.set({ [PREFILL_KEY]: data });
+}
+
+export async function consumePrefillTemplate() {
+  const result = await messenger.storage.local.get({ [PREFILL_KEY]: null });
+  const prefill = result[PREFILL_KEY];
+  if (prefill) {
+    await messenger.storage.local.remove(PREFILL_KEY);
+  }
+  return prefill;
+}
+
+export { PREFILL_KEY };
 
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub
 // are not poisoned by state from earlier tests.

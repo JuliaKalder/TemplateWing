@@ -4,6 +4,8 @@ import {
   saveTemplate,
   deleteTemplate,
   getCategories,
+  consumePrefillTemplate,
+  PREFILL_KEY,
 } from "../modules/template-store.js";
 import {
   validateRecipients,
@@ -641,10 +643,14 @@ async function handleSave() {
 
 async function handleExport() {
   const templates = await getTemplates();
+  const safeTemplates = templates.map((t) => ({
+    ...t,
+    attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
+  }));
   const payload = {
     version: "2.2",
     exportedAt: new Date().toISOString(),
-    templates,
+    templates: safeTemplates,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -713,16 +719,15 @@ function hideImportDialog() {
   pendingImportData = null;
 }
 
-async function consumePrefillTemplate(prefill) {
+async function applyPrefillTemplate(prefill) {
   if (!prefill) return;
   hideImportDialog();
-  await messenger.storage.local.remove("_prefillTemplate");
   await openEditor(null, prefill);
 }
 
 async function checkForPrefillTemplate() {
-  const prefillResult = await messenger.storage.local.get({ _prefillTemplate: null });
-  await consumePrefillTemplate(prefillResult._prefillTemplate);
+  const prefill = await consumePrefillTemplate();
+  await applyPrefillTemplate(prefill);
 }
 
 function sanitizeTemplateBody(html) {
@@ -966,8 +971,8 @@ await populateCategoryFilter();
 messenger.storage.onChanged.addListener(async (changes, area) => {
   if (area !== "local") return;
 
-  if (changes._prefillTemplate && changes._prefillTemplate.newValue) {
-    await consumePrefillTemplate(changes._prefillTemplate.newValue);
+  if (changes[PREFILL_KEY] && changes[PREFILL_KEY].newValue) {
+    await applyPrefillTemplate(changes[PREFILL_KEY].newValue);
     return;
   }
 

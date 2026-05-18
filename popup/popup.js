@@ -81,11 +81,11 @@ async function renderTemplateList() {
 
     item.appendChild(topRow);
 
-    const hasMeta = template.category
-      || (template.attachments && template.attachments.length > 0)
-      || i < 9;
+    const hasTemplateMeta = template.category
+      || (template.attachments && template.attachments.length > 0);
+    const hasShortcut = i < 9;
 
-    if (hasMeta) {
+    if (hasTemplateMeta || hasShortcut) {
       const metaRow = document.createElement("div");
       metaRow.className = "meta-row";
 
