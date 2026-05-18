@@ -182,11 +182,17 @@ export async function deleteTemplate(id) {
 
 export async function trackUsage(id) {
   const templates = await getTemplates();
-  const t = templates.find((t) => t.id === id);
-  if (!t) return;
-  t.usageCount = (t.usageCount || 0) + 1;
-  t.lastUsedAt = new Date().toISOString();
-  await persistTemplates(templates);
+  const index = templates.findIndex((t) => t.id === id);
+  if (index === -1) return;
+  const now = new Date().toISOString();
+  const updated = {
+    ...templates[index],
+    usageCount: (templates[index].usageCount || 0) + 1,
+    lastUsedAt: now,
+  };
+  const updatedTemplates = [...templates];
+  updatedTemplates[index] = updated;
+  await persistTemplates(updatedTemplates);
 }
 
 // ---- Prefill template (cross-page channel) ----
