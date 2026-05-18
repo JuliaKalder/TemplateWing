@@ -51,6 +51,8 @@ export const ATTACHMENT_TOTAL_WARN_SIZE = 10 * 1024 * 1024;
  * with either an existing template or another imported template.
  */
 export function analyseImport(importedTemplates, existingTemplates) {
+  // Accumulates both existing and newly-imported names; used for duplicate
+  // detection. Note: `valid` may include entries that are also in `duplicates`.
   const seenNames = new Map(
     existingTemplates
       .filter((t) => t && typeof t.name === "string" && t.name.trim())

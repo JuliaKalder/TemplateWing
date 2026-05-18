@@ -1,4 +1,4 @@
-import { describe, it, before, beforeEach, after } from "node:test";
+import { describe, it, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.js";
 

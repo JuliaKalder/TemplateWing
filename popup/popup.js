@@ -173,7 +173,7 @@ function filterTemplates() {
       || item.dataset.subject.includes(query);
     const matchesCategory = !selectedCategory
       || item.dataset.category === selectedCategory;
-    item.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+    item.hidden = !(matchesSearch && matchesCategory);
   }
 }
 
@@ -200,6 +200,8 @@ async function populateCategoryFilter() {
 document.getElementById("search-input").addEventListener("input", filterTemplates);
 document.getElementById("category-filter").addEventListener("change", filterTemplates);
 
+// Thunderbird opens the options page in an Add-ons Manager tab that may live
+// in a background window. Focus the first normal window so it comes to front.
 document.getElementById("btn-manage").addEventListener("click", async () => {
   await messenger.runtime.openOptionsPage();
   const allWindows = await messenger.windows.getAll();

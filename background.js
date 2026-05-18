@@ -49,7 +49,8 @@ function getSortedTemplates(templates) {
 }
 
 function getCategoryMenuId(category, index) {
-  const slug = category.replace(/[^a-zA-Z0-9]/g, "_") || "uncategorized";
+  // category is always a non-empty string here (from Object.keys(categorized))
+  const slug = category.replace(/[^a-zA-Z0-9]/g, "_");
   return `templatewing-cat-${slug}-${index}`;
 }
 
@@ -180,8 +181,8 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
           ? sanitizeEmailBodyForPrefill(extracted.body)
           : extracted.body.replace(/\n/g, "<br>");
       }
-    } catch (e) {
-      console.error("TemplateWing: could not get message body", e);
+    } catch (err) {
+      console.error("TemplateWing: could not get message body", err);
     }
 
     await setPrefillTemplate({ subject: msg.subject || "", body });
@@ -213,7 +214,9 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
 messenger.commands.onCommand.addListener(async (commandName) => {
   if (!commandName.startsWith("insert-template-")) return;
 
-  const index = parseInt(commandName.replace("insert-template-", ""), 10) - 1;
+  const parsed = parseInt(commandName.replace("insert-template-", ""), 10);
+  if (!Number.isFinite(parsed)) return;
+  const index = parsed - 1;
   const allTemplates = await getTemplates();
 
   const tabs = await messenger.tabs.query({
@@ -261,9 +264,9 @@ messenger.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     // Give the popup a tick to tear down so the compose window is focused
-    // when we forward the insert request to the compose script. 150ms is
-    // empirically enough on slow systems while still feeling instant.
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    // when we forward the insert request to the compose script.
+    const POPUP_TEARDOWN_DELAY_MS = 150;
+    await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
     try {
       const template = await getTemplate(message.templateId);
       if (!template) return;

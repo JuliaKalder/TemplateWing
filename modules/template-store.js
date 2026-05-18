@@ -23,8 +23,8 @@ async function loadTemplates() {
 }
 
 async function persistTemplates(templates) {
-  _cache = templates;
   await messenger.storage.local.set({ [STORAGE_KEY]: templates });
+  _cache = templates;
 }
 
 // Invalidate cache when storage changes externally (e.g. from another page)
@@ -38,18 +38,42 @@ if (typeof messenger !== "undefined" && messenger.storage) {
 
 // ---- Schema migrations ----
 
-// Migration 0 → 1: ensure every template has all v2.2 fields
+// Migration 0 → 1: backfill name, category, to/cc/bcc, identities, insertMode, attachments
 export async function migrateV0toV1(templates) {
   let changed = false;
   for (const t of templates) {
-    if (typeof t.name !== "string" || !t.name.trim()) { t.name = "(unnamed)"; changed = true; }
-    if (!t.category && t.category !== "") { t.category = ""; changed = true; }
-    if (!Array.isArray(t.to)) { t.to = []; changed = true; }
-    if (!Array.isArray(t.cc)) { t.cc = []; changed = true; }
-    if (!Array.isArray(t.bcc)) { t.bcc = []; changed = true; }
-    if (!Array.isArray(t.identities)) { t.identities = []; changed = true; }
-    if (!t.insertMode) { t.insertMode = "append"; changed = true; }
-    if (!Array.isArray(t.attachments)) { t.attachments = []; changed = true; }
+    if (typeof t.name !== "string" || !t.name.trim()) {
+      t.name = "(unnamed)";
+      changed = true;
+    }
+    if (!t.category && t.category !== "") {
+      t.category = "";
+      changed = true;
+    }
+    if (!Array.isArray(t.to)) {
+      t.to = [];
+      changed = true;
+    }
+    if (!Array.isArray(t.cc)) {
+      t.cc = [];
+      changed = true;
+    }
+    if (!Array.isArray(t.bcc)) {
+      t.bcc = [];
+      changed = true;
+    }
+    if (!Array.isArray(t.identities)) {
+      t.identities = [];
+      changed = true;
+    }
+    if (!t.insertMode) {
+      t.insertMode = "append";
+      changed = true;
+    }
+    if (!Array.isArray(t.attachments)) {
+      t.attachments = [];
+      changed = true;
+    }
   }
   return { templates, changed };
 }
@@ -91,7 +115,16 @@ export async function getTemplates() {
 
 export async function getTemplate(id) {
   const templates = await getTemplates();
-  return templates.find((t) => t.id === id) || null;
+  const t = templates.find((t) => t.id === id);
+  if (!t) return null;
+  return {
+    ...t,
+    to: [...(t.to || [])],
+    cc: [...(t.cc || [])],
+    bcc: [...(t.bcc || [])],
+    attachments: [...(t.attachments || [])],
+    identities: [...(t.identities || [])],
+  };
 }
 
 export async function saveTemplate(template) {

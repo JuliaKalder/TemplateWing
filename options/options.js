@@ -199,25 +199,25 @@ async function loadNestedTemplateOptions(excludeId = null) {
   }
 }
 
+function insertTextAtEditorCursor(text) {
+  const editor = document.getElementById("editor-body");
+  editor.focus();
+  const sel = document.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+    range.collapse(false);
+  } else {
+    editor.append(document.createTextNode(text));
+  }
+}
+
 function insertNestedTemplate() {
   const select = document.getElementById("nested-template-select");
   const templateName = select.value;
   if (!templateName) return;
-
-  const editor = document.getElementById("editor-body");
-  const includeText = `{{template:${templateName}}}`;
-  editor.focus();
-
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount > 0) {
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(document.createTextNode(includeText));
-    range.collapse(false);
-  } else {
-    editor.append(document.createTextNode(includeText));
-  }
-
+  insertTextAtEditorCursor(`{{template:${templateName}}}`);
   select.value = "";
 }
 
@@ -241,16 +241,14 @@ function renderAttachments() {
     size.className = "att-size";
     size.textContent = formatFileSize(att.size);
 
+    item.appendChild(name);
+    item.appendChild(size);
+
     if (att.size >= ATTACHMENT_WARN_SIZE) {
       const warn = document.createElement("span");
       warn.className = "att-warn";
       warn.textContent = messenger.i18n.getMessage("attachmentSizeWarning");
-      item.appendChild(name);
-      item.appendChild(size);
       item.appendChild(warn);
-    } else {
-      item.appendChild(name);
-      item.appendChild(size);
     }
 
     const removeBtn = document.createElement("button");
@@ -349,7 +347,7 @@ async function openEditor(id, prefill = null) {
       bodyEditor.replaceChildren();
       if (template.body) {
         const parsed = new DOMParser().parseFromString(template.body, "text/html");
-        bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+        bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
       }
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
       const selectedIdentities = template.identities || [];
@@ -369,7 +367,7 @@ async function openEditor(id, prefill = null) {
     bodyEditor.replaceChildren();
     if (prefill && prefill.body) {
       const parsed = new DOMParser().parseFromString(prefill.body, "text/html");
-      bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+      bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
     }
   }
 
@@ -425,7 +423,7 @@ async function duplicateTemplate(id) {
   bodyEditor.replaceChildren();
   if (template.body) {
     const parsed = new DOMParser().parseFromString(template.body, "text/html");
-    bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+    bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
   }
 
   const selectedIdentities = template.identities || [];
@@ -507,7 +505,7 @@ function switchToVisualView() {
   const toolbar = document.querySelector(".editor-toolbar");
 
   const parsed = new DOMParser().parseFromString(htmlTextarea.value, "text/html");
-  bodyEditor.replaceChildren(...document.adoptNode(parsed.body).childNodes);
+  bodyEditor.replaceChildren(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
   htmlTextarea.hidden = true;
   bodyEditor.hidden = false;
   htmlViewActive = false;
@@ -616,7 +614,7 @@ async function handleSave() {
   const identities = Array.from(identitiesSelect.selectedOptions).map((opt) => opt.value);
 
   const template = {
-    id: editingId || undefined,
+    id: editingId,
     name,
     category,
     subject,
@@ -643,11 +641,12 @@ async function handleSave() {
 
 async function handleExport() {
   const templates = await getTemplates();
-  const safeTemplates = templates.map((t) => ({
+  const safeTemplates = templates.map(({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
     ...t,
     attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
   }));
   const payload = {
+    // Export format version (not the extension version); import ignores this field.
     version: "2.2",
     exportedAt: new Date().toISOString(),
     templates: safeTemplates,
@@ -666,7 +665,8 @@ function showImportFeedback(message, isError) {
   el.textContent = message;
   el.className = "import-feedback" + (isError ? " error" : "");
   el.hidden = false;
-  setTimeout(() => { el.hidden = true; }, 6000);
+  const FEEDBACK_DISMISS_MS = 6000;
+  setTimeout(() => { el.hidden = true; }, FEEDBACK_DISMISS_MS);
 }
 
 // ---- Import guardrails ----
@@ -805,7 +805,13 @@ async function executeImport() {
   await populateCategoryFilter();
 }
 
+const IMPORT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 async function handleImport(file) {
+  if (file.size > IMPORT_MAX_FILE_SIZE) {
+    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    return;
+  }
   let parsed;
   try {
     const text = await file.text();
@@ -841,7 +847,7 @@ function filterTemplates() {
       || card.dataset.subject.includes(query);
     const matchesCategory = !selectedCategory
       || card.dataset.category === selectedCategory;
-    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+    card.hidden = !(matchesSearch && matchesCategory);
   }
 }
 
@@ -947,19 +953,7 @@ document.getElementById("editor-body").addEventListener("paste", (e) => {
 for (const chip of document.querySelectorAll(".variable-chip[data-var]")) {
   chip.addEventListener("click", (e) => {
     e.preventDefault();
-    const varText = chip.dataset.var;
-    const editor = document.getElementById("editor-body");
-    editor.focus();
-
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode(varText));
-      range.collapse(false);
-    } else {
-      editor.append(document.createTextNode(varText));
-    }
+    insertTextAtEditorCursor(chip.dataset.var);
   });
 }
 
