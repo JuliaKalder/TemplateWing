@@ -207,7 +207,7 @@ function insertNestedTemplate() {
   editor.focus();
 
   const sel = window.getSelection();
-  if (sel.rangeCount > 0) {
+  if (sel && sel.rangeCount > 0) {
     const range = sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(document.createTextNode(includeText));
@@ -947,7 +947,7 @@ for (const chip of document.querySelectorAll(".variable-chip[data-var]")) {
     editor.focus();
 
     const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
+    if (sel && sel.rangeCount > 0) {
       const range = sel.getRangeAt(0);
       range.deleteContents();
       range.insertNode(document.createTextNode(varText));
