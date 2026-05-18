@@ -179,7 +179,12 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
       if (extracted) {
         body = extracted.html
           ? sanitizeEmailBodyForPrefill(extracted.body)
-          : extracted.body.replace(/\n/g, "<br>");
+          : extracted.body
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/\n/g, "<br>");
       }
     } catch (err) {
       console.error("TemplateWing: could not get message body", err);
