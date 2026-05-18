@@ -1,199 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="options.css">
-</head>
-<body>
-  <div class="options-container">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="options-container">
+      <!-- View: Template list -->
+      <div id="view-list">
+        <h1 data-i18n="optionsTitle"></h1>
 
-    <!-- View: Template list -->
-    <div id="view-list">
-      <h1 data-i18n="optionsTitle"></h1>
+        <div class="toolbar">
+          <button id="btn-add" data-i18n="optionsAddTemplate"></button>
+          <button id="btn-export" data-i18n="optionsExportJson"></button>
+          <button id="btn-import" data-i18n="optionsImportJson"></button>
+          <input type="file" id="import-file-input" accept=".json" hidden />
+        </div>
+        <div id="import-feedback" class="import-feedback" hidden></div>
 
-      <div class="toolbar">
-        <button id="btn-add" data-i18n="optionsAddTemplate"></button>
-        <button id="btn-export" data-i18n="optionsExportJson"></button>
-        <button id="btn-import" data-i18n="optionsImportJson"></button>
-        <input type="file" id="import-file-input" accept=".json" hidden>
-      </div>
-      <div id="import-feedback" class="import-feedback" hidden></div>
-
-      <div class="filter-row">
-        <input type="text" id="search-input" class="search-input"
-               data-i18n-placeholder="searchPlaceholder">
-        <select id="category-filter" class="category-filter">
-          <option value="" data-i18n="optionsCategoryAll"></option>
-        </select>
-      </div>
-
-      <div id="template-list" class="template-list">
-        <!-- Filled dynamically -->
-      </div>
-
-      <div id="empty-state" class="empty-state" hidden>
-        <p data-i18n="optionsNoTemplates"></p>
-      </div>
-    </div>
-
-    <!-- View: Template editor -->
-    <div id="view-editor" hidden>
-      <div class="editor-header">
-        <button id="btn-back" class="btn-back" data-i18n="optionsBack"></button>
-        <h2 id="editor-title" data-i18n="optionsNewTemplate"></h2>
-      </div>
-
-      <div class="editor-form">
-        <label data-i18n="optionsLabelName"></label>
-        <input type="text" id="editor-name">
-        <div id="editor-name-error" class="inline-error" hidden></div>
-
-        <label data-i18n="optionsLabelCategory"></label>
-        <input type="text" id="editor-category" list="category-suggestions"
-               data-i18n-placeholder="optionsCategoryPlaceholder">
-        <datalist id="category-suggestions"></datalist>
-
-        <label data-i18n="optionsLabelAccounts"></label>
-        <select id="editor-identities" multiple class="identities-select">
-          <!-- Filled dynamically -->
-        </select>
-        <div class="account-help" data-i18n="optionsAccountsHelp"></div>
-
-        <label data-i18n="optionsLabelSubject"></label>
-        <input type="text" id="editor-subject">
-
-        <label data-i18n="optionsLabelTo"></label>
-        <input type="text" id="editor-to" placeholder="recipient@example.com, Name <email@example.com>">
-        <div id="editor-to-error" class="inline-error" hidden></div>
-
-        <label data-i18n="optionsLabelCc"></label>
-        <input type="text" id="editor-cc" placeholder="recipient@example.com">
-        <div id="editor-cc-error" class="inline-error" hidden></div>
-
-        <label data-i18n="optionsLabelBcc"></label>
-        <input type="text" id="editor-bcc" placeholder="recipient@example.com">
-        <div id="editor-bcc-error" class="inline-error" hidden></div>
-
-        <div class="recipient-help" data-i18n="optionsRecipientHelp"></div>
-
-        <label data-i18n="optionsLabelInsertMode"></label>
-        <select id="editor-insert-mode">
-          <option value="append" data-i18n="optionsInsertModeAppend"></option>
-          <option value="prepend" data-i18n="optionsInsertModePrepend"></option>
-          <option value="cursor" data-i18n="optionsInsertModeCursor"></option>
-          <option value="replace" data-i18n="optionsInsertModeReplace"></option>
-        </select>
-
-        <label data-i18n="optionsLabelBody"></label>
-        <div id="editor-body-warning" class="editor-warning" hidden></div>
-        <div class="editor-toolbar">
-          <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold"><b>B</b></button>
-          <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic"><i>I</i></button>
-          <button type="button" class="toolbar-btn" data-cmd="underline" title="Underline"><u>U</u></button>
-          <span class="toolbar-sep"></span>
-          <button type="button" class="toolbar-btn" data-cmd="insertUnorderedList" title="Bullet List">&#8226; List</button>
-          <button type="button" class="toolbar-btn" data-cmd="insertOrderedList" title="Numbered List">1. List</button>
-          <span class="toolbar-sep"></span>
-          <select id="format-block" class="toolbar-select" title="Format">
-            <option value="p">Normal</option>
-            <option value="h2">Heading 2</option>
-            <option value="h3">Heading 3</option>
-            <option value="blockquote">Quote</option>
+        <div class="filter-row">
+          <input
+            type="text"
+            id="search-input"
+            class="search-input"
+            data-i18n-placeholder="searchPlaceholder"
+          />
+          <select id="category-filter" class="category-filter">
+            <option value="" data-i18n="optionsCategoryAll"></option>
           </select>
-          <span class="toolbar-sep"></span>
-          <label class="toolbar-toggle" title="Paste as plain text">
-            <input type="checkbox" id="paste-plain-toggle">
-            <span data-i18n="optionsPastePlainText"></span>
-          </label>
-          <span class="toolbar-sep"></span>
-          <button type="button" class="toolbar-btn" id="btn-html-toggle" title="Toggle HTML source view">HTML</button>
         </div>
-        <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
-        <textarea id="editor-body-html" class="html-source-editor" hidden spellcheck="false"></textarea>
 
-        <div class="nested-templates-insert">
-          <label data-i18n="optionsLabelNestedTemplates"></label>
-          <div class="nested-templates-row">
-            <select id="nested-template-select" class="nested-select">
-              <option value="" data-i18n="optionsSelectNestedTemplate"></option>
+        <div id="template-list" class="template-list">
+          <!-- Filled dynamically -->
+        </div>
+
+        <div id="empty-state" class="empty-state" hidden>
+          <p data-i18n="optionsNoTemplates"></p>
+        </div>
+      </div>
+
+      <!-- View: Template editor -->
+      <div id="view-editor" hidden>
+        <div class="editor-header">
+          <button id="btn-back" class="btn-back" data-i18n="optionsBack"></button>
+          <h2 id="editor-title" data-i18n="optionsNewTemplate"></h2>
+        </div>
+
+        <div class="editor-form">
+          <label data-i18n="optionsLabelName"></label>
+          <input type="text" id="editor-name" />
+          <div id="editor-name-error" class="inline-error" hidden></div>
+
+          <label data-i18n="optionsLabelCategory"></label>
+          <input
+            type="text"
+            id="editor-category"
+            list="category-suggestions"
+            data-i18n-placeholder="optionsCategoryPlaceholder"
+          />
+          <datalist id="category-suggestions"></datalist>
+
+          <label data-i18n="optionsLabelAccounts"></label>
+          <select id="editor-identities" multiple class="identities-select">
+            <!-- Filled dynamically -->
+          </select>
+          <div class="account-help" data-i18n="optionsAccountsHelp"></div>
+
+          <label data-i18n="optionsLabelSubject"></label>
+          <input type="text" id="editor-subject" />
+
+          <label data-i18n="optionsLabelTo"></label>
+          <input
+            type="text"
+            id="editor-to"
+            placeholder="recipient@example.com, Name <email@example.com>"
+          />
+          <div id="editor-to-error" class="inline-error" hidden></div>
+
+          <label data-i18n="optionsLabelCc"></label>
+          <input type="text" id="editor-cc" placeholder="recipient@example.com" />
+          <div id="editor-cc-error" class="inline-error" hidden></div>
+
+          <label data-i18n="optionsLabelBcc"></label>
+          <input type="text" id="editor-bcc" placeholder="recipient@example.com" />
+          <div id="editor-bcc-error" class="inline-error" hidden></div>
+
+          <div class="recipient-help" data-i18n="optionsRecipientHelp"></div>
+
+          <label data-i18n="optionsLabelInsertMode"></label>
+          <select id="editor-insert-mode">
+            <option value="append" data-i18n="optionsInsertModeAppend"></option>
+            <option value="prepend" data-i18n="optionsInsertModePrepend"></option>
+            <option value="cursor" data-i18n="optionsInsertModeCursor"></option>
+            <option value="replace" data-i18n="optionsInsertModeReplace"></option>
+          </select>
+
+          <label data-i18n="optionsLabelBody"></label>
+          <div id="editor-body-warning" class="editor-warning" hidden></div>
+          <div class="editor-toolbar">
+            <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+            <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic">
+              <i>I</i>
+            </button>
+            <button type="button" class="toolbar-btn" data-cmd="underline" title="Underline">
+              <u>U</u>
+            </button>
+            <span class="toolbar-sep"></span>
+            <button
+              type="button"
+              class="toolbar-btn"
+              data-cmd="insertUnorderedList"
+              title="Bullet List"
+            >
+              &#8226; List
+            </button>
+            <button
+              type="button"
+              class="toolbar-btn"
+              data-cmd="insertOrderedList"
+              title="Numbered List"
+            >
+              1. List
+            </button>
+            <span class="toolbar-sep"></span>
+            <select id="format-block" class="toolbar-select" title="Format">
+              <option value="p">Normal</option>
+              <option value="h2">Heading 2</option>
+              <option value="h3">Heading 3</option>
+              <option value="blockquote">Quote</option>
             </select>
-            <button id="btn-insert-nested" class="btn-insert-nested" data-i18n="optionsInsertNested"></button>
+            <span class="toolbar-sep"></span>
+            <label class="toolbar-toggle" title="Paste as plain text">
+              <input type="checkbox" id="paste-plain-toggle" />
+              <span data-i18n="optionsPastePlainText"></span>
+            </label>
+            <span class="toolbar-sep"></span>
+            <button
+              type="button"
+              class="toolbar-btn"
+              id="btn-html-toggle"
+              title="Toggle HTML source view"
+            >
+              HTML
+            </button>
           </div>
-        </div>
+          <div id="editor-body" class="richtext-editor" contenteditable="true"></div>
+          <textarea
+            id="editor-body-html"
+            class="html-source-editor"
+            hidden
+            spellcheck="false"
+          ></textarea>
 
-        <div class="variables-help">
-          <label data-i18n="optionsLabelVariables"></label>
-          <div class="variable-picker">
-            <button type="button" class="variable-chip" data-var="{DATE}" data-i18n-title="optionsVariableDate">{DATE}</button>
-            <button type="button" class="variable-chip" data-var="{TIME}" data-i18n-title="optionsVariableTime">{TIME}</button>
-            <button type="button" class="variable-chip" data-var="{DATETIME}" data-i18n-title="optionsVariableDatetime">{DATETIME}</button>
-            <button type="button" class="variable-chip" data-var="{YEAR}" data-i18n-title="optionsVariableYear">{YEAR}</button>
-            <button type="button" class="variable-chip" data-var="{WEEKDAY}" data-i18n-title="optionsVariableWeekday">{WEEKDAY}</button>
-            <button type="button" class="variable-chip" data-var="{SENDER_NAME}" data-i18n-title="optionsVariableSenderName">{SENDER_NAME}</button>
-            <button type="button" class="variable-chip" data-var="{SENDER_EMAIL}" data-i18n-title="optionsVariableSenderEmail">{SENDER_EMAIL}</button>
-            <button type="button" class="variable-chip" data-var="{ACCOUNT_NAME}" data-i18n-title="optionsVariableAccountName">{ACCOUNT_NAME}</button>
-            <button type="button" class="variable-chip" data-var="{ACCOUNT_EMAIL}" data-i18n-title="optionsVariableAccountEmail">{ACCOUNT_EMAIL}</button>
+          <div class="nested-templates-insert">
+            <label data-i18n="optionsLabelNestedTemplates"></label>
+            <div class="nested-templates-row">
+              <select id="nested-template-select" class="nested-select">
+                <option value="" data-i18n="optionsSelectNestedTemplate"></option>
+              </select>
+              <button
+                id="btn-insert-nested"
+                class="btn-insert-nested"
+                data-i18n="optionsInsertNested"
+              ></button>
+            </div>
           </div>
-        </div>
 
-        <div class="nested-templates-help">
-          <div class="nested-templates-info" data-i18n="optionsNestedTemplatesHelp"></div>
-        </div>
+          <div class="variables-help">
+            <label data-i18n="optionsLabelVariables"></label>
+            <div class="variable-picker">
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{DATE}"
+                data-i18n-title="optionsVariableDate"
+              >
+                {DATE}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{TIME}"
+                data-i18n-title="optionsVariableTime"
+              >
+                {TIME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{DATETIME}"
+                data-i18n-title="optionsVariableDatetime"
+              >
+                {DATETIME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{YEAR}"
+                data-i18n-title="optionsVariableYear"
+              >
+                {YEAR}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{WEEKDAY}"
+                data-i18n-title="optionsVariableWeekday"
+              >
+                {WEEKDAY}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{SENDER_NAME}"
+                data-i18n-title="optionsVariableSenderName"
+              >
+                {SENDER_NAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{SENDER_EMAIL}"
+                data-i18n-title="optionsVariableSenderEmail"
+              >
+                {SENDER_EMAIL}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{ACCOUNT_NAME}"
+                data-i18n-title="optionsVariableAccountName"
+              >
+                {ACCOUNT_NAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{ACCOUNT_EMAIL}"
+                data-i18n-title="optionsVariableAccountEmail"
+              >
+                {ACCOUNT_EMAIL}
+              </button>
+            </div>
+          </div>
 
-        <div class="attachment-section">
-          <label data-i18n="optionsLabelAttachments"></label>
-          <div id="attachment-list" class="attachment-list"></div>
-          <input type="file" id="file-input" multiple hidden>
-          <button id="btn-add-files" class="btn-add-file" data-i18n="optionsAddFiles"></button>
-        </div>
+          <div class="nested-templates-help">
+            <div class="nested-templates-info" data-i18n="optionsNestedTemplatesHelp"></div>
+          </div>
 
-        <div id="editor-error" class="editor-error" hidden></div>
+          <div class="attachment-section">
+            <label data-i18n="optionsLabelAttachments"></label>
+            <div id="attachment-list" class="attachment-list"></div>
+            <input type="file" id="file-input" multiple hidden />
+            <button id="btn-add-files" class="btn-add-file" data-i18n="optionsAddFiles"></button>
+          </div>
 
-        <div class="editor-actions">
-          <button id="btn-save" class="btn-primary" data-i18n="optionsSave"></button>
-          <button id="btn-cancel" data-i18n="optionsCancel"></button>
+          <div id="editor-error" class="editor-error" hidden></div>
+
+          <div class="editor-actions">
+            <button id="btn-save" class="btn-primary" data-i18n="optionsSave"></button>
+            <button id="btn-cancel" data-i18n="optionsCancel"></button>
+          </div>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- Import dialog modal -->
-  <div id="import-dialog" class="modal-overlay" hidden>
-    <div class="modal-dialog">
-      <h3 data-i18n="importDialogTitle"></h3>
-      <div id="import-summary" class="import-summary"></div>
-      <fieldset class="import-mode-fieldset">
-        <legend data-i18n="importModeLabel"></legend>
-        <label class="import-mode-option">
-          <input type="radio" name="import-mode" value="append" checked>
-          <span>
-            <strong data-i18n="importModeAppend"></strong>
-            <small data-i18n="importModeAppendDesc"></small>
-          </span>
-        </label>
-        <label class="import-mode-option">
-          <input type="radio" name="import-mode" value="skip">
-          <span>
-            <strong data-i18n="importModeSkip"></strong>
-            <small data-i18n="importModeSkipDesc"></small>
-          </span>
-        </label>
-        <label class="import-mode-option">
-          <input type="radio" name="import-mode" value="replace">
-          <span>
-            <strong data-i18n="importModeReplace"></strong>
-            <small data-i18n="importModeReplaceDesc"></small>
-          </span>
-        </label>
-      </fieldset>
-      <div class="modal-actions">
-        <button id="import-confirm" class="btn-primary" data-i18n="importDialogConfirm"></button>
-        <button id="import-cancel" data-i18n="importDialogCancel"></button>
+    <!-- Import dialog modal -->
+    <div id="import-dialog" class="modal-overlay" hidden>
+      <div class="modal-dialog">
+        <h3 data-i18n="importDialogTitle"></h3>
+        <div id="import-summary" class="import-summary"></div>
+        <fieldset class="import-mode-fieldset">
+          <legend data-i18n="importModeLabel"></legend>
+          <label class="import-mode-option">
+            <input type="radio" name="import-mode" value="append" checked />
+            <span>
+              <strong data-i18n="importModeAppend"></strong>
+              <small data-i18n="importModeAppendDesc"></small>
+            </span>
+          </label>
+          <label class="import-mode-option">
+            <input type="radio" name="import-mode" value="skip" />
+            <span>
+              <strong data-i18n="importModeSkip"></strong>
+              <small data-i18n="importModeSkipDesc"></small>
+            </span>
+          </label>
+          <label class="import-mode-option">
+            <input type="radio" name="import-mode" value="replace" />
+            <span>
+              <strong data-i18n="importModeReplace"></strong>
+              <small data-i18n="importModeReplaceDesc"></small>
+            </span>
+          </label>
+        </fieldset>
+        <div class="modal-actions">
+          <button id="import-confirm" class="btn-primary" data-i18n="importDialogConfirm"></button>
+          <button id="import-cancel" data-i18n="importDialogCancel"></button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script type="module" src="options.js"></script>
-</body>
+    <script type="module" src="options.js"></script>
+  </body>
 </html>

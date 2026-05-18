@@ -58,18 +58,20 @@ describe("migrateV0toV1", () => {
   });
 
   it("leaves an already-migrated template alone", async () => {
-    const templates = [{
-      id: "1",
-      name: "Test",
-      body: "Hello",
-      category: "work",
-      to: ["a@b.com"],
-      cc: [],
-      bcc: [],
-      identities: [],
-      insertMode: "replace",
-      attachments: [{ name: "file.txt", type: "text/plain", data: "aGVsbG8=" }],
-    }];
+    const templates = [
+      {
+        id: "1",
+        name: "Test",
+        body: "Hello",
+        category: "work",
+        to: ["a@b.com"],
+        cc: [],
+        bcc: [],
+        identities: [],
+        insertMode: "replace",
+        attachments: [{ name: "file.txt", type: "text/plain", data: "aGVsbG8=" }],
+      },
+    ];
     const { changed } = await migrateV0toV1(templates);
     assert.strictEqual(changed, false);
     assert.strictEqual(templates[0].category, "work");
@@ -84,7 +86,18 @@ describe("migrateV0toV1", () => {
 
   it("handles mixed migrated and unmigrated templates", async () => {
     const templates = [
-      { id: "1", name: "Migrated", body: "", category: "work", to: [], cc: [], bcc: [], identities: [], insertMode: "append", attachments: [] },
+      {
+        id: "1",
+        name: "Migrated",
+        body: "",
+        category: "work",
+        to: [],
+        cc: [],
+        bcc: [],
+        identities: [],
+        insertMode: "append",
+        attachments: [],
+      },
       { id: "2", name: "Unmigrated", body: "" },
     ];
     const { changed } = await migrateV0toV1(templates);

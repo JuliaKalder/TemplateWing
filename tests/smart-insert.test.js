@@ -6,9 +6,7 @@ import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.
 // strictly needed for the pure helpers but keeps the import graph happy.
 installMessengerMock();
 
-const { smartInsertHtml, smartInsertPlaintext } = await import(
-  "../modules/template-insert.js"
-);
+const { smartInsertHtml, smartInsertPlaintext } = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
 
@@ -17,9 +15,9 @@ after(() => uninstallMessengerMock());
 describe("smartInsertHtml", () => {
   it("inserts before a moz-cite-prefix div", () => {
     const body =
-      '<p>User typed reply</p>' +
+      "<p>User typed reply</p>" +
       '<div class="moz-cite-prefix">On 2026-04-17, Alice wrote:</div>' +
-      '<blockquote>quoted</blockquote>';
+      "<blockquote>quoted</blockquote>";
     const result = smartInsertHtml(body, "<p>TEMPLATE</p>");
     const citeIdx = result.indexOf("moz-cite-prefix");
     const tmplIdx = result.indexOf("TEMPLATE");
@@ -31,9 +29,7 @@ describe("smartInsertHtml", () => {
   });
 
   it("inserts before a moz-signature div when no cite-prefix exists", () => {
-    const body =
-      '<p>Hello</p>' +
-      '<div class="moz-signature">--<br>Jane</div>';
+    const body = "<p>Hello</p>" + '<div class="moz-signature">--<br>Jane</div>';
     const result = smartInsertHtml(body, "<p>TEMPLATE</p>");
     const sigIdx = result.indexOf("moz-signature");
     const tmplIdx = result.indexOf("TEMPLATE");
@@ -48,7 +44,7 @@ describe("smartInsertHtml", () => {
     const body =
       '<div class="moz-signature">--<br>Jane</div>' +
       '<div class="moz-cite-prefix">On ...</div>' +
-      '<blockquote>q</blockquote>';
+      "<blockquote>q</blockquote>";
     const result = smartInsertHtml(body, "<p>TEMPLATE</p>");
     const tmplIdx = result.indexOf("TEMPLATE");
     const sigIdx = result.indexOf("moz-signature");

@@ -490,7 +490,9 @@ h1 {
   border-radius: 3px;
   color: var(--color-primary);
   cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
 .variable-chip:hover {

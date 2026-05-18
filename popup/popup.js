@@ -1,4 +1,10 @@
-import { getTemplates, getTemplate, getCategories, trackUsage, isTemplateAllowedForIdentity } from "../modules/template-store.js";
+import {
+  getTemplates,
+  getTemplate,
+  getCategories,
+  trackUsage,
+  isTemplateAllowedForIdentity,
+} from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 async function getCurrentIdentityId() {
@@ -78,8 +84,8 @@ async function renderTemplateList() {
 
     item.appendChild(topRow);
 
-    const hasTemplateMeta = template.category
-      || (template.attachments && template.attachments.length > 0);
+    const hasTemplateMeta =
+      template.category || (template.attachments && template.attachments.length > 0);
     const hasShortcut = i < 9;
 
     if (hasTemplateMeta || hasShortcut) {
@@ -157,12 +163,22 @@ async function insertTemplate(id) {
       const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
       let message;
       if (err && err.code === "ATTACHMENT_FAILED" && Array.isArray(err.failedNames)) {
-        message = messenger.i18n.getMessage("notificationAttachmentFailed", err.failedNames.join(", "));
+        message = messenger.i18n.getMessage(
+          "notificationAttachmentFailed",
+          err.failedNames.join(", ")
+        );
       } else {
         message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
       }
-      await messenger.notifications.create({ type: "basic", iconUrl: messenger.runtime.getURL("images/icon-64.png"), title, message });
-    } catch (_) { /* ignore notification failure */ }
+      await messenger.notifications.create({
+        type: "basic",
+        iconUrl: messenger.runtime.getURL("images/icon-64.png"),
+        title,
+        message,
+      });
+    } catch (_) {
+      /* ignore notification failure */
+    }
     return;
   }
   await trackUsage(id);
@@ -174,11 +190,9 @@ function filterTemplates() {
   const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const items = document.querySelectorAll("#template-list .template-item");
   for (const item of items) {
-    const matchesSearch = !query
-      || item.dataset.name.includes(query)
-      || item.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory
-      || item.dataset.category === selectedCategory;
+    const matchesSearch =
+      !query || item.dataset.name.includes(query) || item.dataset.subject.includes(query);
+    const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
     item.hidden = !(matchesSearch && matchesCategory);
   }
 }
@@ -187,7 +201,9 @@ async function populateCategoryFilter() {
   const filter = document.getElementById("category-filter");
   const currentIdentityId = await getCurrentIdentityId();
   const allTemplates = await getTemplates();
-  const visibleTemplates = allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId));
+  const visibleTemplates = allTemplates.filter((t) =>
+    isTemplateAllowedForIdentity(t, currentIdentityId)
+  );
   const categories = [...new Set(visibleTemplates.map((t) => t.category).filter(Boolean))].sort();
 
   const options = filter.querySelectorAll("option:not(:first-child)");

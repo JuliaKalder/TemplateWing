@@ -5,12 +5,8 @@ import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.
 // The module installs a storage listener at import time; install the mock first.
 installMessengerMock();
 
-const {
-  TEMPLATE_INCLUDE_REGEX,
-  WEEKDAY_NAMES,
-  applyVariables,
-  resolveNestedTemplates,
-} = await import("../modules/template-insert.js");
+const { TEMPLATE_INCLUDE_REGEX, WEEKDAY_NAMES, applyVariables, resolveNestedTemplates } =
+  await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
 
@@ -39,7 +35,10 @@ describe("TEMPLATE_INCLUDE_REGEX", () => {
   it("matches multiple includes in same text", () => {
     const matches = matchAll("{{template:First}} and {{template:Second}} and {{templateid:id123}}");
     assert.strictEqual(matches.length, 3);
-    assert.deepStrictEqual(matches.map((m) => m[2]), ["First", "Second", "id123"]);
+    assert.deepStrictEqual(
+      matches.map((m) => m[2]),
+      ["First", "Second", "id123"]
+    );
   });
 
   it("is case-insensitive for the template keyword", () => {
@@ -94,7 +93,10 @@ describe("applyVariables", () => {
   });
 
   it("is case-insensitive", () => {
-    assert.strictEqual(applyVariables("{date} {Date} {DATE}", fixed), "2026-04-06 2026-04-06 2026-04-06");
+    assert.strictEqual(
+      applyVariables("{date} {Date} {DATE}", fixed),
+      "2026-04-06 2026-04-06 2026-04-06"
+    );
   });
 
   it("leaves text without variables unchanged", () => {
@@ -134,17 +136,13 @@ describe("resolveNestedTemplates", () => {
   }
 
   it("resolves a simple template include", async () => {
-    const { byId, byName } = buildMaps([
-      { id: "t1", name: "Template 1", body: "Hello {NAME}" },
-    ]);
+    const { byId, byName } = buildMaps([{ id: "t1", name: "Template 1", body: "Hello {NAME}" }]);
     const result = await resolveNestedTemplates("{{template:Template 1}}", new Set(), byId, byName);
     assert.strictEqual(result, "Hello {NAME}");
   });
 
   it("detects direct self-reference", async () => {
-    const { byId, byName } = buildMaps([
-      { id: "tA", name: "A", body: "{{templateid:tA}}" },
-    ]);
+    const { byId, byName } = buildMaps([{ id: "tA", name: "A", body: "{{templateid:tA}}" }]);
     await assert.rejects(
       resolveNestedTemplates("{{templateid:tA}}", new Set(), byId, byName),
       /Circular reference detected/
@@ -205,9 +203,7 @@ describe("resolveNestedTemplates", () => {
   });
 
   it("resolves the same template multiple times in one string", async () => {
-    const { byId, byName } = buildMaps([
-      { id: "tA", name: "A", body: "[A]" },
-    ]);
+    const { byId, byName } = buildMaps([{ id: "tA", name: "A", body: "[A]" }]);
     const result = await resolveNestedTemplates(
       "{{template:A}} and {{template:A}}",
       new Set(),
@@ -220,9 +216,7 @@ describe("resolveNestedTemplates", () => {
   it("respects an externally-supplied visited set (caller seeds top-level id)", async () => {
     // The production insertTemplateIntoTab passes `new Set([template.id])` so that a
     // template including itself by name or id is detected as a cycle at the outermost level.
-    const { byId, byName } = buildMaps([
-      { id: "tA", name: "A", body: "{{template:A}}" },
-    ]);
+    const { byId, byName } = buildMaps([{ id: "tA", name: "A", body: "{{template:A}}" }]);
     await assert.rejects(
       resolveNestedTemplates("{{template:A}}", new Set(["tA"]), byId, byName),
       /Circular reference detected/

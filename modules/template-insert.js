@@ -1,5 +1,11 @@
 export const WEEKDAY_NAMES = Object.freeze([
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
 ]);
 
 /**
@@ -18,7 +24,8 @@ export function smartInsertHtml(existingBody, insertHtml) {
   if (!existingBody) return insertHtml || "";
   if (!insertHtml) return existingBody;
 
-  const citeRe = /<(div|blockquote)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-cite-prefix\b[^"']*["'][^>]*>/i;
+  const citeRe =
+    /<(div|blockquote)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-cite-prefix\b[^"']*["'][^>]*>/i;
   const sigRe = /<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-signature\b[^"']*["'][^>]*>/i;
 
   const cite = existingBody.match(citeRe);
@@ -86,9 +93,15 @@ function escapeHtml(str) {
 export function applyVariables(text, vars, isHtml = false) {
   if (!text) return text;
   const {
-    date = "", time = "", datetime = "", year = "",
-    weekday = "", senderName = "", senderEmail = "",
-    accountName = "", accountEmail = "",
+    date = "",
+    time = "",
+    datetime = "",
+    year = "",
+    weekday = "",
+    senderName = "",
+    senderEmail = "",
+    accountName = "",
+    accountEmail = "",
   } = vars || {};
   const e = isHtml ? escapeHtml : (s) => String(s ?? "");
   // Use function replacers to prevent $&/$'/$` pattern injection.
@@ -151,17 +164,21 @@ export async function replaceVariables(text, tabId, isHtml = false) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
-  return applyVariables(text, {
-    date: now.toLocaleDateString(),
-    time: now.toLocaleTimeString(),
-    datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
-    year: now.getFullYear(),
-    weekday: WEEKDAY_NAMES[now.getDay()],
-    senderName,
-    senderEmail,
-    accountName,
-    accountEmail,
-  }, isHtml);
+  return applyVariables(
+    text,
+    {
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
+      year: now.getFullYear(),
+      weekday: WEEKDAY_NAMES[now.getDay()],
+      senderName,
+      senderEmail,
+      accountName,
+      accountEmail,
+    },
+    isHtml
+  );
 }
 
 export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
@@ -177,7 +194,13 @@ export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
  * @param {Map} templatesByName - Map of template name (lowercase) to template object
  * @returns {Promise<string>} Text with includes resolved
  */
-export async function resolveNestedTemplates(text, visited, templatesById, templatesByName, memo = new Map()) {
+export async function resolveNestedTemplates(
+  text,
+  visited,
+  templatesById,
+  templatesByName,
+  memo = new Map()
+) {
   if (!text) return text;
 
   // Use a fresh regex per call to avoid lastIndex state on the shared exported one.
@@ -212,7 +235,10 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
     }
 
     if (visited.has(nestedTemplate.id)) {
-      console.error("TemplateWing: circular reference detected for template:", JSON.stringify(nestedTemplate.name));
+      console.error(
+        "TemplateWing: circular reference detected for template:",
+        JSON.stringify(nestedTemplate.name)
+      );
       throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
     }
 
@@ -264,9 +290,7 @@ export async function insertTemplateIntoTab(tabId, template) {
       const { getTemplates } = await import("./template-store.js");
       const allTemplates = await getTemplates();
       const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
-      const templatesByName = new Map(
-        allTemplates.map((t) => [(t.name || "").toLowerCase(), t])
-      );
+      const templatesByName = new Map(allTemplates.map((t) => [(t.name || "").toLowerCase(), t]));
       const visited = new Set([template.id]);
       resolvedBody = await resolveNestedTemplates(
         template.body,
@@ -319,9 +343,7 @@ export async function insertTemplateIntoTab(tabId, template) {
         // rejected execCommand, DOM exception, etc). `response.error`
         // carries the specific code from compose-script.js.
         const code = (response && response.error) || "unknown";
-        console.warn(
-          `TemplateWing: compose-script returned ${code} — falling back to append`
-        );
+        console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
       }
     } catch (err) {
       // tabs.sendMessage could not reach a listener in this tab. Possible
@@ -362,7 +384,11 @@ export async function insertTemplateIntoTab(tabId, template) {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
     } else {
-      console.warn("TemplateWing: unknown insert mode:", JSON.stringify(mode), "— defaulting to append");
+      console.warn(
+        "TemplateWing: unknown insert mode:",
+        JSON.stringify(mode),
+        "— defaulting to append"
+      );
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
     }

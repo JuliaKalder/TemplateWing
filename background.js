@@ -1,4 +1,10 @@
-import { getTemplates, getTemplate, trackUsage, setPrefillTemplate, isTemplateAllowedForIdentity } from "./modules/template-store.js";
+import {
+  getTemplates,
+  getTemplate,
+  trackUsage,
+  setPrefillTemplate,
+  isTemplateAllowedForIdentity,
+} from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
 async function notifyInsertFailure(err) {
@@ -259,7 +265,10 @@ messenger.runtime.onMessage.addListener(async (message, sender) => {
     // Only accept this message from the popup page.
     const expectedUrl = messenger.runtime.getURL("popup/popup.html");
     if (!sender || sender.url !== expectedUrl) {
-      console.warn("TemplateWing: rejecting templatewing:insertTemplate from untrusted sender", sender && sender.url);
+      console.warn(
+        "TemplateWing: rejecting templatewing:insertTemplate from untrusted sender",
+        sender && sender.url
+      );
       return;
     }
 
@@ -326,11 +335,7 @@ async function injectComposeScript(tabId) {
     });
     console.log("TemplateWing: compose-script injected into tab", tabId);
   } catch (err) {
-    console.warn(
-      "TemplateWing: compose-script inject failed for tab",
-      tabId,
-      err && err.message
-    );
+    console.warn("TemplateWing: compose-script inject failed for tab", tabId, err && err.message);
   }
 }
 

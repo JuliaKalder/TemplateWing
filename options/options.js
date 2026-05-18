@@ -36,8 +36,8 @@ function localize() {
 }
 
 function showView(name) {
-  document.getElementById("view-list").hidden = (name !== "list");
-  document.getElementById("view-editor").hidden = (name !== "editor");
+  document.getElementById("view-list").hidden = name !== "list";
+  document.getElementById("view-editor").hidden = name !== "editor";
 }
 
 async function renderTemplateList() {
@@ -102,10 +102,7 @@ async function renderTemplateList() {
     deleteBtn.className = "btn-delete";
     deleteBtn.textContent = messenger.i18n.getMessage("optionsDelete");
     deleteBtn.addEventListener("click", async () => {
-      const msg = messenger.i18n.getMessage(
-        "optionsConfirmDelete",
-        template.name
-      );
+      const msg = messenger.i18n.getMessage("optionsConfirmDelete", template.name);
       if (confirm(msg)) {
         await deleteTemplate(template.id);
         await renderTemplateList();
@@ -166,9 +163,7 @@ async function loadIdentities() {
         for (const identity of account.identities) {
           const option = document.createElement("option");
           option.value = identity.id;
-          const label = identity.name
-            ? `${identity.name} (${identity.email})`
-            : identity.email;
+          const label = identity.name ? `${identity.name} (${identity.email})` : identity.email;
           option.textContent = label;
           option.title = identity.email;
           select.appendChild(option);
@@ -304,9 +299,7 @@ async function addFiles(files) {
       });
     } catch (err) {
       console.error("TemplateWing: could not read file", file.name, err);
-      showEditorError(
-        messenger.i18n.getMessage("attachmentReadError", file.name)
-      );
+      showEditorError(messenger.i18n.getMessage("attachmentReadError", file.name));
     }
   }
   renderAttachments();
@@ -347,7 +340,9 @@ async function openEditor(id, prefill = null) {
       bodyEditor.replaceChildren();
       if (template.body) {
         const parsed = new DOMParser().parseFromString(template.body, "text/html");
-        bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
+        bodyEditor.append(
+          ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+        );
       }
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
       const selectedIdentities = template.identities || [];
@@ -367,7 +362,9 @@ async function openEditor(id, prefill = null) {
     bodyEditor.replaceChildren();
     if (prefill && prefill.body) {
       const parsed = new DOMParser().parseFromString(prefill.body, "text/html");
-      bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
+      bodyEditor.append(
+        ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+      );
     }
   }
 
@@ -423,7 +420,9 @@ async function duplicateTemplate(id) {
   bodyEditor.replaceChildren();
   if (template.body) {
     const parsed = new DOMParser().parseFromString(template.body, "text/html");
-    bodyEditor.append(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
+    bodyEditor.append(
+      ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+    );
   }
 
   const selectedIdentities = template.identities || [];
@@ -440,7 +439,10 @@ async function duplicateTemplate(id) {
 
 function parseRecipients(value) {
   return value.trim()
-    ? value.split(",").map((s) => s.trim()).filter(Boolean)
+    ? value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 }
 
@@ -505,7 +507,9 @@ function switchToVisualView() {
   const toolbar = document.querySelector(".editor-toolbar");
 
   const parsed = new DOMParser().parseFromString(htmlTextarea.value, "text/html");
-  bodyEditor.replaceChildren(...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true)));
+  bodyEditor.replaceChildren(
+    ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+  );
   htmlTextarea.hidden = true;
   bodyEditor.hidden = false;
   htmlViewActive = false;
@@ -568,23 +572,28 @@ async function handleSave() {
   const ccResult = validateRecipients(ccInput.value);
   const bccResult = validateRecipients(bccInput.value);
 
-  const allInvalid = [
-    ...toResult.invalid,
-    ...ccResult.invalid,
-    ...bccResult.invalid,
-  ];
+  const allInvalid = [...toResult.invalid, ...ccResult.invalid, ...bccResult.invalid];
   if (allInvalid.length > 0) {
     if (toResult.invalid.length) {
       toInput.classList.add("field-error");
-      showInlineError("editor-to", messenger.i18n.getMessage("validationInvalidRecipients", toResult.invalid.join(", ")));
+      showInlineError(
+        "editor-to",
+        messenger.i18n.getMessage("validationInvalidRecipients", toResult.invalid.join(", "))
+      );
     }
     if (ccResult.invalid.length) {
       ccInput.classList.add("field-error");
-      showInlineError("editor-cc", messenger.i18n.getMessage("validationInvalidRecipients", ccResult.invalid.join(", ")));
+      showInlineError(
+        "editor-cc",
+        messenger.i18n.getMessage("validationInvalidRecipients", ccResult.invalid.join(", "))
+      );
     }
     if (bccResult.invalid.length) {
       bccInput.classList.add("field-error");
-      showInlineError("editor-bcc", messenger.i18n.getMessage("validationInvalidRecipients", bccResult.invalid.join(", ")));
+      showInlineError(
+        "editor-bcc",
+        messenger.i18n.getMessage("validationInvalidRecipients", bccResult.invalid.join(", "))
+      );
     }
     return;
   }
@@ -641,10 +650,12 @@ async function handleSave() {
 
 async function handleExport() {
   const templates = await getTemplates();
-  const safeTemplates = templates.map(({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
-    ...t,
-    attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
-  }));
+  const safeTemplates = templates.map(
+    ({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
+      ...t,
+      attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
+    })
+  );
   const payload = {
     // Export format version (not the extension version); import ignores this field.
     version: "2.2",
@@ -666,7 +677,9 @@ function showImportFeedback(message, isError) {
   el.className = "import-feedback" + (isError ? " error" : "");
   el.hidden = false;
   const FEEDBACK_DISMISS_MS = 6000;
-  setTimeout(() => { el.hidden = true; }, FEEDBACK_DISMISS_MS);
+  setTimeout(() => {
+    el.hidden = true;
+  }, FEEDBACK_DISMISS_MS);
 }
 
 // ---- Import guardrails ----
@@ -685,7 +698,10 @@ function showImportDialog(analysis, validTemplates) {
   const totalLine = document.createElement("div");
   totalLine.className = "summary-line";
   const totalSpan = document.createElement("span");
-  totalSpan.textContent = messenger.i18n.getMessage("importDialogTotal", String(validTemplates.length + analysis.invalid));
+  totalSpan.textContent = messenger.i18n.getMessage(
+    "importDialogTotal",
+    String(validTemplates.length + analysis.invalid)
+  );
   totalLine.appendChild(totalSpan);
   summaryEl.appendChild(totalLine);
 
@@ -693,7 +709,10 @@ function showImportDialog(analysis, validTemplates) {
     const invalidLine = document.createElement("div");
     invalidLine.className = "summary-line summary-warn";
     const invalidSpan = document.createElement("span");
-    invalidSpan.textContent = messenger.i18n.getMessage("importDialogInvalid", String(analysis.invalid));
+    invalidSpan.textContent = messenger.i18n.getMessage(
+      "importDialogInvalid",
+      String(analysis.invalid)
+    );
     invalidLine.appendChild(invalidSpan);
     summaryEl.appendChild(invalidLine);
   }
@@ -702,7 +721,10 @@ function showImportDialog(analysis, validTemplates) {
     const dupLine = document.createElement("div");
     dupLine.className = "summary-line summary-warn";
     const dupSpan = document.createElement("span");
-    dupSpan.textContent = messenger.i18n.getMessage("importDialogDuplicates", String(analysis.duplicates.size));
+    dupSpan.textContent = messenger.i18n.getMessage(
+      "importDialogDuplicates",
+      String(analysis.duplicates.size)
+    );
     dupLine.appendChild(dupSpan);
     summaryEl.appendChild(dupLine);
   }
@@ -748,9 +770,7 @@ async function executeImport() {
   const { analysis, validTemplates } = pendingImportData;
   const mode = document.querySelector('input[name="import-mode"]:checked').value;
   const existingTemplates = await getTemplates();
-  const existingByName = new Map(
-    existingTemplates.map((t) => [t.name.toLowerCase(), t])
-  );
+  const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 
   let added = 0;
   let skipped = 0;
@@ -842,11 +862,9 @@ function filterTemplates() {
   const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const cards = document.querySelectorAll("#template-list .template-card");
   for (const card of cards) {
-    const matchesSearch = !query
-      || card.dataset.name.includes(query)
-      || card.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory
-      || card.dataset.category === selectedCategory;
+    const matchesSearch =
+      !query || card.dataset.name.includes(query) || card.dataset.subject.includes(query);
+    const matchesCategory = !selectedCategory || card.dataset.category === selectedCategory;
     card.hidden = !(matchesSearch && matchesCategory);
   }
 }
@@ -925,7 +943,7 @@ function updateToolbarState() {
 
 document.addEventListener("selectionchange", () => {
   const editor = document.getElementById("editor-body");
-  if (editor && editor.contains(document.activeElement) || document.activeElement === editor) {
+  if ((editor && editor.contains(document.activeElement)) || document.activeElement === editor) {
     updateToolbarState();
   }
 });
