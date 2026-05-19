@@ -5,6 +5,7 @@ import {
   setPrefillTemplate,
   isTemplateAllowedForIdentity,
   getSortedTemplates,
+  groupTemplatesByCategory,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
@@ -77,21 +78,7 @@ async function buildContextMenu(identityId = null) {
     return;
   }
 
-  const categorized = {};
-  const uncategorized = [];
-
-  for (const template of templates) {
-    if (template.category) {
-      if (!categorized[template.category]) {
-        categorized[template.category] = [];
-      }
-      categorized[template.category].push(template);
-    } else {
-      uncategorized.push(template);
-    }
-  }
-
-  const sortedCategories = Object.keys(categorized).sort();
+  const { sortedCategories, byCategory, uncategorized } = groupTemplatesByCategory(templates);
 
   for (const [index, category] of sortedCategories.entries()) {
     const categoryId = getCategoryMenuId(category, index);
@@ -102,7 +89,7 @@ async function buildContextMenu(identityId = null) {
       contexts: ["compose_body"],
     });
 
-    for (const template of categorized[category]) {
+    for (const template of byCategory[category]) {
       messenger.menus.create({
         id: `templatewing-insert-${template.id}`,
         title: template.name,

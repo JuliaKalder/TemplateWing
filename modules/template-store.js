@@ -219,6 +219,26 @@ export async function consumePrefillTemplate() {
 
 export { PREFILL_KEY };
 
+// ---- Grouping ----
+
+/** Group templates by category, returning sorted category keys and uncategorized templates. */
+export function groupTemplatesByCategory(templates) {
+  const byCategory = {};
+  const uncategorized = [];
+  for (const t of templates) {
+    if (t.category) {
+      (byCategory[t.category] ??= []).push(t);
+    } else {
+      uncategorized.push(t);
+    }
+  }
+  return {
+    sortedCategories: Object.keys(byCategory).sort(),
+    byCategory,
+    uncategorized,
+  };
+}
+
 // ---- Sorting ----
 
 /** Sort templates by category then by name (case-insensitive). */
