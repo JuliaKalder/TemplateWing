@@ -7,6 +7,7 @@ import {
   getSortedTemplates,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
+import { getIdentityIdForTab } from "./modules/compose-utils.js";
 
 async function notifyInsertFailure(err) {
   try {
@@ -28,16 +29,6 @@ async function notifyInsertFailure(err) {
     });
   } catch (notifyErr) {
     console.error("TemplateWing: could not show notification", notifyErr);
-  }
-}
-
-async function getCurrentIdentityId(tabId) {
-  try {
-    const details = await messenger.compose.getComposeDetails(tabId);
-    return details.identityId || null;
-  } catch (err) {
-    console.warn("TemplateWing: could not get current identity", err);
-    return null;
   }
 }
 
@@ -194,7 +185,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   const template = await getTemplate(templateId);
   if (!template) return;
 
-  const currentIdentityId = await getCurrentIdentityId(tab.id);
+  const currentIdentityId = await getIdentityIdForTab(tab.id);
   if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
     console.warn("TemplateWing: template not allowed for current identity");
     return;
@@ -224,7 +215,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
 
   if (tabs.length === 0) return;
 
-  const currentIdentityId = await getCurrentIdentityId(tabs[0].id);
+  const currentIdentityId = await getIdentityIdForTab(tabs[0].id);
 
   const templates = getSortedTemplates(
     allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
@@ -303,7 +294,7 @@ messenger.menus.onShown.addListener(async (info, tab) => {
   if (!info.contexts || !info.contexts.includes("compose_body") || !tab || !tab.id) {
     return;
   }
-  const identityId = await getCurrentIdentityId(tab.id);
+  const identityId = await getIdentityIdForTab(tab.id);
   await buildContextMenu(identityId);
   messenger.menus.refresh();
 });
