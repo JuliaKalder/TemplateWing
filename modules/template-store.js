@@ -231,6 +231,63 @@ export function getSortedTemplates(templates) {
   });
 }
 
+// ---- Import merge strategy ----
+
+/**
+ * Import templates into storage using the specified merge mode.
+ *
+ * @param {Array<Object>} validTemplates - Pre-validated (and pre-sanitized) template objects to import.
+ *   Each template should have tracking fields (id, createdAt, updatedAt, usageCount, lastUsedAt) already stripped.
+ * @param {"append"|"skip"|"replace"} mode - Merge strategy:
+ *   - "append"  — always add as a new template, even if a duplicate name exists
+ *   - "skip"    — leave existing templates unchanged when a name collision is found
+ *   - "replace" — overwrite the existing template when a name collision is found
+ * @returns {Promise<{added: number, skipped: number, replaced: number}>}
+ */
+export async function importTemplates(validTemplates, mode) {
+  const existingTemplates = await getTemplates();
+  const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
+
+  let added = 0;
+  let skipped = 0;
+  let replaced = 0;
+
+  for (const template of validTemplates) {
+    const nameKey = template.name.trim().toLowerCase();
+    const existing = existingByName.get(nameKey);
+
+    if (existing) {
+      if (mode === "skip") {
+        skipped++;
+        continue;
+      }
+      if (mode === "replace") {
+        try {
+          const saved = await saveTemplate({ ...template, id: existing.id });
+          existingByName.set(nameKey, saved);
+          replaced++;
+        } catch (err) {
+          console.error("TemplateWing: import replace failed for", template.name, err);
+          skipped++;
+        }
+        continue;
+      }
+    }
+
+    // mode === "append" or no duplicate
+    try {
+      const saved = await saveTemplate(template);
+      existingByName.set(nameKey, saved);
+      added++;
+    } catch (err) {
+      console.error("TemplateWing: import failed for template", template.name, err);
+      skipped++;
+    }
+  }
+
+  return { added, skipped, replaced };
+}
+
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub
 // are not poisoned by state from earlier tests.
 export function _resetCacheForTests() {
