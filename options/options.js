@@ -5,6 +5,7 @@ import {
   deleteTemplate,
   getCategories,
   generateId,
+  getIdentities,
   consumePrefillTemplate,
   PREFILL_KEY,
   EXPORT_FORMAT_VERSION,
@@ -159,18 +160,13 @@ async function loadIdentities() {
   select.replaceChildren();
 
   try {
-    const accounts = await messenger.accounts.list();
-    for (const account of accounts) {
-      if (account.identities) {
-        for (const identity of account.identities) {
-          const option = document.createElement("option");
-          option.value = identity.id;
-          const label = identity.name ? `${identity.name} (${identity.email})` : identity.email;
-          option.textContent = label;
-          option.title = identity.email;
-          select.appendChild(option);
-        }
-      }
+    const identities = await getIdentities();
+    for (const { id, label, email } of identities) {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = label;
+      option.title = email;
+      select.appendChild(option);
     }
   } catch (err) {
     console.warn("TemplateWing: could not load identities", err);
