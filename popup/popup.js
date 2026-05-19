@@ -1,12 +1,12 @@
 import {
   getTemplates,
   getTemplate,
-  getCategories,
   trackUsage,
   isTemplateAllowedForIdentity,
   INSERT_MODES,
 } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
+import { setFilterOptions } from "../modules/ui-helpers.js";
 
 async function getCurrentIdentityId() {
   try {
@@ -202,22 +202,13 @@ function filterTemplates() {
 }
 
 async function populateCategoryFilter() {
-  const filter = document.getElementById("category-filter");
   const currentIdentityId = await getCurrentIdentityId();
   const allTemplates = await getTemplates();
   const visibleTemplates = allTemplates.filter((t) =>
     isTemplateAllowedForIdentity(t, currentIdentityId)
   );
   const categories = [...new Set(visibleTemplates.map((t) => t.category).filter(Boolean))].sort();
-
-  const options = filter.querySelectorAll("option:not(:first-child)");
-  options.forEach((opt) => opt.remove());
-  for (const cat of categories) {
-    const option = document.createElement("option");
-    option.value = cat;
-    option.textContent = cat;
-    filter.appendChild(option);
-  }
+  setFilterOptions("category-filter", categories);
 }
 
 document.getElementById("search-input").addEventListener("input", filterTemplates);
