@@ -280,6 +280,80 @@ export function htmlToPlainText(html) {
 }
 
 /**
+ * Try to insert `body` at the cursor position in the given compose tab.
+ *
+ * Attempts to (re-)inject compose-script.js via executeScript so that a
+ * listener is always present, then sends the insertAtCursor message.
+ *
+ * @param {number} tabId - The compose tab ID
+ * @param {string} body - The resolved, variable-replaced HTML body to insert
+ * @param {object} existingDetails - Result of messenger.compose.getComposeDetails(tabId)
+ * @returns {Promise<string|null>} Resolves to `null` when the cursor insert
+ *   succeeded, or to the fallback body string (via smartInsertPlaintext /
+ *   smartInsertHtml) when it did not.
+ */
+async function tryCursorInsert(tabId, body, existingDetails) {
+  const isPlainText = !!existingDetails.isPlainText;
+  console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
+
+  // Safety net: even with composeScripts.register() set up at boot,
+  // explicitly re-inject here so that if something upstream went wrong
+  // (registration failed, tab opened before register resolved, etc.)
+  // we still have a listener to talk to. Idempotent via the
+  // listener-swap in compose-script.js.
+  try {
+    await messenger.tabs.executeScript(tabId, {
+      file: "/modules/compose-script.js",
+    });
+    console.log("TemplateWing: pre-send inject ok", { tabId });
+  } catch (err) {
+    console.warn("TemplateWing: pre-send inject failed", err && err.message);
+  }
+
+  try {
+    const response = await messenger.tabs.sendMessage(tabId, {
+      action: "templatewing:insertAtCursor",
+      html: body,
+      text: htmlToPlainText(body),
+      isPlainText,
+    });
+    console.log("TemplateWing: cursor mode <- response", response);
+    if (response && response.ok) {
+      return null;
+    }
+    // Script ran but refused to insert (no usable range, editor
+    // rejected execCommand, DOM exception, etc). `response.error`
+    // carries the specific code from compose-script.js.
+    const code = (response && response.error) || "unknown";
+    console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
+  } catch (err) {
+    // tabs.sendMessage could not reach a listener in this tab. Possible
+    // causes: composeScripts.register() has not yet resolved for this tab,
+    // the background-page backfill via executeScript failed or hasn't run
+    // yet, or the tab was open before the add-on loaded. Fall back to
+    // append so the existing body and signature stay intact.
+    console.warn(
+      "TemplateWing: compose-script not injected in this tab — falling back to append",
+      err && err.message ? err.message : err
+    );
+  }
+
+  // Smart fallback: when the compose-script path could not insert at
+  // the caret (no listener, no usable range, Gecko quirks, etc.),
+  // insert at a user-meaningful anchor rather than blindly appending.
+  // Priority: before cite-prefix (reply quote), before signature,
+  // else append. Keeps the template from landing after the sign-off.
+  const fallbackBody = isPlainText
+    ? smartInsertPlaintext(existingDetails.body || "", htmlToPlainText(body))
+    : smartInsertHtml(existingDetails.body || "", body);
+  console.log(
+    "TemplateWing: cursor fallback wrote template",
+    isPlainText ? "as plaintext (smart-insert)" : "as HTML (smart-insert)"
+  );
+  return fallbackBody;
+}
+
+/**
  * Insert a template into a compose tab.
  * @param {number} tabId - The compose tab ID
  * @param {object} template - Template object from storage
@@ -310,72 +384,11 @@ export async function insertTemplateIntoTab(tabId, template) {
   // "cursor" mode is delivered via a compose script message rather than by
   // rewriting the whole body, so the signature and any text the user has
   // already typed stay intact.
-  let insertedAtCursor = false;
   if (resolvedBody && mode === INSERT_MODES.CURSOR) {
     const body = await replaceVariables(resolvedBody, tabId, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
-    const isPlainText = !!existing.isPlainText;
-    console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
-
-    // Safety net: even with composeScripts.register() set up at boot,
-    // explicitly re-inject here so that if something upstream went wrong
-    // (registration failed, tab opened before register resolved, etc.)
-    // we still have a listener to talk to. Idempotent via the
-    // listener-swap in compose-script.js.
-    try {
-      await messenger.tabs.executeScript(tabId, {
-        file: "/modules/compose-script.js",
-      });
-      console.log("TemplateWing: pre-send inject ok", { tabId });
-    } catch (err) {
-      console.warn("TemplateWing: pre-send inject failed", err && err.message);
-    }
-
-    try {
-      const response = await messenger.tabs.sendMessage(tabId, {
-        action: "templatewing:insertAtCursor",
-        html: body,
-        text: htmlToPlainText(body),
-        isPlainText,
-      });
-      console.log("TemplateWing: cursor mode <- response", response);
-      if (response && response.ok) {
-        insertedAtCursor = true;
-      } else {
-        // Script ran but refused to insert (no usable range, editor
-        // rejected execCommand, DOM exception, etc). `response.error`
-        // carries the specific code from compose-script.js.
-        const code = (response && response.error) || "unknown";
-        console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
-      }
-    } catch (err) {
-      // tabs.sendMessage could not reach a listener in this tab. Possible
-      // causes: composeScripts.register() has not yet resolved for this tab,
-      // the background-page backfill via executeScript failed or hasn't run
-      // yet, or the tab was open before the add-on loaded. Fall back to
-      // append so the existing body and signature stay intact.
-      console.warn(
-        "TemplateWing: compose-script not injected in this tab — falling back to append",
-        err && err.message ? err.message : err
-      );
-    }
-
-    if (!insertedAtCursor) {
-      // Smart fallback: when the compose-script path could not insert at
-      // the caret (no listener, no usable range, Gecko quirks, etc.),
-      // insert at a user-meaningful anchor rather than blindly appending.
-      // Priority: before cite-prefix (reply quote), before signature,
-      // else append. Keeps the template from landing after the sign-off.
-      if (isPlainText) {
-        details.body = smartInsertPlaintext(existing.body || "", htmlToPlainText(body));
-      } else {
-        details.body = smartInsertHtml(existing.body || "", body);
-      }
-      console.log(
-        "TemplateWing: cursor fallback wrote template",
-        isPlainText ? "as plaintext (smart-insert)" : "as HTML (smart-insert)"
-      );
-    }
+    const fallbackBody = await tryCursorInsert(tabId, body, existing);
+    if (fallbackBody !== null) details.body = fallbackBody;
   } else if (resolvedBody) {
     const body = await replaceVariables(resolvedBody, tabId, true);
     if (mode === INSERT_MODES.REPLACE) {
