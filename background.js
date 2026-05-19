@@ -7,6 +7,7 @@ import {
   getSortedTemplates,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
+import { findPart, extractBody } from "./modules/message-utils.js";
 
 async function notifyInsertFailure(err) {
   try {
@@ -122,24 +123,6 @@ async function buildContextMenu(identityId = null) {
   }
 }
 
-function findPart(part, contentType) {
-  if (part.contentType === contentType && part.body) return part.body;
-  if (part.parts) {
-    for (const child of part.parts) {
-      const found = findPart(child, contentType);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-function extractBody(part) {
-  const html = findPart(part, "text/html");
-  if (html) return { html: true, body: html };
-  const plain = findPart(part, "text/plain");
-  if (plain) return { html: false, body: plain };
-  return null;
-}
 
 /**
  * Sanitize email HTML before storing in _prefillTemplate to prevent XSS
