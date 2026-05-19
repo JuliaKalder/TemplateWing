@@ -125,12 +125,21 @@ export async function getTemplate(id) {
   };
 }
 
-/** Save (create or update) a template. Throws if name is missing. */
+/** Save (create or update) a template. Throws if name is missing or duplicate. */
 export async function saveTemplate(template) {
   if (!template || typeof template.name !== "string" || !template.name.trim()) {
     throw new TypeError("template.name must be a non-empty string");
   }
   const templates = await getTemplates();
+  const nameLower = template.name.trim().toLowerCase();
+  const conflict = templates.find(
+    (t) => t.name.toLowerCase() === nameLower && t.id !== template.id
+  );
+  if (conflict) {
+    const err = new Error("A template with this name already exists");
+    err.code = "DUPLICATE_NAME";
+    throw err;
+  }
   const now = new Date().toISOString();
 
   if (template.id) {
