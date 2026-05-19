@@ -192,6 +192,27 @@ export async function trackUsage(id) {
   await persistTemplates(updatedTemplates);
 }
 
+// ---- Identity data access ----
+
+/**
+ * Fetch all mail identities from Thunderbird accounts and return structured data.
+ * Separates data retrieval from DOM rendering so label-formatting logic is unit-testable.
+ */
+export async function getIdentities() {
+  const accounts = await messenger.accounts.list();
+  const identities = [];
+  for (const account of accounts) {
+    for (const identity of account.identities || []) {
+      identities.push({
+        id: identity.id,
+        label: identity.name ? `${identity.name} (${identity.email})` : identity.email,
+        email: identity.email,
+      });
+    }
+  }
+  return identities;
+}
+
 // ---- Identity filtering ----
 
 /** Check if a template is allowed for the given identity (empty identities list means allowed for all). */
