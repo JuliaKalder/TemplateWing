@@ -219,6 +219,47 @@ describe("saveTemplate / getTemplate / deleteTemplate", () => {
   it("trackUsage on an unknown id is a no-op", async () => {
     await assert.doesNotReject(trackUsage("nope"));
   });
+
+  it("rejects a new template whose name duplicates an existing one (case-insensitive)", async () => {
+    await saveTemplate({ name: "Hello World", body: "" });
+    await assert.rejects(
+      () => saveTemplate({ name: "hello world", body: "different" }),
+      (err) => {
+        assert.strictEqual(err.code, "DUPLICATE_NAME");
+        return true;
+      }
+    );
+  });
+
+  it("rejects updating a template to a name used by a different template", async () => {
+    const a = await saveTemplate({ name: "Alpha", body: "" });
+    await saveTemplate({ name: "Beta", body: "" });
+    await assert.rejects(
+      () => saveTemplate({ id: a.id, name: "Beta", body: "updated" }),
+      (err) => {
+        assert.strictEqual(err.code, "DUPLICATE_NAME");
+        return true;
+      }
+    );
+  });
+
+  it("allows updating a template to keep its own name", async () => {
+    const saved = await saveTemplate({ name: "Gamma", body: "" });
+    await assert.doesNotReject(() =>
+      saveTemplate({ id: saved.id, name: "Gamma", body: "updated" })
+    );
+  });
+
+  it("name uniqueness check is case-insensitive", async () => {
+    await saveTemplate({ name: "CaseSensitive", body: "" });
+    await assert.rejects(
+      () => saveTemplate({ name: "CASESENSITIVE", body: "" }),
+      (err) => {
+        assert.strictEqual(err.code, "DUPLICATE_NAME");
+        return true;
+      }
+    );
+  });
 });
 
 // ---- Schema migration runs via the store when version is stale ----
