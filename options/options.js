@@ -24,6 +24,39 @@ let pendingAttachments = [];
 let bodyEmptyAcknowledged = false;
 let htmlViewActive = false;
 
+function populateEditorFields(template) {
+  const nameInput = document.getElementById("editor-name");
+  const categoryInput = document.getElementById("editor-category");
+  const identitiesSelect = document.getElementById("editor-identities");
+  const subjectInput = document.getElementById("editor-subject");
+  const toInput = document.getElementById("editor-to");
+  const ccInput = document.getElementById("editor-cc");
+  const bccInput = document.getElementById("editor-bcc");
+  const insertModeSelect = document.getElementById("editor-insert-mode");
+  const bodyEditor = document.getElementById("editor-body");
+
+  nameInput.value = template ? template.name || "" : "";
+  categoryInput.value = template ? template.category || "" : "";
+  subjectInput.value = template ? template.subject || "" : "";
+  toInput.value = template ? (template.to || []).join(", ") : "";
+  ccInput.value = template ? (template.cc || []).join(", ") : "";
+  bccInput.value = template ? (template.bcc || []).join(", ") : "";
+  insertModeSelect.value = template ? template.insertMode || INSERT_MODES.APPEND : INSERT_MODES.APPEND;
+  bodyEditor.replaceChildren();
+  if (template && template.body) {
+    const safeBody = sanitizeTemplateBody(template.body);
+    const parsed = new DOMParser().parseFromString(safeBody, "text/html");
+    bodyEditor.append(
+      ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+    );
+  }
+  pendingAttachments = template ? (template.attachments || []).map((a) => ({ ...a })) : [];
+  const selectedIdentities = template ? template.identities || [] : [];
+  for (const option of identitiesSelect.options) {
+    option.selected = selectedIdentities.includes(option.value);
+  }
+}
+
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
     const key = el.getAttribute("data-i18n");
@@ -323,7 +356,6 @@ async function openEditor(id, prefill = null) {
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
-  const identitiesSelect = document.getElementById("editor-identities");
   const subjectInput = document.getElementById("editor-subject");
   const toInput = document.getElementById("editor-to");
   const ccInput = document.getElementById("editor-cc");
@@ -340,26 +372,7 @@ async function openEditor(id, prefill = null) {
     title.textContent = messenger.i18n.getMessage("optionsEditTemplate");
     const template = await getTemplate(id);
     if (template) {
-      nameInput.value = template.name;
-      categoryInput.value = template.category || "";
-      subjectInput.value = template.subject || "";
-      toInput.value = (template.to || []).join(", ");
-      ccInput.value = (template.cc || []).join(", ");
-      bccInput.value = (template.bcc || []).join(", ");
-      insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
-      bodyEditor.replaceChildren();
-      if (template.body) {
-        const safeBody = sanitizeTemplateBody(template.body);
-        const parsed = new DOMParser().parseFromString(safeBody, "text/html");
-        bodyEditor.append(
-          ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
-        );
-      }
-      pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
-      const selectedIdentities = template.identities || [];
-      for (const option of identitiesSelect.options) {
-        option.selected = selectedIdentities.includes(option.value);
-      }
+      populateEditorFields(template);
     }
   } else {
     title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
@@ -400,48 +413,17 @@ async function duplicateTemplate(id) {
   if (!template) return;
 
   editingId = null;
-  pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
   bodyEmptyAcknowledged = false;
   resetHtmlView();
-
-  const title = document.getElementById("editor-title");
-  const nameInput = document.getElementById("editor-name");
-  const categoryInput = document.getElementById("editor-category");
-  const identitiesSelect = document.getElementById("editor-identities");
-  const subjectInput = document.getElementById("editor-subject");
-  const toInput = document.getElementById("editor-to");
-  const ccInput = document.getElementById("editor-cc");
-  const bccInput = document.getElementById("editor-bcc");
-  const insertModeSelect = document.getElementById("editor-insert-mode");
-  const bodyEditor = document.getElementById("editor-body");
-
   clearEditorErrors();
 
   await loadIdentities();
   await loadNestedTemplateOptions(null);
 
-  title.textContent = messenger.i18n.getMessage("optionsNewTemplate");
+  document.getElementById("editor-title").textContent = messenger.i18n.getMessage("optionsNewTemplate");
+  populateEditorFields(template);
+  const nameInput = document.getElementById("editor-name");
   nameInput.value = messenger.i18n.getMessage("optionsDuplicateName", template.name);
-  categoryInput.value = template.category || "";
-  subjectInput.value = template.subject || "";
-  toInput.value = (template.to || []).join(", ");
-  ccInput.value = (template.cc || []).join(", ");
-  bccInput.value = (template.bcc || []).join(", ");
-  insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
-
-  bodyEditor.replaceChildren();
-  if (template.body) {
-    const safeBody = sanitizeTemplateBody(template.body);
-    const parsed = new DOMParser().parseFromString(safeBody, "text/html");
-    bodyEditor.append(
-      ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
-    );
-  }
-
-  const selectedIdentities = template.identities || [];
-  for (const option of identitiesSelect.options) {
-    option.selected = selectedIdentities.includes(option.value);
-  }
 
   await populateCategorySuggestions();
   renderAttachments();
