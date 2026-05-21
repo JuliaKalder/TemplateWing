@@ -18,6 +18,7 @@ import {
   ATTACHMENT_TOTAL_WARN_SIZE,
   parseRecipients,
 } from "../modules/validation.js";
+import { filterTemplateList } from "../modules/ui-helpers.js";
 
 let editingId = null;
 let pendingAttachments = [];
@@ -870,15 +871,7 @@ async function handleImport(file) {
 }
 
 function filterTemplates() {
-  const query = document.getElementById("search-input").value.toLowerCase().trim();
-  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
-  const cards = document.querySelectorAll("#template-list .template-card");
-  for (const card of cards) {
-    const matchesSearch =
-      !query || card.dataset.name.includes(query) || card.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory || card.dataset.category === selectedCategory;
-    card.hidden = !(matchesSearch && matchesCategory);
-  }
+  filterTemplateList("#template-list .template-card");
 }
 
 document.getElementById("search-input").addEventListener("input", filterTemplates);
