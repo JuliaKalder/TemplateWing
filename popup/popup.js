@@ -7,20 +7,15 @@ import {
 } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 import { setFilterOptions } from "../modules/ui-helpers.js";
+import { getIdentityIdForTab } from "../modules/compose-utils.js";
 
 async function getCurrentIdentityId() {
-  try {
-    const tabs = await messenger.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (tabs.length === 0) return null;
-    const details = await messenger.compose.getComposeDetails(tabs[0].id);
-    return details.identityId || null;
-  } catch (err) {
-    console.warn("TemplateWing: could not get current identity", err);
-    return null;
-  }
+  const tabs = await messenger.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (tabs.length === 0) return null;
+  return getIdentityIdForTab(tabs[0].id);
 }
 
 function localize() {

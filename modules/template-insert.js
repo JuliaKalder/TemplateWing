@@ -122,21 +122,14 @@ export function applyVariables(text, vars, isHtml = false) {
 }
 
 /**
- * Replace template variables in text.
- *
- * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
- * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}.
- *
- * @param {string} text - Text containing placeholders
- * @param {number} tabId - The compose tab ID (used to resolve sender identity)
- * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
- * @returns {Promise<string>} Text with placeholders replaced
- * @see applyVariables
+ * Resolve the sender identity variables for a compose tab by calling the
+ * three Thunderbird messenger APIs that require live tab/account context.
+ * Separating this from `replaceVariables` keeps the substitution logic pure
+ * and independently testable.
+ * @param {number} tabId
+ * @returns {Promise<{senderName: string, senderEmail: string, accountName: string, accountEmail: string}>}
  */
-export async function replaceVariables(text, tabId, isHtml = false) {
-  if (!text) return text;
-
-  const now = new Date();
+export async function resolveIdentityVars(tabId) {
   let senderName = "";
   let senderEmail = "";
   let accountName = "";
@@ -168,6 +161,26 @@ export async function replaceVariables(text, tabId, isHtml = false) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
+  return { senderName, senderEmail, accountName, accountEmail };
+}
+
+/**
+ * Replace template variables in text.
+ *
+ * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
+ * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}.
+ *
+ * @param {string} text - Text containing placeholders
+ * @param {object} vars - Pre-resolved identity vars: { senderName, senderEmail, accountName, accountEmail }.
+ *   Obtain via {@link resolveIdentityVars} before calling this function.
+ * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
+ * @returns {string} Text with placeholders replaced
+ * @see applyVariables
+ * @see resolveIdentityVars
+ */
+export function replaceVariables(text, vars, isHtml = false) {
+  if (!text) return text;
+  const now = new Date();
   return applyVariables(
     text,
     {
@@ -176,10 +189,11 @@ export async function replaceVariables(text, tabId, isHtml = false) {
       datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
       year: now.getFullYear(),
       weekday: WEEKDAY_NAMES[now.getDay()],
-      senderName,
-      senderEmail,
-      accountName,
-      accountEmail,
+      senderName: "",
+      senderEmail: "",
+      accountName: "",
+      accountEmail: "",
+      ...vars,
     },
     isHtml
   );
@@ -280,6 +294,80 @@ export function htmlToPlainText(html) {
 }
 
 /**
+ * Try to insert `body` at the cursor position in the given compose tab.
+ *
+ * Attempts to (re-)inject compose-script.js via executeScript so that a
+ * listener is always present, then sends the insertAtCursor message.
+ *
+ * @param {number} tabId - The compose tab ID
+ * @param {string} body - The resolved, variable-replaced HTML body to insert
+ * @param {object} existingDetails - Result of messenger.compose.getComposeDetails(tabId)
+ * @returns {Promise<string|null>} Resolves to `null` when the cursor insert
+ *   succeeded, or to the fallback body string (via smartInsertPlaintext /
+ *   smartInsertHtml) when it did not.
+ */
+async function tryCursorInsert(tabId, body, existingDetails) {
+  const isPlainText = !!existingDetails.isPlainText;
+  console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
+
+  // Safety net: even with composeScripts.register() set up at boot,
+  // explicitly re-inject here so that if something upstream went wrong
+  // (registration failed, tab opened before register resolved, etc.)
+  // we still have a listener to talk to. Idempotent via the
+  // listener-swap in compose-script.js.
+  try {
+    await messenger.tabs.executeScript(tabId, {
+      file: "/modules/compose-script.js",
+    });
+    console.log("TemplateWing: pre-send inject ok", { tabId });
+  } catch (err) {
+    console.warn("TemplateWing: pre-send inject failed", err && err.message);
+  }
+
+  try {
+    const response = await messenger.tabs.sendMessage(tabId, {
+      action: "templatewing:insertAtCursor",
+      html: body,
+      text: htmlToPlainText(body),
+      isPlainText,
+    });
+    console.log("TemplateWing: cursor mode <- response", response);
+    if (response && response.ok) {
+      return null;
+    }
+    // Script ran but refused to insert (no usable range, editor
+    // rejected execCommand, DOM exception, etc). `response.error`
+    // carries the specific code from compose-script.js.
+    const code = (response && response.error) || "unknown";
+    console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
+  } catch (err) {
+    // tabs.sendMessage could not reach a listener in this tab. Possible
+    // causes: composeScripts.register() has not yet resolved for this tab,
+    // the background-page backfill via executeScript failed or hasn't run
+    // yet, or the tab was open before the add-on loaded. Fall back to
+    // append so the existing body and signature stay intact.
+    console.warn(
+      "TemplateWing: compose-script not injected in this tab — falling back to append",
+      err && err.message ? err.message : err
+    );
+  }
+
+  // Smart fallback: when the compose-script path could not insert at
+  // the caret (no listener, no usable range, Gecko quirks, etc.),
+  // insert at a user-meaningful anchor rather than blindly appending.
+  // Priority: before cite-prefix (reply quote), before signature,
+  // else append. Keeps the template from landing after the sign-off.
+  const fallbackBody = isPlainText
+    ? smartInsertPlaintext(existingDetails.body || "", htmlToPlainText(body))
+    : smartInsertHtml(existingDetails.body || "", body);
+  console.log(
+    "TemplateWing: cursor fallback wrote template",
+    isPlainText ? "as plaintext (smart-insert)" : "as HTML (smart-insert)"
+  );
+  return fallbackBody;
+}
+
+/**
  * Insert a template into a compose tab.
  * @param {number} tabId - The compose tab ID
  * @param {object} template - Template object from storage
@@ -288,12 +376,33 @@ export async function insertTemplateIntoTab(tabId, template) {
   const mode = template.insertMode || INSERT_MODES.APPEND;
   const details = {};
 
+  // Hoist compose details fetch so we can use identityId for both nested
+  // template filtering and later insert-mode operations.
+  let currentIdentityId = null;
+  try {
+    const composeDetails = await messenger.compose.getComposeDetails(tabId);
+    currentIdentityId = composeDetails.identityId || null;
+  } catch (err) {
+    console.warn("TemplateWing: could not fetch compose details for identity filtering", err);
+  }
+
   let resolvedBody = template.body;
   if (template.body && new RegExp(TEMPLATE_INCLUDE_REGEX.source, "i").test(template.body)) {
     try {
       const allTemplates = await getTemplates();
-      const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
-      const templatesByName = new Map(allTemplates.map((t) => [(t.name || "").toLowerCase(), t]));
+      // Filter to only templates that the current identity is allowed to use.
+      // A template with no identities restriction (empty or absent) is always
+      // available; otherwise the current identity must be listed explicitly.
+      const allowedTemplates = allTemplates.filter(
+        (t) =>
+          !t.identities ||
+          t.identities.length === 0 ||
+          (currentIdentityId && t.identities.includes(currentIdentityId))
+      );
+      const templatesById = new Map(allowedTemplates.map((t) => [t.id, t]));
+      const templatesByName = new Map(
+        allowedTemplates.map((t) => [(t.name || "").toLowerCase(), t])
+      );
       const visited = new Set([template.id]);
       resolvedBody = await resolveNestedTemplates(
         template.body,
@@ -310,74 +419,14 @@ export async function insertTemplateIntoTab(tabId, template) {
   // "cursor" mode is delivered via a compose script message rather than by
   // rewriting the whole body, so the signature and any text the user has
   // already typed stay intact.
-  let insertedAtCursor = false;
+  const identityVars = await resolveIdentityVars(tabId);
   if (resolvedBody && mode === INSERT_MODES.CURSOR) {
-    const body = await replaceVariables(resolvedBody, tabId, true);
+    const body = replaceVariables(resolvedBody, identityVars, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
-    const isPlainText = !!existing.isPlainText;
-    console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
-
-    // Safety net: even with composeScripts.register() set up at boot,
-    // explicitly re-inject here so that if something upstream went wrong
-    // (registration failed, tab opened before register resolved, etc.)
-    // we still have a listener to talk to. Idempotent via the
-    // listener-swap in compose-script.js.
-    try {
-      await messenger.tabs.executeScript(tabId, {
-        file: "/modules/compose-script.js",
-      });
-      console.log("TemplateWing: pre-send inject ok", { tabId });
-    } catch (err) {
-      console.warn("TemplateWing: pre-send inject failed", err && err.message);
-    }
-
-    try {
-      const response = await messenger.tabs.sendMessage(tabId, {
-        action: "templatewing:insertAtCursor",
-        html: body,
-        text: htmlToPlainText(body),
-        isPlainText,
-      });
-      console.log("TemplateWing: cursor mode <- response", response);
-      if (response && response.ok) {
-        insertedAtCursor = true;
-      } else {
-        // Script ran but refused to insert (no usable range, editor
-        // rejected execCommand, DOM exception, etc). `response.error`
-        // carries the specific code from compose-script.js.
-        const code = (response && response.error) || "unknown";
-        console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
-      }
-    } catch (err) {
-      // tabs.sendMessage could not reach a listener in this tab. Possible
-      // causes: composeScripts.register() has not yet resolved for this tab,
-      // the background-page backfill via executeScript failed or hasn't run
-      // yet, or the tab was open before the add-on loaded. Fall back to
-      // append so the existing body and signature stay intact.
-      console.warn(
-        "TemplateWing: compose-script not injected in this tab — falling back to append",
-        err && err.message ? err.message : err
-      );
-    }
-
-    if (!insertedAtCursor) {
-      // Smart fallback: when the compose-script path could not insert at
-      // the caret (no listener, no usable range, Gecko quirks, etc.),
-      // insert at a user-meaningful anchor rather than blindly appending.
-      // Priority: before cite-prefix (reply quote), before signature,
-      // else append. Keeps the template from landing after the sign-off.
-      if (isPlainText) {
-        details.body = smartInsertPlaintext(existing.body || "", htmlToPlainText(body));
-      } else {
-        details.body = smartInsertHtml(existing.body || "", body);
-      }
-      console.log(
-        "TemplateWing: cursor fallback wrote template",
-        isPlainText ? "as plaintext (smart-insert)" : "as HTML (smart-insert)"
-      );
-    }
+    const fallbackBody = await tryCursorInsert(tabId, body, existing);
+    if (fallbackBody !== null) details.body = fallbackBody;
   } else if (resolvedBody) {
-    const body = await replaceVariables(resolvedBody, tabId, true);
+    const body = replaceVariables(resolvedBody, identityVars, true);
     if (mode === INSERT_MODES.REPLACE) {
       details.body = body;
     } else if (mode === INSERT_MODES.PREPEND) {
@@ -398,7 +447,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   }
 
   if (template.subject) {
-    details.subject = await replaceVariables(template.subject, tabId);
+    details.subject = replaceVariables(template.subject, identityVars);
   }
 
   if (template.to && template.to.length > 0) {
@@ -413,30 +462,40 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   await messenger.compose.setComposeDetails(tabId, details);
 
-  // Per-file decode error handling — failures collected, not fatal
   if (template.attachments && template.attachments.length > 0) {
-    const attachmentErrors = [];
-    for (const att of template.attachments) {
-      try {
-        const binary = atob(att.data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        // Sanitize filename: strip path separators, null bytes, and control chars
-        const safeName = (att.name || "attachment")
-          .replace(/[/\\:\x00-\x1f]/g, "_")
-          .replace(/^\.+/, "_");
-        const file = new File([bytes], safeName, { type: att.type });
-        await messenger.compose.addAttachment(tabId, { file, name: safeName });
-      } catch (err) {
-        console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
-        attachmentErrors.push(att.name);
-      }
+    await decodeAndAttach(tabId, template.attachments);
+  }
+}
+
+/**
+ * Decode base64-encoded attachments and add them to a compose tab.
+ * Failures are collected per-file; a single error is thrown at the end
+ * listing all filenames that could not be attached.
+ * @param {number} tabId - The compose tab ID
+ * @param {Array<{name: string, data: string, type: string}>} attachments
+ */
+export async function decodeAndAttach(tabId, attachments) {
+  const attachmentErrors = [];
+  for (const att of attachments) {
+    try {
+      const binary = atob(att.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      // Sanitize filename: strip path separators, null bytes, and control chars
+      const safeName = (att.name || "attachment")
+        .replace(/[/\\:\x00-\x1f]/g, "_")
+        .replace(/^\.+/, "_");
+      const file = new File([bytes], safeName, { type: att.type });
+      await messenger.compose.addAttachment(tabId, { file, name: safeName });
+    } catch (err) {
+      console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
+      attachmentErrors.push(att.name);
     }
-    if (attachmentErrors.length > 0) {
-      const err = new Error(`Could not attach: ${attachmentErrors.join(", ")}`);
-      err.code = "ATTACHMENT_FAILED";
-      err.failedNames = attachmentErrors;
-      throw err;
-    }
+  }
+  if (attachmentErrors.length > 0) {
+    const err = new Error(`Could not attach: ${attachmentErrors.join(", ")}`);
+    err.code = "ATTACHMENT_FAILED";
+    err.failedNames = attachmentErrors;
+    throw err;
   }
 }
