@@ -426,30 +426,40 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   await messenger.compose.setComposeDetails(tabId, details);
 
-  // Per-file decode error handling — failures collected, not fatal
   if (template.attachments && template.attachments.length > 0) {
-    const attachmentErrors = [];
-    for (const att of template.attachments) {
-      try {
-        const binary = atob(att.data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        // Sanitize filename: strip path separators, null bytes, and control chars
-        const safeName = (att.name || "attachment")
-          .replace(/[/\\:\x00-\x1f]/g, "_")
-          .replace(/^\.+/, "_");
-        const file = new File([bytes], safeName, { type: att.type });
-        await messenger.compose.addAttachment(tabId, { file, name: safeName });
-      } catch (err) {
-        console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
-        attachmentErrors.push(att.name);
-      }
+    await decodeAndAttach(tabId, template.attachments);
+  }
+}
+
+/**
+ * Decode base64-encoded attachments and add them to a compose tab.
+ * Failures are collected per-file; a single error is thrown at the end
+ * listing all filenames that could not be attached.
+ * @param {number} tabId - The compose tab ID
+ * @param {Array<{name: string, data: string, type: string}>} attachments
+ */
+export async function decodeAndAttach(tabId, attachments) {
+  const attachmentErrors = [];
+  for (const att of attachments) {
+    try {
+      const binary = atob(att.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      // Sanitize filename: strip path separators, null bytes, and control chars
+      const safeName = (att.name || "attachment")
+        .replace(/[/\\:\x00-\x1f]/g, "_")
+        .replace(/^\.+/, "_");
+      const file = new File([bytes], safeName, { type: att.type });
+      await messenger.compose.addAttachment(tabId, { file, name: safeName });
+    } catch (err) {
+      console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
+      attachmentErrors.push(att.name);
     }
-    if (attachmentErrors.length > 0) {
-      const err = new Error(`Could not attach: ${attachmentErrors.join(", ")}`);
-      err.code = "ATTACHMENT_FAILED";
-      err.failedNames = attachmentErrors;
-      throw err;
-    }
+  }
+  if (attachmentErrors.length > 0) {
+    const err = new Error(`Could not attach: ${attachmentErrors.join(", ")}`);
+    err.code = "ATTACHMENT_FAILED";
+    err.failedNames = attachmentErrors;
+    throw err;
   }
 }
