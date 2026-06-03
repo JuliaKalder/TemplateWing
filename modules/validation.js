@@ -72,7 +72,7 @@ export function analyseImport(importedTemplates, existingTemplates) {
       invalid++;
       continue;
     }
-    const key = t.name.trim().toLowerCase();
+    const key = (t.name || "").trim().toLowerCase();
     if (seenNames.has(key)) {
       duplicates.set(key, t);
     }
