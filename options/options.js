@@ -557,18 +557,6 @@ async function handleSave() {
     return;
   }
 
-  // Check for duplicate name
-  const allTemplates = await getTemplates();
-  const duplicate = allTemplates.find(
-    (t) => t.name.toLowerCase() === name.toLowerCase() && t.id !== editingId
-  );
-  if (duplicate) {
-    nameInput.classList.add("field-error");
-    showInlineError("editor-name", messenger.i18n.getMessage("validationDuplicateName"));
-    nameInput.focus();
-    return;
-  }
-
   // Validate recipients
   const toResult = validateRecipients(toInput.value);
   const ccResult = validateRecipients(ccInput.value);
@@ -641,6 +629,12 @@ async function handleSave() {
   try {
     await saveTemplate(template);
   } catch (err) {
+    if (err.code === "DUPLICATE_NAME") {
+      nameInput.classList.add("field-error");
+      showInlineError("editor-name", messenger.i18n.getMessage("validationDuplicateName"));
+      nameInput.focus();
+      return;
+    }
     console.error("TemplateWing: save failed", err);
     showEditorError(messenger.i18n.getMessage("optionsSaveError"));
     return;
