@@ -154,6 +154,14 @@ describe("analyseImport", () => {
     assert.strictEqual(result.invalid, 0);
     assert.strictEqual(result.duplicates.size, 0);
   });
+
+  it("handles existing templates with null/missing names without throwing", () => {
+    const brokenExisting = [{ id: "1", name: null }, { id: "2" }];
+    const imported = [{ name: "Valid", body: "test" }];
+    assert.doesNotThrow(() => analyseImport(imported, brokenExisting));
+    const result = analyseImport(imported, brokenExisting);
+    assert.strictEqual(result.valid.length, 1);
+  });
 });
 
 // ---- Constants ----

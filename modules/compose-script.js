@@ -41,7 +41,9 @@
       if (prev && prev.listener && prev.removeListener) {
         prev.removeListener();
       }
-    } catch (_) { /* ignore — prior listener may belong to an unloaded extension */ }
+    } catch (_) {
+      /* ignore — prior listener may belong to an unloaded extension */
+    }
   }
 
   const TAG = "TemplateWing[compose]";
@@ -51,7 +53,9 @@
       designMode: document.designMode,
       readyState: document.readyState,
     });
-  } catch (_) { /* console may be unavailable */ }
+  } catch (_) {
+    /* console may be unavailable */
+  }
 
   let lastRange = null;
 
@@ -140,7 +144,9 @@
       r.collapse(false);
     }
     r.collapse(true);
-    try { console.log(TAG, "getInsertRange synthesized", { hasAnchor: !!anchor }); } catch (_) {}
+    try {
+      console.log(TAG, "getInsertRange synthesized", { hasAnchor: !!anchor });
+    } catch (_) {}
     return r;
   }
 
@@ -189,13 +195,17 @@
         hasLastRange: !!lastRange,
         liveRangeCount: (document.getSelection() || {}).rangeCount,
       });
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
 
     if (!document.body) return { ok: false, error: "no-body" };
 
     const range = getInsertRange();
     if (!range) {
-      try { console.warn(TAG, "no usable range — caller will fall back"); } catch (_) {}
+      try {
+        console.warn(TAG, "no usable range — caller will fall back");
+      } catch (_) {}
       return { ok: false, error: "no-range" };
     }
 
@@ -208,7 +218,9 @@
         sel.removeAllRanges();
         sel.addRange(range);
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
 
     // Plaintext compose uses Gecko's designMode editor (not a <textarea>),
     // but the editor silently coerces/drops Range-API-inserted <br> nodes
@@ -224,13 +236,19 @@
       try {
         const ok = document.execCommand("insertText", false, message.text || "");
         if (ok) {
-          try { console.log(TAG, "insert ok (execCommand insertText)"); } catch (_) {}
+          try {
+            console.log(TAG, "insert ok (execCommand insertText)");
+          } catch (_) {}
           return { ok: true };
         }
-        try { console.warn(TAG, "execCommand insertText returned false"); } catch (_) {}
+        try {
+          console.warn(TAG, "execCommand insertText returned false");
+        } catch (_) {}
         return { ok: false, error: "execCommand-failed" };
       } catch (err) {
-        try { console.error(TAG, "execCommand insertText threw", err); } catch (_) {}
+        try {
+          console.error(TAG, "execCommand insertText threw", err);
+        } catch (_) {}
         return { ok: false, error: "execCommand-failed" };
       }
     }
@@ -238,10 +256,14 @@
     try {
       const lastNode = insertHtmlAtRange(range, message.html);
       moveCaretAfter(lastNode);
-      try { console.log(TAG, "insert ok"); } catch (_) {}
+      try {
+        console.log(TAG, "insert ok");
+      } catch (_) {}
       return { ok: true };
     } catch (err) {
-      try { console.error(TAG, "insert threw", err); } catch (_) {}
+      try {
+        console.error(TAG, "insert threw", err);
+      } catch (_) {}
       return { ok: false, error: String((err && err.message) || err) };
     }
   }
@@ -272,4 +294,3 @@
     removeListener: () => api.runtime.onMessage.removeListener(onMessageListener),
   };
 })();
-

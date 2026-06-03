@@ -23,7 +23,10 @@ export function isValidRecipient(value) {
  */
 export function validateRecipients(value) {
   if (!value || !value.trim()) return { valid: true, invalid: [] };
-  const recipients = value.split(",").map((s) => s.trim()).filter(Boolean);
+  const recipients = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   const invalid = recipients.filter((r) => !isValidRecipient(r));
   return { valid: invalid.length === 0, invalid };
 }
@@ -32,12 +35,13 @@ export function validateRecipients(value) {
  * Format bytes as a human-readable file-size string.
  */
 export function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) return "0 B";
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
-// Issue #18: v2.1 -- per-file and total attachment size warnings
+// Per-file and total attachment size warning thresholds
 /** Per-file attachment size warning threshold (5 MB). */
 export const ATTACHMENT_WARN_SIZE = 5 * 1024 * 1024;
 
@@ -51,8 +55,12 @@ export const ATTACHMENT_TOTAL_WARN_SIZE = 10 * 1024 * 1024;
  * with either an existing template or another imported template.
  */
 export function analyseImport(importedTemplates, existingTemplates) {
+  // Accumulates both existing and newly-imported names; used for duplicate
+  // detection. Note: `valid` may include entries that are also in `duplicates`.
   const seenNames = new Map(
-    existingTemplates.map((t) => [t.name.toLowerCase(), t])
+    existingTemplates
+      .filter((t) => t && typeof t.name === "string" && t.name.trim())
+      .map((t) => [t.name.toLowerCase(), t])
   );
 
   const valid = [];
@@ -69,8 +77,48 @@ export function analyseImport(importedTemplates, existingTemplates) {
       duplicates.set(key, t);
     }
     seenNames.set(key, t);
+    if (t.body != null && typeof t.body !== "string") {
+      invalid++;
+      continue;
+    }
+    if (t.subject != null && typeof t.subject !== "string") {
+      invalid++;
+      continue;
+    }
+    if (t.to != null && !Array.isArray(t.to)) {
+      invalid++;
+      continue;
+    }
+    if (t.cc != null && !Array.isArray(t.cc)) {
+      invalid++;
+      continue;
+    }
+    if (t.bcc != null && !Array.isArray(t.bcc)) {
+      invalid++;
+      continue;
+    }
+    if (t.identities != null && !Array.isArray(t.identities)) {
+      invalid++;
+      continue;
+    }
+    if (t.attachments != null && !Array.isArray(t.attachments)) {
+      invalid++;
+      continue;
+    }
     valid.push(t);
   }
 
   return { valid, invalid, duplicates };
+}
+
+/**
+ * Parse a comma-separated recipient string into an array of trimmed, non-empty entries.
+ */
+export function parseRecipients(value) {
+  return value && value.trim()
+    ? value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
 }

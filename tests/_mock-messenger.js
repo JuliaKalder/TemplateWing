@@ -33,9 +33,7 @@ export function createMessengerMock() {
           }
           const result = {};
           for (const [key, fallback] of Object.entries(defaults ?? {})) {
-            result[key] = Object.prototype.hasOwnProperty.call(store, key)
-              ? store[key]
-              : fallback;
+            result[key] = Object.prototype.hasOwnProperty.call(store, key) ? store[key] : fallback;
           }
           return result;
         },
@@ -56,7 +54,9 @@ export function createMessengerMock() {
         _raw: store,
       },
       onChanged: {
-        addListener(fn) { listeners.push(fn); },
+        addListener(fn) {
+          listeners.push(fn);
+        },
         removeListener(fn) {
           const i = listeners.indexOf(fn);
           if (i !== -1) listeners.splice(i, 1);
@@ -64,12 +64,16 @@ export function createMessengerMock() {
       },
     },
     identities: {
-      async get(id) { return this._index?.[id] ?? null; },
+      async get(id) {
+        return this._index?.[id] ?? null;
+      },
       _index: {},
     },
     accounts: {
       _list: [],
-      async list() { return this._list; },
+      async list() {
+        return this._list;
+      },
     },
     compose,
     i18n: {
