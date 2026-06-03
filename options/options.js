@@ -7,6 +7,7 @@ import {
   generateId,
   getIdentities,
   consumePrefillTemplate,
+  importTemplates,
   PREFILL_KEY,
   EXPORT_FORMAT_VERSION,
   INSERT_MODES,
@@ -774,51 +775,18 @@ function sanitizeTemplateBody(html) {
 async function executeImport() {
   if (!pendingImportData) return;
 
-  const { analysis, validTemplates } = pendingImportData;
+  const { validTemplates } = pendingImportData;
   const checkedRadio = document.querySelector('input[name="import-mode"]:checked');
   const mode = checkedRadio ? checkedRadio.value : INSERT_MODES.APPEND;
-  const existingTemplates = await getTemplates();
-  const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 
-  let added = 0;
-  let skipped = 0;
-  let replaced = 0;
-
-  for (const t of validTemplates) {
-    // Strip internal tracking fields; keep only user-visible template data.
+  // Strip internal tracking fields and sanitize bodies before handing off to the store.
+  const sanitized = validTemplates.map((t) => {
     const { id: _, createdAt: _1, updatedAt: _2, usageCount: _3, lastUsedAt: _4, ...rest } = t;
     rest.body = sanitizeTemplateBody(rest.body);
-    const nameKey = t.name.trim().toLowerCase();
-    const existing = existingByName.get(nameKey);
+    return rest;
+  });
 
-    if (existing) {
-      if (mode === "skip") {
-        skipped++;
-        continue;
-      }
-      if (mode === "replace") {
-        try {
-          const saved = await saveTemplate({ ...rest, id: existing.id });
-          existingByName.set(nameKey, saved);
-          replaced++;
-        } catch (err) {
-          console.error("TemplateWing: import replace failed for", t.name, err);
-          skipped++;
-        }
-        continue;
-      }
-    }
-
-    // mode === "append" or no duplicate
-    try {
-      const saved = await saveTemplate(rest);
-      existingByName.set(nameKey, saved);
-      added++;
-    } catch (err) {
-      console.error("TemplateWing: import failed for template", t.name, err);
-      skipped++;
-    }
-  }
+  const { added, skipped, replaced } = await importTemplates(sanitized, mode);
 
   hideImportDialog();
 
