@@ -25,40 +25,40 @@ after(() => uninstallMessengerMock());
 
 describe("migrateV0toV1", () => {
   it("adds missing category field as empty string", async () => {
-    const templates = [{ id: "1", name: "Test", body: "Hello" }];
-    const { changed } = await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "Hello" }];
+    const { templates, changed } = await migrateV0toV1(input);
     assert.strictEqual(changed, true);
     assert.strictEqual(templates[0].category, "");
   });
 
   it("adds missing to/cc/bcc arrays", async () => {
-    const templates = [{ id: "1", name: "Test", body: "Hello" }];
-    await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "Hello" }];
+    const { templates } = await migrateV0toV1(input);
     assert.deepStrictEqual(templates[0].to, []);
     assert.deepStrictEqual(templates[0].cc, []);
     assert.deepStrictEqual(templates[0].bcc, []);
   });
 
   it("adds missing identities array", async () => {
-    const templates = [{ id: "1", name: "Test", body: "Hello" }];
-    await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "Hello" }];
+    const { templates } = await migrateV0toV1(input);
     assert.deepStrictEqual(templates[0].identities, []);
   });
 
   it("defaults insertMode to append", async () => {
-    const templates = [{ id: "1", name: "Test", body: "Hello" }];
-    await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "Hello" }];
+    const { templates } = await migrateV0toV1(input);
     assert.strictEqual(templates[0].insertMode, "append");
   });
 
   it("adds missing attachments array", async () => {
-    const templates = [{ id: "1", name: "Test", body: "Hello" }];
-    await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "Hello" }];
+    const { templates } = await migrateV0toV1(input);
     assert.deepStrictEqual(templates[0].attachments, []);
   });
 
   it("leaves an already-migrated template alone", async () => {
-    const templates = [
+    const input = [
       {
         id: "1",
         name: "Test",
@@ -72,7 +72,7 @@ describe("migrateV0toV1", () => {
         attachments: [{ name: "file.txt", type: "text/plain", data: "aGVsbG8=" }],
       },
     ];
-    const { changed } = await migrateV0toV1(templates);
+    const { templates, changed } = await migrateV0toV1(input);
     assert.strictEqual(changed, false);
     assert.strictEqual(templates[0].category, "work");
     assert.strictEqual(templates[0].insertMode, "replace");
@@ -85,7 +85,7 @@ describe("migrateV0toV1", () => {
   });
 
   it("handles mixed migrated and unmigrated templates", async () => {
-    const templates = [
+    const input = [
       {
         id: "1",
         name: "Migrated",
@@ -100,7 +100,7 @@ describe("migrateV0toV1", () => {
       },
       { id: "2", name: "Unmigrated", body: "" },
     ];
-    const { changed } = await migrateV0toV1(templates);
+    const { templates, changed } = await migrateV0toV1(input);
     assert.strictEqual(changed, true);
     assert.strictEqual(templates[0].category, "work");
     assert.strictEqual(templates[1].category, "");
@@ -108,8 +108,8 @@ describe("migrateV0toV1", () => {
   });
 
   it("treats category null as missing", async () => {
-    const templates = [{ id: "1", name: "Test", body: "", category: null }];
-    await migrateV0toV1(templates);
+    const input = [{ id: "1", name: "Test", body: "", category: null }];
+    const { templates } = await migrateV0toV1(input);
     assert.strictEqual(templates[0].category, "");
   });
 });
