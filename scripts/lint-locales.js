@@ -45,5 +45,7 @@ for (const [locale, messages] of Object.entries(locales)) {
 if (hasErrors) {
   process.exit(1);
 } else {
-  console.log(`All ${dirs.length} locale(s) have consistent keys (${referenceKeys.length} keys each).`);
+  console.log(
+    `All ${dirs.length} locale(s) have consistent keys (${referenceKeys.length} keys each).`
+  );
 }

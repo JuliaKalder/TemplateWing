@@ -1,4 +1,11 @@
-import { getTemplates, getTemplate, trackUsage } from "./modules/template-store.js";
+import {
+  getTemplates,
+  getTemplate,
+  trackUsage,
+  setPrefillTemplate,
+  isTemplateAllowedForIdentity,
+  getSortedTemplates,
+} from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 
 async function notifyInsertFailure(err) {
@@ -34,22 +41,9 @@ async function getCurrentIdentityId(tabId) {
   }
 }
 
-function isTemplateAllowedForIdentity(template, identityId) {
-  if (!template.identities || template.identities.length === 0) return true;
-  return template.identities.includes(identityId);
-}
-
-function getSortedTemplates(templates) {
-  return [...templates].sort((a, b) => {
-    const catA = (a.category || "").toLowerCase();
-    const catB = (b.category || "").toLowerCase();
-    if (catA !== catB) return catA.localeCompare(catB);
-    return a.name.localeCompare(b.name);
-  });
-}
-
 function getCategoryMenuId(category, index) {
-  const slug = category.replace(/[^a-zA-Z0-9]/g, "_") || "uncategorized";
+  // category is always a non-empty string here (from Object.keys(categorized))
+  const slug = category.replace(/[^a-zA-Z0-9]/g, "_");
   return `templatewing-cat-${slug}-${index}`;
 }
 
@@ -147,6 +141,24 @@ function extractBody(part) {
   return null;
 }
 
+/**
+ * Sanitize email HTML before storing in _prefillTemplate to prevent XSS
+ * via inline event handlers (onerror, onload, etc.) when the content
+ * is later parsed by DOMParser and inserted into the contenteditable editor.
+ */
+function sanitizeEmailBodyForPrefill(html) {
+  const doc = new DOMParser().parseFromString(html || "", "text/html");
+  for (const el of doc.body.querySelectorAll("*")) {
+    // Remove all inline event handlers (onerror, onload, onclick, etc.)
+    for (const attr of [...el.attributes]) {
+      if (attr.name.toLowerCase().startsWith("on")) el.removeAttribute(attr.name);
+    }
+    // Remove dangerous elements entirely
+    if (["SCRIPT", "OBJECT", "EMBED", "IFRAME"].includes(el.tagName)) el.remove();
+  }
+  return doc.body.innerHTML;
+}
+
 messenger.menus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "templatewing-save-as-template") {
     const messages = info.selectedMessages && info.selectedMessages.messages;
@@ -159,16 +171,19 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
       const extracted = extractBody(full);
       if (extracted) {
         body = extracted.html
-          ? extracted.body
-          : extracted.body.replace(/\n/g, "<br>");
+          ? sanitizeEmailBodyForPrefill(extracted.body)
+          : extracted.body
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/\n/g, "<br>");
       }
-    } catch (e) {
-      console.error("TemplateWing: could not get message body", e);
+    } catch (err) {
+      console.error("TemplateWing: could not get message body", err);
     }
 
-    await messenger.storage.local.set({
-      _prefillTemplate: { subject: msg.subject || "", body },
-    });
+    await setPrefillTemplate({ subject: msg.subject || "", body });
     await messenger.runtime.openOptionsPage();
     return;
   }
@@ -197,7 +212,9 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
 messenger.commands.onCommand.addListener(async (commandName) => {
   if (!commandName.startsWith("insert-template-")) return;
 
-  const index = parseInt(commandName.replace("insert-template-", ""), 10) - 1;
+  const parsed = parseInt(commandName.replace("insert-template-", ""), 10);
+  if (!Number.isFinite(parsed)) return;
+  const index = parsed - 1;
   const allTemplates = await getTemplates();
 
   const tabs = await messenger.tabs.query({
@@ -226,7 +243,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   }
 });
 
-messenger.runtime.onMessage.addListener(async (message) => {
+messenger.runtime.onMessage.addListener(async (message, sender) => {
   if (!message || !message.action) return;
 
   if (message.action === "templatesChanged") {
@@ -237,13 +254,36 @@ messenger.runtime.onMessage.addListener(async (message) => {
   // Popup delegates cursor-mode insertion here so it can close first and
   // return focus to the compose window before the insert runs.
   if (message.action === "templatewing:insertTemplate") {
+    // Only accept this message from the popup page.
+    const expectedUrl = messenger.runtime.getURL("popup/popup.html");
+    if (!sender || sender.url !== expectedUrl) {
+      console.warn(
+        "TemplateWing: rejecting templatewing:insertTemplate from untrusted sender",
+        sender && sender.url
+      );
+      return;
+    }
+
     // Give the popup a tick to tear down so the compose window is focused
-    // when we forward the insert request to the compose script. 150ms is
-    // empirically enough on slow systems while still feeling instant.
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    // when we forward the insert request to the compose script.
+    const POPUP_TEARDOWN_DELAY_MS = 150;
+    await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
     try {
+      // Validate tabId is a compose window before acting on it.
+      if (typeof message.tabId !== "number") return;
+      const tabDetails = await messenger.compose.getComposeDetails(message.tabId);
+      if (!tabDetails) return;
+
       const template = await getTemplate(message.templateId);
       if (!template) return;
+
+      // Re-validate identity at the enforcement point, not just in the popup UI.
+      const currentIdentityId = tabDetails.identityId || null;
+      if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
+        console.warn("TemplateWing: templatewing:insertTemplate — identity not allowed");
+        return;
+      }
+
       await insertTemplateIntoTab(message.tabId, template);
       await trackUsage(message.templateId);
     } catch (err) {
@@ -292,11 +332,7 @@ async function injectComposeScript(tabId) {
     });
     console.log("TemplateWing: compose-script injected into tab", tabId);
   } catch (err) {
-    console.warn(
-      "TemplateWing: compose-script inject failed for tab",
-      tabId,
-      err && err.message
-    );
+    console.warn("TemplateWing: compose-script inject failed for tab", tabId, err && err.message);
   }
 }
 
