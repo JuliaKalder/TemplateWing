@@ -123,7 +123,6 @@ async function buildContextMenu(identityId = null) {
   }
 }
 
-
 /**
  * Sanitize email HTML before storing in _prefillTemplate to prevent XSS
  * via inline event handlers (onerror, onload, etc.) when the content
