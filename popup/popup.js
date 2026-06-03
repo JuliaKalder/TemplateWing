@@ -1,4 +1,11 @@
-import { getTemplates, getTemplate, getCategories, trackUsage } from "../modules/template-store.js";
+import {
+  getTemplates,
+  getTemplate,
+  getCategories,
+  trackUsage,
+  isTemplateAllowedForIdentity,
+  INSERT_MODES,
+} from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 
 async function getCurrentIdentityId() {
@@ -25,6 +32,10 @@ function localize() {
     const key = el.getAttribute("data-i18n-placeholder");
     el.placeholder = messenger.i18n.getMessage(key);
   }
+  for (const el of document.querySelectorAll("[data-i18n-title]")) {
+    const key = el.getAttribute("data-i18n-title");
+    el.title = messenger.i18n.getMessage(key);
+  }
 }
 
 async function renderTemplateList() {
@@ -34,11 +45,7 @@ async function renderTemplateList() {
   const currentIdentityId = await getCurrentIdentityId();
 
   const templates = allTemplates
-    .filter((t) => {
-      if (!t.identities || t.identities.length === 0) return true;
-      return t.identities.includes(currentIdentityId);
-    })
-    .slice()
+    .filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
     .sort((a, b) => {
       if (!a.lastUsedAt && !b.lastUsedAt) return 0;
       if (!a.lastUsedAt) return 1;
@@ -61,7 +68,7 @@ async function renderTemplateList() {
     const template = templates[i];
     const item = document.createElement("div");
     item.className = "template-item";
-    item.dataset.name = template.name.toLowerCase();
+    item.dataset.name = (template.name || "").toLowerCase();
     item.dataset.subject = (template.subject || "").toLowerCase();
     item.dataset.category = (template.category || "").toLowerCase();
 
@@ -81,11 +88,11 @@ async function renderTemplateList() {
 
     item.appendChild(topRow);
 
-    const hasMeta = template.category
-      || (template.attachments && template.attachments.length > 0)
-      || i < 9;
+    const hasTemplateMeta =
+      template.category || (template.attachments && template.attachments.length > 0);
+    const hasShortcut = i < 9;
 
-    if (hasMeta) {
+    if (hasTemplateMeta || hasShortcut) {
       const metaRow = document.createElement("div");
       metaRow.className = "meta-row";
 
@@ -131,7 +138,24 @@ async function insertTemplate(id) {
   });
   if (tabs.length === 0) return;
   const currentIdentityId = await getCurrentIdentityId();
-  if (template.identities && template.identities.length > 0 && !template.identities.includes(currentIdentityId)) {
+  if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
+    return;
+  }
+
+  // Cursor-mode insertion runs in the compose-script (Range API) and needs
+  // the compose window to hold focus / have a live selection. While the popup
+  // is open, focus sits with the popup and the editor's selection collapses,
+  // so the insert lands at the wrong place (or falls back to prepend).
+  // Delegate to the background page so the popup can close first; the
+  // background then runs the insert against the focused compose window.
+  // Other modes use setComposeDetails and don't need focus.
+  if (template.insertMode === INSERT_MODES.CURSOR) {
+    messenger.runtime.sendMessage({
+      action: "templatewing:insertTemplate",
+      tabId: tabs[0].id,
+      templateId: id,
+    });
+    window.close();
     return;
   }
 
@@ -139,7 +163,26 @@ async function insertTemplate(id) {
     await insertTemplateIntoTab(tabs[0].id, template);
   } catch (err) {
     console.error("TemplateWing: insert failed", err);
-    alert(err.message);
+    try {
+      const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
+      let message;
+      if (err && err.code === "ATTACHMENT_FAILED" && Array.isArray(err.failedNames)) {
+        message = messenger.i18n.getMessage(
+          "notificationAttachmentFailed",
+          err.failedNames.join(", ")
+        );
+      } else {
+        message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
+      }
+      await messenger.notifications.create({
+        type: "basic",
+        iconUrl: messenger.runtime.getURL("images/icon-64.png"),
+        title,
+        message,
+      });
+    } catch (_) {
+      /* ignore notification failure */
+    }
     return;
   }
   await trackUsage(id);
@@ -151,18 +194,22 @@ function filterTemplates() {
   const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const items = document.querySelectorAll("#template-list .template-item");
   for (const item of items) {
-    const matchesSearch = !query
-      || item.dataset.name.includes(query)
-      || item.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory
-      || item.dataset.category === selectedCategory;
-    item.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+    const matchesSearch =
+      !query || item.dataset.name.includes(query) || item.dataset.subject.includes(query);
+    const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
+    item.hidden = !(matchesSearch && matchesCategory);
   }
 }
 
 async function populateCategoryFilter() {
   const filter = document.getElementById("category-filter");
-  const categories = await getCategories();
+  const currentIdentityId = await getCurrentIdentityId();
+  const allTemplates = await getTemplates();
+  const visibleTemplates = allTemplates.filter((t) =>
+    isTemplateAllowedForIdentity(t, currentIdentityId)
+  );
+  const categories = [...new Set(visibleTemplates.map((t) => t.category).filter(Boolean))].sort();
+
   const options = filter.querySelectorAll("option:not(:first-child)");
   options.forEach((opt) => opt.remove());
   for (const cat of categories) {
@@ -176,6 +223,8 @@ async function populateCategoryFilter() {
 document.getElementById("search-input").addEventListener("input", filterTemplates);
 document.getElementById("category-filter").addEventListener("change", filterTemplates);
 
+// Thunderbird opens the options page in an Add-ons Manager tab that may live
+// in a background window. Focus the first normal window so it comes to front.
 document.getElementById("btn-manage").addEventListener("click", async () => {
   await messenger.runtime.openOptionsPage();
   const allWindows = await messenger.windows.getAll();
@@ -189,4 +238,5 @@ document.getElementById("btn-manage").addEventListener("click", async () => {
 });
 
 localize();
-renderTemplateList().then(() => populateCategoryFilter());
+await renderTemplateList();
+await populateCategoryFilter();

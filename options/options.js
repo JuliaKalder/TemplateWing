@@ -4,6 +4,11 @@ import {
   saveTemplate,
   deleteTemplate,
   getCategories,
+  generateId,
+  consumePrefillTemplate,
+  PREFILL_KEY,
+  EXPORT_FORMAT_VERSION,
+  INSERT_MODES,
 } from "../modules/template-store.js";
 import {
   validateRecipients,
@@ -11,10 +16,13 @@ import {
   analyseImport,
   ATTACHMENT_WARN_SIZE,
   ATTACHMENT_TOTAL_WARN_SIZE,
+  parseRecipients,
 } from "../modules/validation.js";
 
 let editingId = null;
 let pendingAttachments = [];
+let bodyEmptyAcknowledged = false;
+let htmlViewActive = false;
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
@@ -32,8 +40,8 @@ function localize() {
 }
 
 function showView(name) {
-  document.getElementById("view-list").hidden = (name !== "list");
-  document.getElementById("view-editor").hidden = (name !== "editor");
+  document.getElementById("view-list").hidden = name !== "list";
+  document.getElementById("view-editor").hidden = name !== "editor";
 }
 
 async function renderTemplateList() {
@@ -55,7 +63,7 @@ async function renderTemplateList() {
   for (const template of templates) {
     const card = document.createElement("div");
     card.className = "template-card";
-    card.dataset.name = template.name.toLowerCase();
+    card.dataset.name = (template.name || "").toLowerCase();
     card.dataset.subject = (template.subject || "").toLowerCase();
     card.dataset.category = (template.category || "").toLowerCase();
 
@@ -98,10 +106,7 @@ async function renderTemplateList() {
     deleteBtn.className = "btn-delete";
     deleteBtn.textContent = messenger.i18n.getMessage("optionsDelete");
     deleteBtn.addEventListener("click", async () => {
-      const msg = messenger.i18n.getMessage(
-        "optionsConfirmDelete",
-        template.name
-      );
+      const msg = messenger.i18n.getMessage("optionsConfirmDelete", template.name);
       if (confirm(msg)) {
         await deleteTemplate(template.id);
         await renderTemplateList();
@@ -147,9 +152,7 @@ async function populateCategorySuggestions() {
   }
 }
 
-function generateAttId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
-}
+const generateAttId = generateId;
 
 async function loadIdentities() {
   const select = document.getElementById("editor-identities");
@@ -162,9 +165,7 @@ async function loadIdentities() {
         for (const identity of account.identities) {
           const option = document.createElement("option");
           option.value = identity.id;
-          const label = identity.name
-            ? `${identity.name} (${identity.email})`
-            : identity.email;
+          const label = identity.name ? `${identity.name} (${identity.email})` : identity.email;
           option.textContent = label;
           option.title = identity.email;
           select.appendChild(option);
@@ -195,25 +196,25 @@ async function loadNestedTemplateOptions(excludeId = null) {
   }
 }
 
+function insertTextAtEditorCursor(text) {
+  const editor = document.getElementById("editor-body");
+  editor.focus();
+  const sel = document.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+    range.collapse(false);
+  } else {
+    editor.append(document.createTextNode(text));
+  }
+}
+
 function insertNestedTemplate() {
   const select = document.getElementById("nested-template-select");
   const templateName = select.value;
   if (!templateName) return;
-
-  const editor = document.getElementById("editor-body");
-  const includeText = `{{template:${templateName}}}`;
-  editor.focus();
-
-  const sel = window.getSelection();
-  if (sel.rangeCount > 0) {
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(document.createTextNode(includeText));
-    range.collapse(false);
-  } else {
-    editor.append(document.createTextNode(includeText));
-  }
-
+  insertTextAtEditorCursor(`{{template:${templateName}}}`);
   select.value = "";
 }
 
@@ -237,16 +238,14 @@ function renderAttachments() {
     size.className = "att-size";
     size.textContent = formatFileSize(att.size);
 
+    item.appendChild(name);
+    item.appendChild(size);
+
     if (att.size >= ATTACHMENT_WARN_SIZE) {
       const warn = document.createElement("span");
       warn.className = "att-warn";
       warn.textContent = messenger.i18n.getMessage("attachmentSizeWarning");
-      item.appendChild(name);
-      item.appendChild(size);
       item.appendChild(warn);
-    } else {
-      item.appendChild(name);
-      item.appendChild(size);
     }
 
     const removeBtn = document.createElement("button");
@@ -281,8 +280,13 @@ function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      const base64 = reader.result.split(",")[1];
-      resolve(base64);
+      const result = reader.result || "";
+      const commaIdx = result.indexOf(",");
+      if (commaIdx === -1) {
+        reject(new Error("Malformed data URL"));
+        return;
+      }
+      resolve(result.slice(commaIdx + 1));
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
@@ -293,18 +297,19 @@ async function addFiles(files) {
   for (const file of files) {
     try {
       const data = await readFileAsBase64(file);
-      pendingAttachments.push({
-        id: generateAttId(),
-        name: file.name,
-        type: file.type || "application/octet-stream",
-        size: file.size,
-        data,
-      });
+      pendingAttachments = [
+        ...pendingAttachments,
+        {
+          id: generateAttId(),
+          name: file.name,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+          data,
+        },
+      ];
     } catch (err) {
       console.error("TemplateWing: could not read file", file.name, err);
-      showEditorError(
-        messenger.i18n.getMessage("attachmentReadError", file.name)
-      );
+      showEditorError(messenger.i18n.getMessage("attachmentReadError", file.name));
     }
   }
   renderAttachments();
@@ -313,6 +318,8 @@ async function addFiles(files) {
 async function openEditor(id, prefill = null) {
   editingId = id || null;
   pendingAttachments = [];
+  bodyEmptyAcknowledged = false;
+  resetHtmlView();
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
   const categoryInput = document.getElementById("editor-category");
@@ -339,11 +346,14 @@ async function openEditor(id, prefill = null) {
       toInput.value = (template.to || []).join(", ");
       ccInput.value = (template.cc || []).join(", ");
       bccInput.value = (template.bcc || []).join(", ");
-      insertModeSelect.value = template.insertMode || "append";
+      insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
       bodyEditor.replaceChildren();
       if (template.body) {
-        const parsed = new DOMParser().parseFromString(template.body, "text/html");
-        bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+        const safeBody = sanitizeTemplateBody(template.body);
+        const parsed = new DOMParser().parseFromString(safeBody, "text/html");
+        bodyEditor.append(
+          ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+        );
       }
       pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
       const selectedIdentities = template.identities || [];
@@ -359,11 +369,14 @@ async function openEditor(id, prefill = null) {
     toInput.value = "";
     ccInput.value = "";
     bccInput.value = "";
-    insertModeSelect.value = "append";
+    insertModeSelect.value = INSERT_MODES.APPEND;
     bodyEditor.replaceChildren();
     if (prefill && prefill.body) {
-      const parsed = new DOMParser().parseFromString(prefill.body, "text/html");
-      bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+      const safeBody = sanitizeTemplateBody(prefill.body);
+      const parsed = new DOMParser().parseFromString(safeBody, "text/html");
+      bodyEditor.append(
+        ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+      );
     }
   }
 
@@ -376,6 +389,8 @@ async function openEditor(id, prefill = null) {
 function closeEditor() {
   editingId = null;
   pendingAttachments = [];
+  bodyEmptyAcknowledged = false;
+  resetHtmlView();
   document.getElementById("search-input").value = "";
   showView("list");
 }
@@ -386,6 +401,8 @@ async function duplicateTemplate(id) {
 
   editingId = null;
   pendingAttachments = (template.attachments || []).map((a) => ({ ...a }));
+  bodyEmptyAcknowledged = false;
+  resetHtmlView();
 
   const title = document.getElementById("editor-title");
   const nameInput = document.getElementById("editor-name");
@@ -410,12 +427,15 @@ async function duplicateTemplate(id) {
   toInput.value = (template.to || []).join(", ");
   ccInput.value = (template.cc || []).join(", ");
   bccInput.value = (template.bcc || []).join(", ");
-  insertModeSelect.value = template.insertMode || "append";
+  insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
 
   bodyEditor.replaceChildren();
   if (template.body) {
-    const parsed = new DOMParser().parseFromString(template.body, "text/html");
-    bodyEditor.append(...document.adoptNode(parsed.body).childNodes);
+    const safeBody = sanitizeTemplateBody(template.body);
+    const parsed = new DOMParser().parseFromString(safeBody, "text/html");
+    bodyEditor.append(
+      ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+    );
   }
 
   const selectedIdentities = template.identities || [];
@@ -430,16 +450,18 @@ async function duplicateTemplate(id) {
   nameInput.select();
 }
 
-function parseRecipients(value) {
-  return value.trim()
-    ? value.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
-}
-
 function showEditorError(message) {
   const errorEl = document.getElementById("editor-error");
   errorEl.textContent = message;
   errorEl.hidden = false;
+}
+
+function showInlineError(fieldId, message) {
+  const errorEl = document.getElementById(`${fieldId}-error`);
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
 }
 
 function clearEditorErrors() {
@@ -449,6 +471,71 @@ function clearEditorErrors() {
   for (const el of document.querySelectorAll(".field-error")) {
     el.classList.remove("field-error");
   }
+  // Clear inline errors
+  for (const el of document.querySelectorAll(".inline-error")) {
+    el.hidden = true;
+    el.textContent = "";
+  }
+  // Clear body warning
+  const bodyWarning = document.getElementById("editor-body-warning");
+  if (bodyWarning) {
+    bodyWarning.hidden = true;
+    bodyWarning.textContent = "";
+  }
+}
+
+function switchToHtmlView() {
+  const bodyEditor = document.getElementById("editor-body");
+  const htmlTextarea = document.getElementById("editor-body-html");
+  const toggleBtn = document.getElementById("btn-html-toggle");
+  const toolbar = document.querySelector(".editor-toolbar");
+
+  htmlTextarea.value = bodyEditor.innerHTML;
+  bodyEditor.hidden = true;
+  htmlTextarea.hidden = false;
+  htmlViewActive = true;
+  toggleBtn.classList.add("active");
+
+  // Disable formatting toolbar buttons while in HTML view
+  for (const btn of toolbar.querySelectorAll(".toolbar-btn:not(#btn-html-toggle)")) {
+    btn.disabled = true;
+  }
+  toolbar.querySelector(".toolbar-select")?.setAttribute("disabled", "");
+  toolbar.querySelector("#paste-plain-toggle")?.setAttribute("disabled", "");
+}
+
+function switchToVisualView() {
+  const bodyEditor = document.getElementById("editor-body");
+  const htmlTextarea = document.getElementById("editor-body-html");
+  const toggleBtn = document.getElementById("btn-html-toggle");
+  const toolbar = document.querySelector(".editor-toolbar");
+
+  const safeHtml = sanitizeTemplateBody(htmlTextarea.value);
+  const parsed = new DOMParser().parseFromString(safeHtml, "text/html");
+  bodyEditor.replaceChildren(
+    ...Array.from(parsed.body.childNodes).map((n) => document.importNode(n, true))
+  );
+  htmlTextarea.hidden = true;
+  bodyEditor.hidden = false;
+  htmlViewActive = false;
+  toggleBtn.classList.remove("active");
+
+  // Re-enable formatting toolbar buttons
+  for (const btn of toolbar.querySelectorAll(".toolbar-btn:not(#btn-html-toggle)")) {
+    btn.disabled = false;
+  }
+  toolbar.querySelector(".toolbar-select")?.removeAttribute("disabled");
+  toolbar.querySelector("#paste-plain-toggle")?.removeAttribute("disabled");
+}
+
+function resetHtmlView() {
+  if (htmlViewActive) {
+    switchToVisualView();
+  }
+  htmlViewActive = false;
+  document.getElementById("editor-body").hidden = false;
+  document.getElementById("editor-body-html").hidden = true;
+  document.getElementById("btn-html-toggle").classList.remove("active");
 }
 
 async function handleSave() {
@@ -459,14 +546,16 @@ async function handleSave() {
   const toInput = document.getElementById("editor-to");
   const ccInput = document.getElementById("editor-cc");
   const bccInput = document.getElementById("editor-bcc");
-  const body = document.getElementById("editor-body").innerHTML;
+  const body = htmlViewActive
+    ? document.getElementById("editor-body-html").value
+    : document.getElementById("editor-body").innerHTML;
 
   clearEditorErrors();
 
   // Validate name
   if (!name) {
     nameInput.classList.add("field-error");
-    showEditorError(messenger.i18n.getMessage("validationNameRequired"));
+    showInlineError("editor-name", messenger.i18n.getMessage("validationNameRequired"));
     nameInput.focus();
     return;
   }
@@ -478,7 +567,7 @@ async function handleSave() {
   );
   if (duplicate) {
     nameInput.classList.add("field-error");
-    showEditorError(messenger.i18n.getMessage("validationDuplicateName"));
+    showInlineError("editor-name", messenger.i18n.getMessage("validationDuplicateName"));
     nameInput.focus();
     return;
   }
@@ -488,18 +577,29 @@ async function handleSave() {
   const ccResult = validateRecipients(ccInput.value);
   const bccResult = validateRecipients(bccInput.value);
 
-  const allInvalid = [
-    ...toResult.invalid,
-    ...ccResult.invalid,
-    ...bccResult.invalid,
-  ];
+  const allInvalid = [...toResult.invalid, ...ccResult.invalid, ...bccResult.invalid];
   if (allInvalid.length > 0) {
-    if (toResult.invalid.length) toInput.classList.add("field-error");
-    if (ccResult.invalid.length) ccInput.classList.add("field-error");
-    if (bccResult.invalid.length) bccInput.classList.add("field-error");
-    showEditorError(
-      messenger.i18n.getMessage("validationInvalidRecipients", allInvalid.join(", "))
-    );
+    if (toResult.invalid.length) {
+      toInput.classList.add("field-error");
+      showInlineError(
+        "editor-to",
+        messenger.i18n.getMessage("validationInvalidRecipients", toResult.invalid.join(", "))
+      );
+    }
+    if (ccResult.invalid.length) {
+      ccInput.classList.add("field-error");
+      showInlineError(
+        "editor-cc",
+        messenger.i18n.getMessage("validationInvalidRecipients", ccResult.invalid.join(", "))
+      );
+    }
+    if (bccResult.invalid.length) {
+      bccInput.classList.add("field-error");
+      showInlineError(
+        "editor-bcc",
+        messenger.i18n.getMessage("validationInvalidRecipients", bccResult.invalid.join(", "))
+      );
+    }
     return;
   }
 
@@ -509,11 +609,26 @@ async function handleSave() {
 
   const insertMode = document.getElementById("editor-insert-mode").value;
 
+  // Block save on empty body in replace mode, unless user has already confirmed.
+  if (insertMode === INSERT_MODES.REPLACE) {
+    const rawBody = htmlViewActive
+      ? document.getElementById("editor-body-html").value
+      : document.getElementById("editor-body").innerHTML;
+    const bodyText = new DOMParser().parseFromString(rawBody, "text/html").body.innerText.trim();
+    if (!bodyText && !bodyEmptyAcknowledged) {
+      const bodyWarning = document.getElementById("editor-body-warning");
+      bodyWarning.textContent = messenger.i18n.getMessage("validationBodyEmptyReplace");
+      bodyWarning.hidden = false;
+      bodyEmptyAcknowledged = true;
+      return;
+    }
+  }
+
   const identitiesSelect = document.getElementById("editor-identities");
   const identities = Array.from(identitiesSelect.selectedOptions).map((opt) => opt.value);
 
   const template = {
-    id: editingId || undefined,
+    id: editingId,
     name,
     category,
     subject,
@@ -540,10 +655,16 @@ async function handleSave() {
 
 async function handleExport() {
   const templates = await getTemplates();
+  const safeTemplates = templates.map(
+    ({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
+      ...t,
+      attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
+    })
+  );
   const payload = {
-    version: "2.2",
+    version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
-    templates,
+    templates: safeTemplates,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -559,7 +680,18 @@ function showImportFeedback(message, isError) {
   el.textContent = message;
   el.className = "import-feedback" + (isError ? " error" : "");
   el.hidden = false;
-  setTimeout(() => { el.hidden = true; }, 6000);
+  const FEEDBACK_DISMISS_MS = 6000;
+  setTimeout(() => {
+    el.hidden = true;
+  }, FEEDBACK_DISMISS_MS);
+}
+
+function showImportError(message) {
+  showImportFeedback(message, true);
+}
+
+function showImportSuccess(message) {
+  showImportFeedback(message, false);
 }
 
 // ---- Import guardrails ----
@@ -577,27 +709,41 @@ function showImportDialog(analysis, validTemplates) {
 
   const totalLine = document.createElement("div");
   totalLine.className = "summary-line";
-  totalLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogTotal", String(validTemplates.length + analysis.invalid))}</span>`;
+  const totalSpan = document.createElement("span");
+  totalSpan.textContent = messenger.i18n.getMessage(
+    "importDialogTotal",
+    String(validTemplates.length + analysis.invalid)
+  );
+  totalLine.appendChild(totalSpan);
   summaryEl.appendChild(totalLine);
 
   if (analysis.invalid > 0) {
     const invalidLine = document.createElement("div");
     invalidLine.className = "summary-line summary-warn";
-    invalidLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogInvalid", String(analysis.invalid))}</span>`;
+    const invalidSpan = document.createElement("span");
+    invalidSpan.textContent = messenger.i18n.getMessage(
+      "importDialogInvalid",
+      String(analysis.invalid)
+    );
+    invalidLine.appendChild(invalidSpan);
     summaryEl.appendChild(invalidLine);
   }
 
   if (analysis.duplicates.size > 0) {
     const dupLine = document.createElement("div");
     dupLine.className = "summary-line summary-warn";
-    dupLine.innerHTML = `<span>${messenger.i18n.getMessage("importDialogDuplicates", String(analysis.duplicates.size))}</span>`;
+    const dupSpan = document.createElement("span");
+    dupSpan.textContent = messenger.i18n.getMessage(
+      "importDialogDuplicates",
+      String(analysis.duplicates.size)
+    );
+    dupLine.appendChild(dupSpan);
     summaryEl.appendChild(dupLine);
   }
 
   // Reset radio to default
   dialog.querySelector('input[value="append"]').checked = true;
 
-  localize();
   dialog.hidden = false;
 }
 
@@ -606,34 +752,46 @@ function hideImportDialog() {
   pendingImportData = null;
 }
 
-async function consumePrefillTemplate(prefill) {
+async function applyPrefillTemplate(prefill) {
   if (!prefill) return;
   hideImportDialog();
-  await messenger.storage.local.remove("_prefillTemplate");
   await openEditor(null, prefill);
 }
 
 async function checkForPrefillTemplate() {
-  const prefillResult = await messenger.storage.local.get({ _prefillTemplate: null });
-  await consumePrefillTemplate(prefillResult._prefillTemplate);
+  const prefill = await consumePrefillTemplate();
+  await applyPrefillTemplate(prefill);
+}
+
+function sanitizeTemplateBody(html) {
+  if (!html) return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const el of doc.body.querySelectorAll("*")) {
+    for (const attr of [...el.attributes]) {
+      if (attr.name.toLowerCase().startsWith("on")) el.removeAttribute(attr.name);
+    }
+    if (["SCRIPT", "OBJECT", "EMBED", "IFRAME"].includes(el.tagName)) el.remove();
+  }
+  return doc.body.innerHTML;
 }
 
 async function executeImport() {
   if (!pendingImportData) return;
 
   const { analysis, validTemplates } = pendingImportData;
-  const mode = document.querySelector('input[name="import-mode"]:checked').value;
+  const checkedRadio = document.querySelector('input[name="import-mode"]:checked');
+  const mode = checkedRadio ? checkedRadio.value : INSERT_MODES.APPEND;
   const existingTemplates = await getTemplates();
-  const existingByName = new Map(
-    existingTemplates.map((t) => [t.name.toLowerCase(), t])
-  );
+  const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 
   let added = 0;
   let skipped = 0;
   let replaced = 0;
 
   for (const t of validTemplates) {
-    const { id, createdAt, updatedAt, usageCount, lastUsedAt, ...rest } = t;
+    // Strip internal tracking fields; keep only user-visible template data.
+    const { id: _, createdAt: _1, updatedAt: _2, usageCount: _3, lastUsedAt: _4, ...rest } = t;
+    rest.body = sanitizeTemplateBody(rest.body);
     const nameKey = t.name.trim().toLowerCase();
     const existing = existingByName.get(nameKey);
 
@@ -668,30 +826,35 @@ async function executeImport() {
 
   hideImportDialog();
 
-  showImportFeedback(
+  showImportSuccess(
     messenger.i18n.getMessage("importResultSummary", [
       String(added),
       String(skipped),
       String(replaced),
-    ]),
-    false
+    ])
   );
   await renderTemplateList();
   await populateCategoryFilter();
 }
 
+const IMPORT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 async function handleImport(file) {
+  if (file.size > IMPORT_MAX_FILE_SIZE) {
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
+    return;
+  }
   let parsed;
   try {
     const text = await file.text();
     parsed = JSON.parse(text);
   } catch {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
   if (!parsed || !Array.isArray(parsed.templates)) {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
@@ -699,7 +862,7 @@ async function handleImport(file) {
   const analysis = analyseImport(parsed.templates, existingTemplates);
 
   if (analysis.valid.length === 0) {
-    showImportFeedback(messenger.i18n.getMessage("optionsImportError"), true);
+    showImportError(messenger.i18n.getMessage("optionsImportError"));
     return;
   }
 
@@ -711,12 +874,10 @@ function filterTemplates() {
   const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
   const cards = document.querySelectorAll("#template-list .template-card");
   for (const card of cards) {
-    const matchesSearch = !query
-      || card.dataset.name.includes(query)
-      || card.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory
-      || card.dataset.category === selectedCategory;
-    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+    const matchesSearch =
+      !query || card.dataset.name.includes(query) || card.dataset.subject.includes(query);
+    const matchesCategory = !selectedCategory || card.dataset.category === selectedCategory;
+    card.hidden = !(matchesSearch && matchesCategory);
   }
 }
 
@@ -755,6 +916,15 @@ document.getElementById("file-input").addEventListener("change", (e) => {
   }
 });
 
+// HTML source toggle
+document.getElementById("btn-html-toggle").addEventListener("click", () => {
+  if (htmlViewActive) {
+    switchToVisualView();
+  } else {
+    switchToHtmlView();
+  }
+});
+
 // Rich text toolbar
 for (const btn of document.querySelectorAll(".toolbar-btn[data-cmd]")) {
   btn.addEventListener("click", (e) => {
@@ -771,7 +941,7 @@ document.getElementById("format-block").addEventListener("change", (e) => {
   e.target.value = "p";
 });
 
-// ---- v2.2: Toolbar active-state feedback ----
+// ---- Toolbar active-state feedback ----
 
 function updateToolbarState() {
   const cmds = ["bold", "italic", "underline"];
@@ -785,14 +955,19 @@ function updateToolbarState() {
 
 document.addEventListener("selectionchange", () => {
   const editor = document.getElementById("editor-body");
-  if (editor && editor.contains(document.activeElement) || document.activeElement === editor) {
+  if ((editor && editor.contains(document.activeElement)) || document.activeElement === editor) {
     updateToolbarState();
   }
 });
 
 document.getElementById("editor-body").addEventListener("keyup", updateToolbarState);
 
-// ---- v2.2: Paste sanitization mode ----
+document.getElementById("editor-body").addEventListener("input", () => {
+  const warning = document.getElementById("editor-body-warning");
+  if (warning && !warning.hidden) warning.hidden = true;
+});
+
+// ---- Paste sanitization mode ----
 
 document.getElementById("editor-body").addEventListener("paste", (e) => {
   const toggle = document.getElementById("paste-plain-toggle");
@@ -803,24 +978,12 @@ document.getElementById("editor-body").addEventListener("paste", (e) => {
   }
 });
 
-// ---- v2.2: Variable picker (click-to-insert) ----
+// ---- Variable picker (click-to-insert) ----
 
 for (const chip of document.querySelectorAll(".variable-chip[data-var]")) {
   chip.addEventListener("click", (e) => {
     e.preventDefault();
-    const varText = chip.dataset.var;
-    const editor = document.getElementById("editor-body");
-    editor.focus();
-
-    const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(document.createTextNode(varText));
-      range.collapse(false);
-    } else {
-      editor.append(document.createTextNode(varText));
-    }
+    insertTextAtEditorCursor(chip.dataset.var);
   });
 }
 
@@ -830,10 +993,20 @@ await renderTemplateList();
 await populateCategoryFilter();
 
 messenger.storage.onChanged.addListener(async (changes, area) => {
-  if (area !== "local" || !changes._prefillTemplate || !changes._prefillTemplate.newValue) {
+  if (area !== "local") return;
+
+  if (changes[PREFILL_KEY] && changes[PREFILL_KEY].newValue) {
+    await applyPrefillTemplate(changes[PREFILL_KEY].newValue);
     return;
   }
-  await consumePrefillTemplate(changes._prefillTemplate.newValue);
+
+  // Re-render the list when templates change from another surface (background
+  // trackUsage, popup insertion, etc.), but only when the list view is visible
+  // so we don't clobber in-progress edits.
+  if (changes.templates && !document.getElementById("view-list").hidden) {
+    await renderTemplateList();
+    await populateCategoryFilter();
+  }
 });
 
 // Check for pre-fill data from "Save as Template" context menu
