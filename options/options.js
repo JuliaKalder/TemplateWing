@@ -7,6 +7,8 @@ import {
   generateId,
   consumePrefillTemplate,
   PREFILL_KEY,
+  EXPORT_FORMAT_VERSION,
+  INSERT_MODES,
 } from "../modules/template-store.js";
 import {
   validateRecipients,
@@ -14,6 +16,7 @@ import {
   analyseImport,
   ATTACHMENT_WARN_SIZE,
   ATTACHMENT_TOTAL_WARN_SIZE,
+  parseRecipients,
 } from "../modules/validation.js";
 import { filterTemplateList } from "../modules/ui-helpers.js";
 
@@ -344,7 +347,7 @@ async function openEditor(id, prefill = null) {
       toInput.value = (template.to || []).join(", ");
       ccInput.value = (template.cc || []).join(", ");
       bccInput.value = (template.bcc || []).join(", ");
-      insertModeSelect.value = template.insertMode || "append";
+      insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
       bodyEditor.replaceChildren();
       if (template.body) {
         const safeBody = sanitizeTemplateBody(template.body);
@@ -367,7 +370,7 @@ async function openEditor(id, prefill = null) {
     toInput.value = "";
     ccInput.value = "";
     bccInput.value = "";
-    insertModeSelect.value = "append";
+    insertModeSelect.value = INSERT_MODES.APPEND;
     bodyEditor.replaceChildren();
     if (prefill && prefill.body) {
       const safeBody = sanitizeTemplateBody(prefill.body);
@@ -425,7 +428,7 @@ async function duplicateTemplate(id) {
   toInput.value = (template.to || []).join(", ");
   ccInput.value = (template.cc || []).join(", ");
   bccInput.value = (template.bcc || []).join(", ");
-  insertModeSelect.value = template.insertMode || "append";
+  insertModeSelect.value = template.insertMode || INSERT_MODES.APPEND;
 
   bodyEditor.replaceChildren();
   if (template.body) {
@@ -446,15 +449,6 @@ async function duplicateTemplate(id) {
   showView("editor");
   nameInput.focus();
   nameInput.select();
-}
-
-function parseRecipients(value) {
-  return value.trim()
-    ? value
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
 }
 
 function showEditorError(message) {
@@ -617,7 +611,7 @@ async function handleSave() {
   const insertMode = document.getElementById("editor-insert-mode").value;
 
   // Block save on empty body in replace mode, unless user has already confirmed.
-  if (insertMode === "replace") {
+  if (insertMode === INSERT_MODES.REPLACE) {
     const rawBody = htmlViewActive
       ? document.getElementById("editor-body-html").value
       : document.getElementById("editor-body").innerHTML;
@@ -669,8 +663,7 @@ async function handleExport() {
     })
   );
   const payload = {
-    // Export format version (not the extension version); import ignores this field.
-    version: "2.2",
+    version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     templates: safeTemplates,
   };
@@ -788,7 +781,7 @@ async function executeImport() {
 
   const { analysis, validTemplates } = pendingImportData;
   const checkedRadio = document.querySelector('input[name="import-mode"]:checked');
-  const mode = checkedRadio ? checkedRadio.value : "append";
+  const mode = checkedRadio ? checkedRadio.value : INSERT_MODES.APPEND;
   const existingTemplates = await getTemplates();
   const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 

@@ -4,6 +4,7 @@ import {
   getCategories,
   trackUsage,
   isTemplateAllowedForIdentity,
+  INSERT_MODES,
 } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
 import { filterTemplateList } from "../modules/ui-helpers.js";
@@ -149,7 +150,7 @@ async function insertTemplate(id) {
   // Delegate to the background page so the popup can close first; the
   // background then runs the insert against the focused compose window.
   // Other modes use setComposeDetails and don't need focus.
-  if (template.insertMode === "cursor") {
+  if (template.insertMode === INSERT_MODES.CURSOR) {
     messenger.runtime.sendMessage({
       action: "templatewing:insertTemplate",
       tabId: tabs[0].id,

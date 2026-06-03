@@ -1,7 +1,17 @@
 export const STORAGE_KEY = "templates";
 export const SCHEMA_KEY = "schemaVersion";
 export const CURRENT_SCHEMA = 1;
+export const EXPORT_FORMAT_VERSION = "2.2";
 
+/** Shared insert mode constants used across popup, options, and template-insert. */
+export const INSERT_MODES = Object.freeze({
+  APPEND: "append",
+  PREPEND: "prepend",
+  REPLACE: "replace",
+  CURSOR: "cursor",
+});
+
+/** Generate a unique ID for a template or attachment. */
 export function generateId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -94,11 +104,13 @@ async function migrateIfNeeded() {
 
 // ---- Public API ----
 
+/** Get all templates. Returns a shallow copy of the cached array. */
 export async function getTemplates() {
   const templates = await loadTemplates();
   return [...templates];
 }
 
+/** Get a single template by ID. Returns a defensive copy, or null. */
 export async function getTemplate(id) {
   const templates = await getTemplates();
   const t = templates.find((t) => t.id === id);
@@ -113,6 +125,7 @@ export async function getTemplate(id) {
   };
 }
 
+/** Save (create or update) a template. Throws if name is missing. */
 export async function saveTemplate(template) {
   if (!template || typeof template.name !== "string" || !template.name.trim()) {
     throw new TypeError("template.name must be a non-empty string");
@@ -150,17 +163,20 @@ export async function saveTemplate(template) {
   return template;
 }
 
+/** Get distinct, sorted, non-empty category names. */
 export async function getCategories() {
   const templates = await getTemplates();
   return [...new Set(templates.map((t) => t.category).filter(Boolean))].sort();
 }
 
+/** Delete a template by ID. */
 export async function deleteTemplate(id) {
   const templates = await getTemplates();
   const filtered = templates.filter((t) => t.id !== id);
   await persistTemplates(filtered);
 }
 
+/** Increment usageCount and update lastUsedAt for a template. */
 export async function trackUsage(id) {
   const templates = await getTemplates();
   const index = templates.findIndex((t) => t.id === id);
@@ -178,6 +194,7 @@ export async function trackUsage(id) {
 
 // ---- Identity filtering ----
 
+/** Check if a template is allowed for the given identity (empty identities list means allowed for all). */
 export function isTemplateAllowedForIdentity(template, identityId) {
   if (!template.identities || template.identities.length === 0) return true;
   return template.identities.includes(identityId);
@@ -201,6 +218,18 @@ export async function consumePrefillTemplate() {
 }
 
 export { PREFILL_KEY };
+
+// ---- Sorting ----
+
+/** Sort templates by category then by name (case-insensitive). */
+export function getSortedTemplates(templates) {
+  return [...templates].sort((a, b) => {
+    const catA = (a.category || "").toLowerCase();
+    const catB = (b.category || "").toLowerCase();
+    if (catA !== catB) return catA.localeCompare(catB);
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
 
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub
 // are not poisoned by state from earlier tests.
