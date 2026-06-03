@@ -6,7 +6,7 @@ import {
   INSERT_MODES,
 } from "../modules/template-store.js";
 import { insertTemplateIntoTab } from "../modules/template-insert.js";
-import { setFilterOptions } from "../modules/ui-helpers.js";
+import { filterTemplateList, setFilterOptions } from "../modules/ui-helpers.js";
 import { getIdentityIdForTab } from "../modules/compose-utils.js";
 
 async function getCurrentIdentityId() {
@@ -185,15 +185,7 @@ async function insertTemplate(id) {
 }
 
 function filterTemplates() {
-  const query = document.getElementById("search-input").value.toLowerCase().trim();
-  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
-  const items = document.querySelectorAll("#template-list .template-item");
-  for (const item of items) {
-    const matchesSearch =
-      !query || item.dataset.name.includes(query) || item.dataset.subject.includes(query);
-    const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
-    item.hidden = !(matchesSearch && matchesCategory);
-  }
+  filterTemplateList("#template-list .template-item");
 }
 
 async function populateCategoryFilter() {
