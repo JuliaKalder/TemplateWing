@@ -362,12 +362,33 @@ export async function insertTemplateIntoTab(tabId, template) {
   const mode = template.insertMode || INSERT_MODES.APPEND;
   const details = {};
 
+  // Hoist compose details fetch so we can use identityId for both nested
+  // template filtering and later insert-mode operations.
+  let currentIdentityId = null;
+  try {
+    const composeDetails = await messenger.compose.getComposeDetails(tabId);
+    currentIdentityId = composeDetails.identityId || null;
+  } catch (err) {
+    console.warn("TemplateWing: could not fetch compose details for identity filtering", err);
+  }
+
   let resolvedBody = template.body;
   if (template.body && new RegExp(TEMPLATE_INCLUDE_REGEX.source, "i").test(template.body)) {
     try {
       const allTemplates = await getTemplates();
-      const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
-      const templatesByName = new Map(allTemplates.map((t) => [(t.name || "").toLowerCase(), t]));
+      // Filter to only templates that the current identity is allowed to use.
+      // A template with no identities restriction (empty or absent) is always
+      // available; otherwise the current identity must be listed explicitly.
+      const allowedTemplates = allTemplates.filter(
+        (t) =>
+          !t.identities ||
+          t.identities.length === 0 ||
+          (currentIdentityId && t.identities.includes(currentIdentityId))
+      );
+      const templatesById = new Map(allowedTemplates.map((t) => [t.id, t]));
+      const templatesByName = new Map(
+        allowedTemplates.map((t) => [(t.name || "").toLowerCase(), t])
+      );
       const visited = new Set([template.id]);
       resolvedBody = await resolveNestedTemplates(
         template.body,
