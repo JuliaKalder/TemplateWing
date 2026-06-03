@@ -55,9 +55,11 @@ export const ATTACHMENT_TOTAL_WARN_SIZE = 10 * 1024 * 1024;
  * with either an existing template or another imported template.
  */
 export function analyseImport(importedTemplates, existingTemplates) {
-  // Accumulates both existing and newly-imported names; used for duplicate
-  // detection. Note: `valid` may include entries that are also in `duplicates`.
-  const seenNames = new Map(
+  // Tracks all names seen so far: pre-seeded with existing template names
+  // for storage-level dedup, then extended with each processed import for
+  // intra-import dedup (so two imported templates with the same name both
+  // land in `duplicates`). Note: `valid` may include entries also in `duplicates`.
+  const allSeenNames = new Map(
     existingTemplates
       .filter((t) => t && typeof t.name === "string" && t.name.trim())
       .map((t) => [t.name.toLowerCase(), t])
@@ -73,10 +75,10 @@ export function analyseImport(importedTemplates, existingTemplates) {
       continue;
     }
     const key = t.name.trim().toLowerCase();
-    if (seenNames.has(key)) {
+    if (allSeenNames.has(key)) {
       duplicates.set(key, t);
     }
-    seenNames.set(key, t);
+    allSeenNames.set(key, t);
     if (t.body != null && typeof t.body !== "string") {
       invalid++;
       continue;

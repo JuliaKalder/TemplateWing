@@ -5,8 +5,13 @@ import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.
 // The module installs a storage listener at import time; install the mock first.
 installMessengerMock();
 
-const { TEMPLATE_INCLUDE_REGEX, WEEKDAY_NAMES, applyVariables, resolveNestedTemplates } =
-  await import("../modules/template-insert.js");
+const {
+  TEMPLATE_INCLUDE_REGEX,
+  WEEKDAY_NAMES,
+  applyVariables,
+  replaceVariables,
+  resolveNestedTemplates,
+} = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
 
@@ -115,6 +120,73 @@ describe("applyVariables", () => {
   it("handles null/undefined input", () => {
     assert.strictEqual(applyVariables(null, fixed), null);
     assert.strictEqual(applyVariables(undefined, fixed), undefined);
+  });
+});
+
+describe("replaceVariables", () => {
+  it("replaces {SENDER_NAME} and {SENDER_EMAIL} from provided vars", () => {
+    const result = replaceVariables("From: {SENDER_NAME} <{SENDER_EMAIL}>", {
+      senderName: "Alice",
+      senderEmail: "alice@example.com",
+    });
+    assert.strictEqual(result, "From: Alice <alice@example.com>");
+  });
+
+  it("replaces {ACCOUNT_NAME} and {ACCOUNT_EMAIL} from provided vars", () => {
+    const result = replaceVariables("{ACCOUNT_NAME} / {ACCOUNT_EMAIL}", {
+      accountName: "Work",
+      accountEmail: "alice.work@example.com",
+    });
+    assert.strictEqual(result, "Work / alice.work@example.com");
+  });
+
+  it("HTML-encodes identity values when isHtml is true", () => {
+    const result = replaceVariables("{SENDER_NAME}", { senderName: "<b>Alice & Bob</b>" }, true);
+    assert.strictEqual(result, "&lt;b&gt;Alice &amp; Bob&lt;/b&gt;");
+  });
+
+  it("does not HTML-encode when isHtml is false", () => {
+    const result = replaceVariables("{SENDER_NAME}", { senderName: "<Alice>" }, false);
+    assert.strictEqual(result, "<Alice>");
+  });
+
+  it("defaults identity vars to empty strings when vars is empty", () => {
+    const result = replaceVariables("{SENDER_NAME} <{SENDER_EMAIL}>", {});
+    assert.strictEqual(result, " <>");
+  });
+
+  it("replaces {DATE} with a non-empty string", () => {
+    const result = replaceVariables("{DATE}", {});
+    assert.ok(
+      result.length > 0 && !result.includes("{DATE}"),
+      `{DATE} should be replaced, got: ${result}`
+    );
+  });
+
+  it("replaces {TIME} with a non-empty string", () => {
+    const result = replaceVariables("{TIME}", {});
+    assert.ok(
+      result.length > 0 && !result.includes("{TIME}"),
+      `{TIME} should be replaced, got: ${result}`
+    );
+  });
+
+  it("replaces {YEAR} with a 4-digit year", () => {
+    const result = replaceVariables("{YEAR}", {});
+    assert.match(result, /^\d{4}$/);
+  });
+
+  it("replaces {WEEKDAY} with a day name", () => {
+    const result = replaceVariables("{WEEKDAY}", {});
+    assert.ok(WEEKDAY_NAMES.includes(result), `expected a weekday name, got: ${result}`);
+  });
+
+  it("returns null unchanged for null input", () => {
+    assert.strictEqual(replaceVariables(null, {}), null);
+  });
+
+  it("returns undefined unchanged for undefined input", () => {
+    assert.strictEqual(replaceVariables(undefined, {}), undefined);
   });
 });
 
