@@ -312,7 +312,9 @@ export async function insertTemplateIntoTab(tabId, template) {
           (currentIdentityId && t.identities.includes(currentIdentityId))
       );
       const templatesById = new Map(allowedTemplates.map((t) => [t.id, t]));
-      const templatesByName = new Map(allowedTemplates.map((t) => [(t.name || "").toLowerCase(), t]));
+      const templatesByName = new Map(
+        allowedTemplates.map((t) => [(t.name || "").toLowerCase(), t])
+      );
       const visited = new Set([template.id]);
       resolvedBody = await resolveNestedTemplates(
         template.body,
