@@ -1,6 +1,14 @@
-export const WEEKDAY_NAMES = [
-  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-];
+import { getTemplates, INSERT_MODES } from "./template-store.js";
+
+export const WEEKDAY_NAMES = Object.freeze([
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+]);
 
 /**
  * Insert `insertHtml` into `existingBody` at the most user-meaningful
@@ -18,7 +26,8 @@ export function smartInsertHtml(existingBody, insertHtml) {
   if (!existingBody) return insertHtml || "";
   if (!insertHtml) return existingBody;
 
-  const citeRe = /<(div|blockquote)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-cite-prefix\b[^"']*["'][^>]*>/i;
+  const citeRe =
+    /<(div|blockquote)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-cite-prefix\b[^"']*["'][^>]*>/i;
   const sigRe = /<(div|pre)\b[^>]*\bclass\s*=\s*["'][^"']*\bmoz-signature\b[^"']*["'][^>]*>/i;
 
   const cite = existingBody.match(citeRe);
@@ -44,20 +53,22 @@ export function smartInsertPlaintext(existingBody, insertText) {
   if (!existingBody) return insertText || "";
   if (!insertText) return existingBody;
 
+  // Skip past the captured \n prefix to get the real start of the delimiter.
+  function matchStart(m) {
+    return m.index + (m[1] ? 1 : 0);
+  }
+
   // Match the standalone sig delimiter line.
   const sigMatch = existingBody.match(/(^|\n)-- \n/);
   const quoteMatch = existingBody.match(/(^|\n)> /);
 
   let idx = -1;
   if (sigMatch && quoteMatch) {
-    idx = Math.min(
-      sigMatch.index + (sigMatch[1] ? 1 : 0),
-      quoteMatch.index + (quoteMatch[1] ? 1 : 0)
-    );
+    idx = Math.min(matchStart(sigMatch), matchStart(quoteMatch));
   } else if (sigMatch) {
-    idx = sigMatch.index + (sigMatch[1] ? 1 : 0);
+    idx = matchStart(sigMatch);
   } else if (quoteMatch) {
-    idx = quoteMatch.index + (quoteMatch[1] ? 1 : 0);
+    idx = matchStart(quoteMatch);
   }
 
   if (idx >= 0) {
@@ -67,33 +78,62 @@ export function smartInsertPlaintext(existingBody, insertText) {
   return existingBody + insertText;
 }
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Pure helper: substitute the supported variable tokens in `text`.
  * Does not touch messenger.* or Date; all values are provided by the caller.
  * @param {string} text
  * @param {object} vars - { date, time, datetime, year, weekday, senderName, senderEmail, accountName, accountEmail }
+ * @param {boolean} isHtml - When true, identity-derived values are HTML-entity-encoded before substitution.
  */
-export function applyVariables(text, vars) {
+export function applyVariables(text, vars, isHtml = false) {
   if (!text) return text;
+  const {
+    date = "",
+    time = "",
+    datetime = "",
+    year = "",
+    weekday = "",
+    senderName = "",
+    senderEmail = "",
+    accountName = "",
+    accountEmail = "",
+  } = vars || {};
+  const e = isHtml ? escapeHtml : (s) => String(s ?? "");
+  // Use function replacers to prevent $&/$'/$` pattern injection.
   return text
-    .replace(/\{DATE\}/gi, vars.date)
-    .replace(/\{TIME\}/gi, vars.time)
-    .replace(/\{DATETIME\}/gi, vars.datetime)
-    .replace(/\{YEAR\}/gi, String(vars.year))
-    .replace(/\{WEEKDAY\}/gi, vars.weekday)
-    .replace(/\{SENDER_NAME\}/gi, vars.senderName)
-    .replace(/\{SENDER_EMAIL\}/gi, vars.senderEmail)
-    .replace(/\{ACCOUNT_NAME\}/gi, vars.accountName)
-    .replace(/\{ACCOUNT_EMAIL\}/gi, vars.accountEmail);
+    .replace(/\{DATE\}/gi, () => date)
+    .replace(/\{TIME\}/gi, () => time)
+    .replace(/\{DATETIME\}/gi, () => datetime)
+    .replace(/\{YEAR\}/gi, () => String(year))
+    .replace(/\{WEEKDAY\}/gi, () => weekday)
+    .replace(/\{SENDER_NAME\}/gi, () => e(senderName))
+    .replace(/\{SENDER_EMAIL\}/gi, () => e(senderEmail))
+    .replace(/\{ACCOUNT_NAME\}/gi, () => e(accountName))
+    .replace(/\{ACCOUNT_EMAIL\}/gi, () => e(accountEmail));
 }
 
 /**
  * Replace template variables in text.
+ *
+ * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
+ * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}.
+ *
  * @param {string} text - Text containing placeholders
  * @param {number} tabId - The compose tab ID (used to resolve sender identity)
+ * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
  * @returns {Promise<string>} Text with placeholders replaced
+ * @see applyVariables
  */
-export async function replaceVariables(text, tabId) {
+export async function replaceVariables(text, tabId, isHtml = false) {
   if (!text) return text;
 
   const now = new Date();
@@ -120,23 +160,29 @@ export async function replaceVariables(text, tabId) {
             break;
           }
         }
-      } catch { /* accountsRead may not be available */ }
+      } catch (err) {
+        console.warn("TemplateWing: could not resolve account name", err);
+      }
     }
   } catch (err) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
-  return applyVariables(text, {
-    date: now.toLocaleDateString(),
-    time: now.toLocaleTimeString(),
-    datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
-    year: now.getFullYear(),
-    weekday: WEEKDAY_NAMES[now.getDay()],
-    senderName,
-    senderEmail,
-    accountName,
-    accountEmail,
-  });
+  return applyVariables(
+    text,
+    {
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
+      year: now.getFullYear(),
+      weekday: WEEKDAY_NAMES[now.getDay()],
+      senderName,
+      senderEmail,
+      accountName,
+      accountEmail,
+    },
+    isHtml
+  );
 }
 
 export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
@@ -145,17 +191,29 @@ export const TEMPLATE_INCLUDE_REGEX = /\{\{template(id)?:([^}]+)\}\}/gi;
  * Resolve nested template includes in text.
  * Syntax: {{template:Template Name}} or {{templateid:abc123}}
  * @param {string} text - Text containing template includes
- * @param {Set} visited - Set of visited template IDs to detect circular references
+ * @param {Set} visited - DFS path set of template IDs for cycle detection.
+ *   A new Set copy is created for each recursive branch, so the same template
+ *   can appear in separate non-cyclic paths (diamond include graphs are allowed).
  * @param {Map} templatesById - Map of template ID to template object
  * @param {Map} templatesByName - Map of template name (lowercase) to template object
  * @returns {Promise<string>} Text with includes resolved
  */
-export async function resolveNestedTemplates(text, visited, templatesById, templatesByName) {
+export async function resolveNestedTemplates(
+  text,
+  visited,
+  templatesById,
+  templatesByName,
+  memo = new Map()
+) {
   if (!text) return text;
 
   // Use a fresh regex per call to avoid lastIndex state on the shared exported one.
   const includeRegex = new RegExp(TEMPLATE_INCLUDE_REGEX.source, TEMPLATE_INCLUDE_REGEX.flags);
 
+  // Collect all matches from `text`, then apply replacements to `resolved`.
+  // String.replace without /g replaces one occurrence per call, so each match
+  // from the original text is resolved exactly once even if its literal appears
+  // multiple times in the evolving `resolved` string.
   let resolved = text;
   let match;
   const matches = [];
@@ -176,25 +234,34 @@ export async function resolveNestedTemplates(text, visited, templatesById, templ
     }
 
     if (!nestedTemplate) {
-      console.warn(`TemplateWing: referenced template not found: ${identifier}`);
+      console.warn("TemplateWing: referenced template not found:", JSON.stringify(identifier));
       continue;
     }
 
     if (visited.has(nestedTemplate.id)) {
-      console.error(`TemplateWing: circular reference detected for template: ${nestedTemplate.name}`);
+      console.error(
+        "TemplateWing: circular reference detected for template:",
+        JSON.stringify(nestedTemplate.name)
+      );
       throw new Error(`Circular reference detected: ${nestedTemplate.name}`);
     }
 
-    visited.add(nestedTemplate.id);
-    const nestedContent = await resolveNestedTemplates(
-      nestedTemplate.body || "",
-      visited,
-      templatesById,
-      templatesByName
-    );
-    visited.delete(nestedTemplate.id);
+    let nestedContent;
+    if (memo.has(nestedTemplate.id)) {
+      nestedContent = memo.get(nestedTemplate.id);
+    } else {
+      nestedContent = await resolveNestedTemplates(
+        nestedTemplate.body || "",
+        new Set([...visited, nestedTemplate.id]),
+        templatesById,
+        templatesByName,
+        memo
+      );
+      memo.set(nestedTemplate.id, nestedContent);
+    }
 
-    resolved = resolved.replace(fullMatch, nestedContent);
+    // Use function replacer to prevent $&/$'/$` pattern injection.
+    resolved = resolved.replace(fullMatch, () => nestedContent);
   }
 
   return resolved;
@@ -218,18 +285,15 @@ export function htmlToPlainText(html) {
  * @param {object} template - Template object from storage
  */
 export async function insertTemplateIntoTab(tabId, template) {
-  const mode = template.insertMode || "append";
+  const mode = template.insertMode || INSERT_MODES.APPEND;
   const details = {};
 
   let resolvedBody = template.body;
-  if (template.body && /\{\{template(id)?:/i.test(template.body)) {
+  if (template.body && new RegExp(TEMPLATE_INCLUDE_REGEX.source, "i").test(template.body)) {
     try {
-      const { getTemplates } = await import("./template-store.js");
       const allTemplates = await getTemplates();
       const templatesById = new Map(allTemplates.map((t) => [t.id, t]));
-      const templatesByName = new Map(
-        allTemplates.map((t) => [t.name.toLowerCase(), t])
-      );
+      const templatesByName = new Map(allTemplates.map((t) => [(t.name || "").toLowerCase(), t]));
       const visited = new Set([template.id]);
       resolvedBody = await resolveNestedTemplates(
         template.body,
@@ -245,10 +309,10 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   // "cursor" mode is delivered via a compose script message rather than by
   // rewriting the whole body, so the signature and any text the user has
-  // already typed stay intact (issue #33).
+  // already typed stay intact.
   let insertedAtCursor = false;
-  if (resolvedBody && mode === "cursor") {
-    const body = await replaceVariables(resolvedBody, tabId);
+  if (resolvedBody && mode === INSERT_MODES.CURSOR) {
+    const body = await replaceVariables(resolvedBody, tabId, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const isPlainText = !!existing.isPlainText;
     console.log("TemplateWing: cursor mode -> sending insertAtCursor", { tabId, isPlainText });
@@ -282,17 +346,14 @@ export async function insertTemplateIntoTab(tabId, template) {
         // rejected execCommand, DOM exception, etc). `response.error`
         // carries the specific code from compose-script.js.
         const code = (response && response.error) || "unknown";
-        console.warn(
-          `TemplateWing: compose-script returned ${code} — falling back to append`
-        );
+        console.warn(`TemplateWing: compose-script returned ${code} — falling back to append`);
       }
     } catch (err) {
-      // tabs.sendMessage could not reach a listener in this tab. This is
-      // the structural "script not injected" case: declarative
-      // compose_scripts only run in windows opened after the add-on loads,
-      // so a pre-existing compose window has no listener until the
-      // background-page backfill runs. Fall back to append so the existing
-      // body and signature stay intact above the inserted template.
+      // tabs.sendMessage could not reach a listener in this tab. Possible
+      // causes: composeScripts.register() has not yet resolved for this tab,
+      // the background-page backfill via executeScript failed or hasn't run
+      // yet, or the tab was open before the add-on loaded. Fall back to
+      // append so the existing body and signature stay intact.
       console.warn(
         "TemplateWing: compose-script not injected in this tab — falling back to append",
         err && err.message ? err.message : err
@@ -316,13 +377,21 @@ export async function insertTemplateIntoTab(tabId, template) {
       );
     }
   } else if (resolvedBody) {
-    const body = await replaceVariables(resolvedBody, tabId);
-    if (mode === "replace") {
+    const body = await replaceVariables(resolvedBody, tabId, true);
+    if (mode === INSERT_MODES.REPLACE) {
       details.body = body;
-    } else if (mode === "prepend") {
+    } else if (mode === INSERT_MODES.PREPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = body + (existing.body || "");
+    } else if (mode === INSERT_MODES.APPEND) {
+      const existing = await messenger.compose.getComposeDetails(tabId);
+      details.body = (existing.body || "") + body;
     } else {
+      console.warn(
+        "TemplateWing: unknown insert mode:",
+        JSON.stringify(mode),
+        "— defaulting to append"
+      );
       const existing = await messenger.compose.getComposeDetails(tabId);
       details.body = (existing.body || "") + body;
     }
@@ -344,7 +413,7 @@ export async function insertTemplateIntoTab(tabId, template) {
 
   await messenger.compose.setComposeDetails(tabId, details);
 
-  // Issue #18: Per-file decode error handling -- failures collected, not fatal
+  // Per-file decode error handling — failures collected, not fatal
   if (template.attachments && template.attachments.length > 0) {
     const attachmentErrors = [];
     for (const att of template.attachments) {
@@ -352,10 +421,14 @@ export async function insertTemplateIntoTab(tabId, template) {
         const binary = atob(att.data);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        const file = new File([bytes], att.name, { type: att.type });
-        await messenger.compose.addAttachment(tabId, { file, name: att.name });
+        // Sanitize filename: strip path separators, null bytes, and control chars
+        const safeName = (att.name || "attachment")
+          .replace(/[/\\:\x00-\x1f]/g, "_")
+          .replace(/^\.+/, "_");
+        const file = new File([bytes], safeName, { type: att.type });
+        await messenger.compose.addAttachment(tabId, { file, name: safeName });
       } catch (err) {
-        console.error(`TemplateWing: failed to attach "${att.name}"`, err);
+        console.error("TemplateWing: failed to attach:", JSON.stringify(att.name), err);
         attachmentErrors.push(att.name);
       }
     }
