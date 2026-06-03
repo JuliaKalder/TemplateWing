@@ -5,9 +5,11 @@ import {
   setPrefillTemplate,
   isTemplateAllowedForIdentity,
   getSortedTemplates,
+  groupTemplatesByCategory,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
 import { findPart, extractBody } from "./modules/message-utils.js";
+import { getIdentityIdForTab } from "./modules/compose-utils.js";
 
 async function notifyInsertFailure(err) {
   try {
@@ -29,16 +31,6 @@ async function notifyInsertFailure(err) {
     });
   } catch (notifyErr) {
     console.error("TemplateWing: could not show notification", notifyErr);
-  }
-}
-
-async function getCurrentIdentityId(tabId) {
-  try {
-    const details = await messenger.compose.getComposeDetails(tabId);
-    return details.identityId || null;
-  } catch (err) {
-    console.warn("TemplateWing: could not get current identity", err);
-    return null;
   }
 }
 
@@ -78,21 +70,7 @@ async function buildContextMenu(identityId = null) {
     return;
   }
 
-  const categorized = {};
-  const uncategorized = [];
-
-  for (const template of templates) {
-    if (template.category) {
-      if (!categorized[template.category]) {
-        categorized[template.category] = [];
-      }
-      categorized[template.category].push(template);
-    } else {
-      uncategorized.push(template);
-    }
-  }
-
-  const sortedCategories = Object.keys(categorized).sort();
+  const { sortedCategories, byCategory, uncategorized } = groupTemplatesByCategory(templates);
 
   for (const [index, category] of sortedCategories.entries()) {
     const categoryId = getCategoryMenuId(category, index);
@@ -103,7 +81,7 @@ async function buildContextMenu(identityId = null) {
       contexts: ["compose_body"],
     });
 
-    for (const template of categorized[category]) {
+    for (const template of byCategory[category]) {
       messenger.menus.create({
         id: `templatewing-insert-${template.id}`,
         title: template.name,
@@ -176,7 +154,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   const template = await getTemplate(templateId);
   if (!template) return;
 
-  const currentIdentityId = await getCurrentIdentityId(tab.id);
+  const currentIdentityId = await getIdentityIdForTab(tab.id);
   if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
     console.warn("TemplateWing: template not allowed for current identity");
     return;
@@ -206,7 +184,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
 
   if (tabs.length === 0) return;
 
-  const currentIdentityId = await getCurrentIdentityId(tabs[0].id);
+  const currentIdentityId = await getIdentityIdForTab(tabs[0].id);
 
   const templates = getSortedTemplates(
     allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
@@ -285,7 +263,7 @@ messenger.menus.onShown.addListener(async (info, tab) => {
   if (!info.contexts || !info.contexts.includes("compose_body") || !tab || !tab.id) {
     return;
   }
-  const identityId = await getCurrentIdentityId(tab.id);
+  const identityId = await getIdentityIdForTab(tab.id);
   await buildContextMenu(identityId);
   messenger.menus.refresh();
 });

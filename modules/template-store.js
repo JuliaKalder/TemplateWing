@@ -125,12 +125,21 @@ export async function getTemplate(id) {
   };
 }
 
-/** Save (create or update) a template. Throws if name is missing. */
+/** Save (create or update) a template. Throws if name is missing or duplicate. */
 export async function saveTemplate(template) {
   if (!template || typeof template.name !== "string" || !template.name.trim()) {
     throw new TypeError("template.name must be a non-empty string");
   }
   const templates = await getTemplates();
+  const nameLower = template.name.trim().toLowerCase();
+  const conflict = templates.find(
+    (t) => t.name.toLowerCase() === nameLower && t.id !== template.id
+  );
+  if (conflict) {
+    const err = new Error("A template with this name already exists");
+    err.code = "DUPLICATE_NAME";
+    throw err;
+  }
   const now = new Date().toISOString();
 
   if (template.id) {
@@ -192,6 +201,27 @@ export async function trackUsage(id) {
   await persistTemplates(updatedTemplates);
 }
 
+// ---- Identity data access ----
+
+/**
+ * Fetch all mail identities from Thunderbird accounts and return structured data.
+ * Separates data retrieval from DOM rendering so label-formatting logic is unit-testable.
+ */
+export async function getIdentities() {
+  const accounts = await messenger.accounts.list();
+  const identities = [];
+  for (const account of accounts) {
+    for (const identity of account.identities || []) {
+      identities.push({
+        id: identity.id,
+        label: identity.name ? `${identity.name} (${identity.email})` : identity.email,
+        email: identity.email,
+      });
+    }
+  }
+  return identities;
+}
+
 // ---- Identity filtering ----
 
 /** Check if a template is allowed for the given identity (empty identities list means allowed for all). */
@@ -219,6 +249,26 @@ export async function consumePrefillTemplate() {
 
 export { PREFILL_KEY };
 
+// ---- Grouping ----
+
+/** Group templates by category, returning sorted category keys and uncategorized templates. */
+export function groupTemplatesByCategory(templates) {
+  const byCategory = {};
+  const uncategorized = [];
+  for (const t of templates) {
+    if (t.category) {
+      (byCategory[t.category] ??= []).push(t);
+    } else {
+      uncategorized.push(t);
+    }
+  }
+  return {
+    sortedCategories: Object.keys(byCategory).sort(),
+    byCategory,
+    uncategorized,
+  };
+}
+
 // ---- Sorting ----
 
 /** Sort templates by category then by name (case-insensitive). */
@@ -229,6 +279,63 @@ export function getSortedTemplates(templates) {
     if (catA !== catB) return catA.localeCompare(catB);
     return (a.name || "").localeCompare(b.name || "");
   });
+}
+
+// ---- Import merge strategy ----
+
+/**
+ * Import templates into storage using the specified merge mode.
+ *
+ * @param {Array<Object>} validTemplates - Pre-validated (and pre-sanitized) template objects to import.
+ *   Each template should have tracking fields (id, createdAt, updatedAt, usageCount, lastUsedAt) already stripped.
+ * @param {"append"|"skip"|"replace"} mode - Merge strategy:
+ *   - "append"  — always add as a new template, even if a duplicate name exists
+ *   - "skip"    — leave existing templates unchanged when a name collision is found
+ *   - "replace" — overwrite the existing template when a name collision is found
+ * @returns {Promise<{added: number, skipped: number, replaced: number}>}
+ */
+export async function importTemplates(validTemplates, mode) {
+  const existingTemplates = await getTemplates();
+  const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
+
+  let added = 0;
+  let skipped = 0;
+  let replaced = 0;
+
+  for (const template of validTemplates) {
+    const nameKey = template.name.trim().toLowerCase();
+    const existing = existingByName.get(nameKey);
+
+    if (existing) {
+      if (mode === "skip") {
+        skipped++;
+        continue;
+      }
+      if (mode === "replace") {
+        try {
+          const saved = await saveTemplate({ ...template, id: existing.id });
+          existingByName.set(nameKey, saved);
+          replaced++;
+        } catch (err) {
+          console.error("TemplateWing: import replace failed for", template.name, err);
+          skipped++;
+        }
+        continue;
+      }
+    }
+
+    // mode === "append" or no duplicate
+    try {
+      const saved = await saveTemplate(template);
+      existingByName.set(nameKey, saved);
+      added++;
+    } catch (err) {
+      console.error("TemplateWing: import failed for template", template.name, err);
+      skipped++;
+    }
+  }
+
+  return { added, skipped, replaced };
 }
 
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub
