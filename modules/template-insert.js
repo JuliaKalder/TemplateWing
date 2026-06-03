@@ -122,21 +122,14 @@ export function applyVariables(text, vars, isHtml = false) {
 }
 
 /**
- * Replace template variables in text.
- *
- * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
- * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}.
- *
- * @param {string} text - Text containing placeholders
- * @param {number} tabId - The compose tab ID (used to resolve sender identity)
- * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
- * @returns {Promise<string>} Text with placeholders replaced
- * @see applyVariables
+ * Resolve the sender identity variables for a compose tab by calling the
+ * three Thunderbird messenger APIs that require live tab/account context.
+ * Separating this from `replaceVariables` keeps the substitution logic pure
+ * and independently testable.
+ * @param {number} tabId
+ * @returns {Promise<{senderName: string, senderEmail: string, accountName: string, accountEmail: string}>}
  */
-export async function replaceVariables(text, tabId, isHtml = false) {
-  if (!text) return text;
-
-  const now = new Date();
+export async function resolveIdentityVars(tabId) {
   let senderName = "";
   let senderEmail = "";
   let accountName = "";
@@ -168,6 +161,26 @@ export async function replaceVariables(text, tabId, isHtml = false) {
     console.warn("TemplateWing: could not resolve sender identity", err);
   }
 
+  return { senderName, senderEmail, accountName, accountEmail };
+}
+
+/**
+ * Replace template variables in text.
+ *
+ * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
+ * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}.
+ *
+ * @param {string} text - Text containing placeholders
+ * @param {object} vars - Pre-resolved identity vars: { senderName, senderEmail, accountName, accountEmail }.
+ *   Obtain via {@link resolveIdentityVars} before calling this function.
+ * @param {boolean} isHtml - Pass true when substituting into HTML to HTML-encode identity values.
+ * @returns {string} Text with placeholders replaced
+ * @see applyVariables
+ * @see resolveIdentityVars
+ */
+export function replaceVariables(text, vars, isHtml = false) {
+  if (!text) return text;
+  const now = new Date();
   return applyVariables(
     text,
     {
@@ -176,10 +189,11 @@ export async function replaceVariables(text, tabId, isHtml = false) {
       datetime: now.toLocaleDateString() + " " + now.toLocaleTimeString(),
       year: now.getFullYear(),
       weekday: WEEKDAY_NAMES[now.getDay()],
-      senderName,
-      senderEmail,
-      accountName,
-      accountEmail,
+      senderName: "",
+      senderEmail: "",
+      accountName: "",
+      accountEmail: "",
+      ...vars,
     },
     isHtml
   );
@@ -405,13 +419,14 @@ export async function insertTemplateIntoTab(tabId, template) {
   // "cursor" mode is delivered via a compose script message rather than by
   // rewriting the whole body, so the signature and any text the user has
   // already typed stay intact.
+  const identityVars = await resolveIdentityVars(tabId);
   if (resolvedBody && mode === INSERT_MODES.CURSOR) {
-    const body = await replaceVariables(resolvedBody, tabId, true);
+    const body = replaceVariables(resolvedBody, identityVars, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const fallbackBody = await tryCursorInsert(tabId, body, existing);
     if (fallbackBody !== null) details.body = fallbackBody;
   } else if (resolvedBody) {
-    const body = await replaceVariables(resolvedBody, tabId, true);
+    const body = replaceVariables(resolvedBody, identityVars, true);
     if (mode === INSERT_MODES.REPLACE) {
       details.body = body;
     } else if (mode === INSERT_MODES.PREPEND) {
@@ -432,7 +447,7 @@ export async function insertTemplateIntoTab(tabId, template) {
   }
 
   if (template.subject) {
-    details.subject = await replaceVariables(template.subject, tabId);
+    details.subject = replaceVariables(template.subject, identityVars);
   }
 
   if (template.to && template.to.length > 0) {
