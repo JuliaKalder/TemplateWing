@@ -20,6 +20,7 @@ import {
   ATTACHMENT_TOTAL_WARN_SIZE,
   parseRecipients,
 } from "../modules/validation.js";
+import { setFilterOptions } from "../modules/ui-helpers.js";
 
 let editingId = null;
 let pendingAttachments = [];
@@ -166,16 +167,7 @@ async function renderTemplateList() {
 }
 
 async function populateCategoryFilter() {
-  const filter = document.getElementById("category-filter");
-  const categories = await getCategories();
-  const options = filter.querySelectorAll("option:not(:first-child)");
-  options.forEach((opt) => opt.remove());
-  for (const cat of categories) {
-    const option = document.createElement("option");
-    option.value = cat;
-    option.textContent = cat;
-    filter.appendChild(option);
-  }
+  setFilterOptions("category-filter", await getCategories());
 }
 
 async function populateCategorySuggestions() {
