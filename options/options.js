@@ -41,7 +41,9 @@ function populateEditorFields(template) {
   toInput.value = template ? (template.to || []).join(", ") : "";
   ccInput.value = template ? (template.cc || []).join(", ") : "";
   bccInput.value = template ? (template.bcc || []).join(", ") : "";
-  insertModeSelect.value = template ? template.insertMode || INSERT_MODES.APPEND : INSERT_MODES.APPEND;
+  insertModeSelect.value = template
+    ? template.insertMode || INSERT_MODES.APPEND
+    : INSERT_MODES.APPEND;
   bodyEditor.replaceChildren();
   if (template && template.body) {
     const safeBody = sanitizeTemplateBody(template.body);
@@ -420,7 +422,8 @@ async function duplicateTemplate(id) {
   await loadIdentities();
   await loadNestedTemplateOptions(null);
 
-  document.getElementById("editor-title").textContent = messenger.i18n.getMessage("optionsNewTemplate");
+  document.getElementById("editor-title").textContent =
+    messenger.i18n.getMessage("optionsNewTemplate");
   populateEditorFields(template);
   const nameInput = document.getElementById("editor-name");
   nameInput.value = messenger.i18n.getMessage("optionsDuplicateName", template.name);
