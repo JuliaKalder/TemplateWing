@@ -8,6 +8,7 @@ import {
   groupTemplatesByCategory,
 } from "./modules/template-store.js";
 import { insertTemplateIntoTab } from "./modules/template-insert.js";
+import { findPart, extractBody } from "./modules/message-utils.js";
 import { getIdentityIdForTab } from "./modules/compose-utils.js";
 
 async function notifyInsertFailure(err) {
@@ -98,25 +99,6 @@ async function buildContextMenu(identityId = null) {
       contexts: ["compose_body"],
     });
   }
-}
-
-function findPart(part, contentType) {
-  if (part.contentType === contentType && part.body) return part.body;
-  if (part.parts) {
-    for (const child of part.parts) {
-      const found = findPart(child, contentType);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-function extractBody(part) {
-  const html = findPart(part, "text/html");
-  if (html) return { html: true, body: html };
-  const plain = findPart(part, "text/plain");
-  if (plain) return { html: false, body: plain };
-  return null;
 }
 
 /**
