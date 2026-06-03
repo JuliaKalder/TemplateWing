@@ -5,8 +5,13 @@ import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.
 // The module installs a storage listener at import time; install the mock first.
 installMessengerMock();
 
-const { TEMPLATE_INCLUDE_REGEX, WEEKDAY_NAMES, applyVariables, replaceVariables, resolveNestedTemplates } =
-  await import("../modules/template-insert.js");
+const {
+  TEMPLATE_INCLUDE_REGEX,
+  WEEKDAY_NAMES,
+  applyVariables,
+  replaceVariables,
+  resolveNestedTemplates,
+} = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
 
@@ -152,12 +157,18 @@ describe("replaceVariables", () => {
 
   it("replaces {DATE} with a non-empty string", () => {
     const result = replaceVariables("{DATE}", {});
-    assert.ok(result.length > 0 && !result.includes("{DATE}"), `{DATE} should be replaced, got: ${result}`);
+    assert.ok(
+      result.length > 0 && !result.includes("{DATE}"),
+      `{DATE} should be replaced, got: ${result}`
+    );
   });
 
   it("replaces {TIME} with a non-empty string", () => {
     const result = replaceVariables("{TIME}", {});
-    assert.ok(result.length > 0 && !result.includes("{TIME}"), `{TIME} should be replaced, got: ${result}`);
+    assert.ok(
+      result.length > 0 && !result.includes("{TIME}"),
+      `{TIME} should be replaced, got: ${result}`
+    );
   });
 
   it("replaces {YEAR} with a 4-digit year", () => {
