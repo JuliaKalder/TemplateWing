@@ -160,6 +160,50 @@ describe("saveTemplate / getTemplate / deleteTemplate", () => {
     assert.ok(saved.updatedAt);
   });
 
+  it("assigns a non-empty string id when caller passes id: null (UI save shape)", async () => {
+    const saved = await saveTemplate({
+      id: null,
+      name: "NewShape",
+      body: "x",
+      category: "",
+      to: [],
+      cc: [],
+      bcc: [],
+      identities: [],
+      insertMode: "append",
+      attachments: [],
+    });
+    assert.strictEqual(typeof saved.id, "string");
+    assert.ok(saved.id.length > 0, `id should be non-empty, got: ${JSON.stringify(saved.id)}`);
+  });
+
+  it("assigns a non-empty string id when caller passes id: undefined", async () => {
+    const saved = await saveTemplate({
+      id: undefined,
+      name: "UndefIdShape",
+      body: "x",
+    });
+    assert.strictEqual(typeof saved.id, "string");
+    assert.ok(saved.id.length > 0, `id should be non-empty, got: ${JSON.stringify(saved.id)}`);
+  });
+
+  it("generates a fresh id for every falsy-id variant in the new-template branch", async () => {
+    // Regression: issue #206 — falsy own-property id must not overwrite generated id.
+    const falsyIds = [null, undefined, "", 0, false];
+    for (const falsyId of falsyIds) {
+      const saved = await saveTemplate({ id: falsyId, name: `Falsy_${typeof falsyId}_${String(falsyId)}`, body: "x" });
+      assert.strictEqual(
+        typeof saved.id,
+        "string",
+        `id should be a string for input id=${JSON.stringify(falsyId)}, got ${JSON.stringify(saved.id)}`
+      );
+      assert.ok(
+        saved.id.length > 0,
+        `id should be non-empty for input id=${JSON.stringify(falsyId)}, got ${JSON.stringify(saved.id)}`
+      );
+    }
+  });
+
   it("fills defaults for attachments, insertMode, category, and recipient arrays", async () => {
     const saved = await saveTemplate({ name: "With defaults", body: "" });
     assert.deepStrictEqual(saved.attachments, []);

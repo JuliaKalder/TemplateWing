@@ -150,6 +150,10 @@ export async function saveTemplate(template) {
       templates.push({ ...template, createdAt: now, updatedAt: now });
     }
   } else {
+    // Strip the incoming id so a caller-supplied null/undefined cannot
+    // overwrite the freshly-generated id below. The UI passes
+    // { id: editingId, ... } where editingId is null for new templates.
+    const { id: _ignored, ...rest } = template;
     const newTemplate = {
       id: generateId(),
       attachments: [],
@@ -159,7 +163,7 @@ export async function saveTemplate(template) {
       cc: [],
       bcc: [],
       identities: [],
-      ...template,
+      ...rest,
       createdAt: now,
       updatedAt: now,
     };
