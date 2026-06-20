@@ -203,7 +203,53 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   }
 });
 
-messenger.runtime.onMessage.addListener(async (message, sender) => {
+// Popup delegates cursor-mode insertion here so it can close first and
+// return focus to the compose window before the insert runs.
+async function handleInsertTemplateFromPopup(message, sender) {
+  // Only accept this message from the popup page.
+  const expectedUrl = messenger.runtime.getURL("popup/popup.html");
+  if (!sender || sender.url !== expectedUrl) {
+    console.warn(
+      "TemplateWing: rejecting templatewing:insertTemplate from untrusted sender",
+      sender && sender.url
+    );
+    return;
+  }
+
+  // Give the popup a tick to tear down so the compose window is focused
+  // when we forward the insert request to the compose script.
+  const POPUP_TEARDOWN_DELAY_MS = 150;
+  await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
+  try {
+    // Validate tabId is a compose window before acting on it.
+    if (typeof message.tabId !== "number") return;
+    const tabDetails = await messenger.compose.getComposeDetails(message.tabId);
+    if (!tabDetails) return;
+
+    const template = await getTemplate(message.templateId);
+    if (!template) return;
+
+    // Re-validate identity at the enforcement point, not just in the popup UI.
+    const currentIdentityId = tabDetails.identityId || null;
+    if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
+      console.warn("TemplateWing: templatewing:insertTemplate — identity not allowed");
+      return;
+    }
+
+    await insertTemplateIntoTab(message.tabId, template);
+    await trackUsage(message.templateId);
+  } catch (err) {
+    console.error("TemplateWing: insert failed from popup delegation", err);
+    await notifyInsertFailure(err);
+  }
+}
+
+// Synchronous listener per Thunderbird MV3 messaging guide:
+// an async listener always returns a Promise — even for messages it doesn't
+// handle — which signals "I will respond" for every message and conflicts
+// with other listeners. Return a Promise *only* from handlers we own; return
+// undefined for everything else.
+messenger.runtime.onMessage.addListener((message, sender) => {
   if (!message || !message.action) return;
 
   if (message.action === "templatesChanged") {
@@ -211,45 +257,8 @@ messenger.runtime.onMessage.addListener(async (message, sender) => {
     return;
   }
 
-  // Popup delegates cursor-mode insertion here so it can close first and
-  // return focus to the compose window before the insert runs.
   if (message.action === "templatewing:insertTemplate") {
-    // Only accept this message from the popup page.
-    const expectedUrl = messenger.runtime.getURL("popup/popup.html");
-    if (!sender || sender.url !== expectedUrl) {
-      console.warn(
-        "TemplateWing: rejecting templatewing:insertTemplate from untrusted sender",
-        sender && sender.url
-      );
-      return;
-    }
-
-    // Give the popup a tick to tear down so the compose window is focused
-    // when we forward the insert request to the compose script.
-    const POPUP_TEARDOWN_DELAY_MS = 150;
-    await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
-    try {
-      // Validate tabId is a compose window before acting on it.
-      if (typeof message.tabId !== "number") return;
-      const tabDetails = await messenger.compose.getComposeDetails(message.tabId);
-      if (!tabDetails) return;
-
-      const template = await getTemplate(message.templateId);
-      if (!template) return;
-
-      // Re-validate identity at the enforcement point, not just in the popup UI.
-      const currentIdentityId = tabDetails.identityId || null;
-      if (!isTemplateAllowedForIdentity(template, currentIdentityId)) {
-        console.warn("TemplateWing: templatewing:insertTemplate — identity not allowed");
-        return;
-      }
-
-      await insertTemplateIntoTab(message.tabId, template);
-      await trackUsage(message.templateId);
-    } catch (err) {
-      console.error("TemplateWing: insert failed from popup delegation", err);
-      await notifyInsertFailure(err);
-    }
+    return handleInsertTemplateFromPopup(message, sender);
   }
 });
 
