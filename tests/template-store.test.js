@@ -191,7 +191,11 @@ describe("saveTemplate / getTemplate / deleteTemplate", () => {
     // Regression: issue #206 — falsy own-property id must not overwrite generated id.
     const falsyIds = [null, undefined, "", 0, false];
     for (const falsyId of falsyIds) {
-      const saved = await saveTemplate({ id: falsyId, name: `Falsy_${typeof falsyId}_${String(falsyId)}`, body: "x" });
+      const saved = await saveTemplate({
+        id: falsyId,
+        name: `Falsy_${typeof falsyId}_${String(falsyId)}`,
+        body: "x",
+      });
       assert.strictEqual(
         typeof saved.id,
         "string",
