@@ -37,6 +37,14 @@
         <div id="empty-state" class="empty-state" hidden>
           <p data-i18n="optionsNoTemplates"></p>
         </div>
+
+        <section id="defaults-section" class="defaults-section">
+          <h2 data-i18n="optionsDefaultsTitle"></h2>
+          <p class="defaults-help" data-i18n="optionsDefaultsHelp"></p>
+          <div id="defaults-list" class="defaults-list">
+            <!-- Filled dynamically: one row per identity. -->
+          </div>
+        </section>
       </div>
 
       <!-- View: Template editor -->
@@ -240,6 +248,70 @@
                 data-i18n-title="optionsVariableAccountEmail"
               >
                 {ACCOUNT_EMAIL}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{RECIPIENT_NAME}"
+                data-i18n-title="optionsVariableRecipientName"
+              >
+                {RECIPIENT_NAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{RECIPIENT_FIRSTNAME}"
+                data-i18n-title="optionsVariableRecipientFirstname"
+              >
+                {RECIPIENT_FIRSTNAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{RECIPIENT_EMAIL}"
+                data-i18n-title="optionsVariableRecipientEmail"
+              >
+                {RECIPIENT_EMAIL}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{REPLY_QUOTE}"
+                data-i18n-title="optionsVariableReplyQuote"
+              >
+                {REPLY_QUOTE}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{LAST_MESSAGE_SUBJECT}"
+                data-i18n-title="optionsVariableLastSubject"
+              >
+                {LAST_MESSAGE_SUBJECT}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var='{IF recipient.domain=="example.com"}…{ELSE}…{ENDIF}'
+                data-i18n-title="optionsVariableIf"
+              >
+                {IF…}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{PROMPT:Label:default}"
+                data-i18n-title="optionsVariablePrompt"
+              >
+                {PROMPT:…}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
+                data-var="{CHOICE:Tone:formal|casual}"
+                data-i18n-title="optionsVariableChoice"
+              >
+                {CHOICE:…}
               </button>
             </div>
           </div>

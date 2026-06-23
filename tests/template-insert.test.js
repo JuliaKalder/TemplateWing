@@ -11,6 +11,10 @@ const {
   applyVariables,
   replaceVariables,
   resolveNestedTemplates,
+  resolveControlFlow,
+  extractPromptTokens,
+  applyPromptAnswers,
+  buildVariableContext,
 } = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
@@ -293,5 +297,219 @@ describe("resolveNestedTemplates", () => {
       resolveNestedTemplates("{{template:A}}", new Set(["tA"]), byId, byName),
       /Circular reference detected/
     );
+  });
+});
+
+// ---- Recipient variables (#208) ----
+
+describe("applyVariables — recipient tokens", () => {
+  const vars = {
+    recipientName: "Jane Doe",
+    recipientFirstname: "Jane",
+    recipientEmail: "jane@example.com",
+    lastMessageSubject: "Project update",
+    replyQuote: "> previous text",
+  };
+
+  it("replaces {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME}, {RECIPIENT_EMAIL}", () => {
+    assert.strictEqual(
+      applyVariables("To {RECIPIENT_FIRSTNAME} <{RECIPIENT_EMAIL}> ({RECIPIENT_NAME})", vars),
+      "To Jane <jane@example.com> (Jane Doe)"
+    );
+  });
+
+  it("replaces {LAST_MESSAGE_SUBJECT}", () => {
+    assert.strictEqual(
+      applyVariables("Re: {LAST_MESSAGE_SUBJECT}", vars),
+      "Re: Project update"
+    );
+  });
+
+  it("inserts {REPLY_QUOTE} verbatim (no escaping) so quote markup survives", () => {
+    const html = applyVariables(
+      "Hi —<br>{REPLY_QUOTE}",
+      { replyQuote: "<blockquote>old</blockquote>" },
+      true
+    );
+    assert.ok(html.includes("<blockquote>old</blockquote>"));
+  });
+
+  it("missing recipient values resolve to empty strings, not 'undefined'", () => {
+    const result = applyVariables(
+      "Hi {RECIPIENT_FIRSTNAME}, your email {RECIPIENT_EMAIL}",
+      {}
+    );
+    assert.strictEqual(result, "Hi , your email ");
+    assert.ok(!result.includes("undefined"));
+  });
+
+  it("HTML-encodes recipient name when isHtml=true", () => {
+    const result = applyVariables(
+      "{RECIPIENT_NAME}",
+      { recipientName: "<script>alert(1)</script>" },
+      true
+    );
+    assert.strictEqual(result, "&lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+});
+
+// ---- Conditional variables (#207) ----
+
+describe("resolveControlFlow — {IF}/{ELSE}/{ENDIF}", () => {
+  const ctx = {
+    recipient: { name: "Jane", email: "jane@example.com", domain: "example.com", firstname: "Jane" },
+    identity: { email: "me@example.com", name: "Me" },
+  };
+
+  it("renders THEN branch when condition is true", () => {
+    const t = 'Hello {IF recipient.firstname=="Jane"}Jane!{ELSE}stranger{ENDIF}';
+    assert.strictEqual(resolveControlFlow(t, ctx), "Hello Jane!");
+  });
+
+  it("renders ELSE branch when condition is false", () => {
+    const t = 'Hi {IF recipient.firstname=="Bob"}Bob{ELSE}friend{ENDIF}';
+    assert.strictEqual(resolveControlFlow(t, ctx), "Hi friend");
+  });
+
+  it("supports != operator", () => {
+    const t = '{IF recipient.domain!="other.com"}match{ELSE}no{ENDIF}';
+    assert.strictEqual(resolveControlFlow(t, ctx), "match");
+  });
+
+  it("omits content when condition false and no ELSE", () => {
+    const t = 'A{IF recipient.email=="nope"}HIDDEN{ENDIF}B';
+    assert.strictEqual(resolveControlFlow(t, ctx), "AB");
+  });
+
+  it("treats unknown variable as empty string in comparison", () => {
+    const t = '{IF recipient.unknown=="x"}yes{ELSE}no{ENDIF}';
+    assert.strictEqual(resolveControlFlow(t, ctx), "no");
+  });
+
+  it("handles nested {IF} blocks", () => {
+    const t =
+      '{IF recipient.domain=="example.com"}' +
+      'outer{IF recipient.firstname=="Jane"}-inner{ENDIF}' +
+      "{ELSE}other{ENDIF}";
+    assert.strictEqual(resolveControlFlow(t, ctx), "outer-inner");
+  });
+
+  it("supports single quotes in expression", () => {
+    const t = "{IF recipient.domain=='example.com'}ok{ENDIF}";
+    assert.strictEqual(resolveControlFlow(t, ctx), "ok");
+  });
+
+  it("returns text unchanged when no IF tokens", () => {
+    assert.strictEqual(resolveControlFlow("plain", ctx), "plain");
+  });
+
+  it("returns empty string unchanged", () => {
+    assert.strictEqual(resolveControlFlow("", ctx), "");
+  });
+
+  it("falls back gracefully on unparseable expression", () => {
+    const t = "{IF garbage}then{ELSE}else{ENDIF}";
+    // Unparseable cond evaluates to false → ELSE branch
+    assert.strictEqual(resolveControlFlow(t, ctx), "else");
+  });
+
+  it("leaves stray {ENDIF} literal when there is no opening {IF}", () => {
+    assert.strictEqual(resolveControlFlow("hello {ENDIF}", ctx), "hello {ENDIF}");
+  });
+
+  it("emits the THEN branch when {ENDIF} is missing (graceful degrade)", () => {
+    const t = '{IF recipient.firstname=="Jane"}greeting';
+    assert.strictEqual(resolveControlFlow(t, ctx), "greeting");
+  });
+});
+
+// ---- Prompt / Choice variables (#207) ----
+
+describe("extractPromptTokens", () => {
+  it("returns empty list when none present", () => {
+    assert.deepStrictEqual(extractPromptTokens("plain text"), []);
+  });
+
+  it("extracts a {PROMPT:label} token without default", () => {
+    const tokens = extractPromptTokens("Hi {PROMPT:Your name}");
+    assert.strictEqual(tokens.length, 1);
+    assert.strictEqual(tokens[0].kind, "prompt");
+    assert.strictEqual(tokens[0].label, "Your name");
+    assert.strictEqual(tokens[0].default, "");
+  });
+
+  it("extracts a {PROMPT:label:default} token with default", () => {
+    const tokens = extractPromptTokens("{PROMPT:Greeting:Hello}");
+    assert.strictEqual(tokens[0].default, "Hello");
+  });
+
+  it("extracts a {CHOICE:label:opt1|opt2|opt3} token", () => {
+    const tokens = extractPromptTokens("{CHOICE:Tone:formal|casual|terse}");
+    assert.strictEqual(tokens[0].kind, "choice");
+    assert.deepStrictEqual(tokens[0].options, ["formal", "casual", "terse"]);
+    assert.strictEqual(tokens[0].default, "formal");
+  });
+
+  it("deduplicates identical literal tokens", () => {
+    const tokens = extractPromptTokens("{PROMPT:Name} and {PROMPT:Name} again");
+    assert.strictEqual(tokens.length, 1);
+  });
+});
+
+describe("applyPromptAnswers", () => {
+  it("substitutes the provided answer at every occurrence", () => {
+    const tokens = extractPromptTokens("Hi {PROMPT:Name}, see you {PROMPT:Name}.");
+    const result = applyPromptAnswers(
+      "Hi {PROMPT:Name}, see you {PROMPT:Name}.",
+      tokens,
+      { "{PROMPT:Name}": "Alice" }
+    );
+    assert.strictEqual(result, "Hi Alice, see you Alice.");
+  });
+
+  it("falls back to the parsed default when no answer is supplied", () => {
+    const tokens = extractPromptTokens("{PROMPT:Greeting:Hello} world");
+    const result = applyPromptAnswers("{PROMPT:Greeting:Hello} world", tokens, {});
+    assert.strictEqual(result, "Hello world");
+  });
+
+  it("HTML-encodes the answer when isHtml=true", () => {
+    const tokens = extractPromptTokens("{PROMPT:Name}");
+    const result = applyPromptAnswers(
+      "{PROMPT:Name}",
+      tokens,
+      { "{PROMPT:Name}": "<b>x</b>" },
+      true
+    );
+    assert.strictEqual(result, "&lt;b&gt;x&lt;/b&gt;");
+  });
+
+  it("returns text unchanged when no tokens", () => {
+    assert.strictEqual(applyPromptAnswers("plain", [], {}), "plain");
+  });
+});
+
+describe("buildVariableContext", () => {
+  it("exposes recipient.domain derived from recipient email", () => {
+    const ctx = buildVariableContext({
+      identityVars: { senderName: "Me", senderEmail: "me@x", accountName: "", accountEmail: "" },
+      recipientVars: {
+        recipientName: "J",
+        recipientFirstname: "J",
+        recipientEmail: "jane@example.com",
+      },
+      date: new Date(2026, 5, 24, 10, 30, 0),
+    });
+    assert.strictEqual(ctx.recipient.domain, "example.com");
+    assert.strictEqual(ctx.identity.email, "me@x");
+    assert.strictEqual(ctx.year, "2026");
+  });
+
+  it("empty recipient email yields empty domain", () => {
+    const ctx = buildVariableContext({
+      identityVars: { senderName: "", senderEmail: "" },
+      recipientVars: { recipientEmail: "" },
+    });
+    assert.strictEqual(ctx.recipient.domain, "");
   });
 });

@@ -7,15 +7,21 @@ installMessengerMock();
 const {
   STORAGE_KEY,
   SCHEMA_KEY,
+  SETTINGS_KEY,
   CURRENT_SCHEMA,
   generateId,
   migrateV0toV1,
+  migrateV1toV2,
   getTemplates,
   getTemplate,
   saveTemplate,
   deleteTemplate,
   getCategories,
   trackUsage,
+  setPinned,
+  getPopupSortedTemplates,
+  getDefaults,
+  setDefault,
   _resetCacheForTests,
 } = await import("../modules/template-store.js");
 
@@ -117,8 +123,8 @@ describe("migrateV0toV1", () => {
 // ---- Constants (real module exports, not inline copies) ----
 
 describe("template-store constants", () => {
-  it("exports CURRENT_SCHEMA = 1", () => {
-    assert.strictEqual(CURRENT_SCHEMA, 1);
+  it("exports CURRENT_SCHEMA = 2", () => {
+    assert.strictEqual(CURRENT_SCHEMA, 2);
   });
   it("exports STORAGE_KEY = templates", () => {
     assert.strictEqual(STORAGE_KEY, "templates");
@@ -310,6 +316,117 @@ describe("saveTemplate / getTemplate / deleteTemplate", () => {
   });
 });
 
+// ---- migrateV1toV2 ----
+
+describe("migrateV1toV2", () => {
+  it("adds pinned:false to templates missing the field", async () => {
+    const input = [{ id: "1", name: "Test" }];
+    const { templates, changed } = await migrateV1toV2(input);
+    assert.strictEqual(changed, true);
+    assert.strictEqual(templates[0].pinned, false);
+  });
+
+  it("leaves a template that already has pinned:true alone", async () => {
+    const input = [{ id: "1", name: "Test", pinned: true }];
+    const { templates, changed } = await migrateV1toV2(input);
+    assert.strictEqual(changed, false);
+    assert.strictEqual(templates[0].pinned, true);
+  });
+
+  it("returns unchanged for an empty array", async () => {
+    const { templates, changed } = await migrateV1toV2([]);
+    assert.strictEqual(changed, false);
+    assert.deepStrictEqual(templates, []);
+  });
+});
+
+// ---- Pinning ----
+
+describe("setPinned + getPopupSortedTemplates", () => {
+  beforeEach(() => {
+    installMessengerMock();
+    _resetCacheForTests();
+  });
+
+  it("setPinned flips the flag on the stored template", async () => {
+    const saved = await saveTemplate({ name: "Pinme", body: "" });
+    assert.strictEqual(saved.pinned, false);
+    await setPinned(saved.id, true);
+    const refetched = await getTemplate(saved.id);
+    assert.strictEqual(refetched.pinned, true);
+  });
+
+  it("setPinned with an unknown id is a no-op", async () => {
+    await assert.doesNotReject(setPinned("does-not-exist", true));
+  });
+
+  it("getPopupSortedTemplates puts pinned templates first (alpha)", () => {
+    const list = [
+      { id: "1", name: "Zoo", pinned: false, lastUsedAt: "2026-06-20" },
+      { id: "2", name: "Bear", pinned: true },
+      { id: "3", name: "Apple", pinned: true },
+      { id: "4", name: "Cat", pinned: false, lastUsedAt: "2026-06-21" },
+    ];
+    const sorted = getPopupSortedTemplates(list);
+    assert.deepStrictEqual(
+      sorted.map((t) => t.name),
+      ["Apple", "Bear", "Cat", "Zoo"]
+    );
+  });
+
+  it("unpinned slot keeps recency sort (newest first, untouched last)", () => {
+    const list = [
+      { id: "1", name: "Old", pinned: false, lastUsedAt: "2026-01-01" },
+      { id: "2", name: "Never", pinned: false },
+      { id: "3", name: "New", pinned: false, lastUsedAt: "2026-06-20" },
+    ];
+    const sorted = getPopupSortedTemplates(list);
+    assert.deepStrictEqual(
+      sorted.map((t) => t.name),
+      ["New", "Old", "Never"]
+    );
+  });
+});
+
+// ---- Per-identity defaults ----
+
+describe("getDefaults / setDefault", () => {
+  beforeEach(() => {
+    installMessengerMock();
+    _resetCacheForTests();
+  });
+
+  it("returns an empty object when no settings exist", async () => {
+    assert.deepStrictEqual(await getDefaults(), {});
+  });
+
+  it("setDefault writes a mapping that getDefaults reads back", async () => {
+    await setDefault("identity-1", "tpl-A");
+    assert.deepStrictEqual(await getDefaults(), { "identity-1": "tpl-A" });
+  });
+
+  it("setDefault with empty templateId clears that identity's default", async () => {
+    await setDefault("identity-1", "tpl-A");
+    await setDefault("identity-1", null);
+    assert.deepStrictEqual(await getDefaults(), {});
+  });
+
+  it("deleting a template clears any default that pointed at it", async () => {
+    const saved = await saveTemplate({ name: "DefaultTpl", body: "" });
+    await setDefault("identity-1", saved.id);
+    await setDefault("identity-2", "other-tpl");
+    await deleteTemplate(saved.id);
+    const defaults = await getDefaults();
+    assert.strictEqual(defaults["identity-1"], undefined);
+    assert.strictEqual(defaults["identity-2"], "other-tpl");
+  });
+
+  it("setDefault ignores empty identityId", async () => {
+    await setDefault("", "tpl-A");
+    assert.deepStrictEqual(await getDefaults(), {});
+  });
+});
+
 // ---- Schema migration runs via the store when version is stale ----
 
 describe("getTemplates triggers migration on stale schema", () => {
@@ -332,8 +449,39 @@ describe("getTemplates triggers migration on stale schema", () => {
     assert.strictEqual(templates[0].insertMode, "append");
     assert.deepStrictEqual(templates[0].to, []);
     assert.strictEqual(templates[0].category, "");
+    assert.strictEqual(templates[0].pinned, false);
+
+    const stamped = await messenger.storage.local.get({ [SCHEMA_KEY]: 0 });
+    assert.strictEqual(stamped[SCHEMA_KEY], CURRENT_SCHEMA);
+  });
+
+  it("promotes v1 templates to v2 by stamping pinned:false", async () => {
+    await messenger.storage.local.set({
+      [SCHEMA_KEY]: 1,
+      [STORAGE_KEY]: [
+        {
+          id: "v1-tpl",
+          name: "From v1",
+          body: "Hi",
+          category: "",
+          to: [],
+          cc: [],
+          bcc: [],
+          identities: [],
+          insertMode: "append",
+          attachments: [],
+        },
+      ],
+    });
+    _resetCacheForTests();
+
+    const templates = await getTemplates();
+    assert.strictEqual(templates[0].pinned, false);
 
     const stamped = await messenger.storage.local.get({ [SCHEMA_KEY]: 0 });
     assert.strictEqual(stamped[SCHEMA_KEY], CURRENT_SCHEMA);
   });
 });
+
+// Suppress unused-import lint for SETTINGS_KEY (it's re-exported for parity).
+void SETTINGS_KEY;

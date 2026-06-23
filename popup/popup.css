@@ -38,6 +38,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
@@ -123,6 +127,25 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.template-item .pin-btn {
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.template-item .pin-btn.pinned {
+  color: #f59e0b;
+}
+
+.template-item .pin-btn:hover {
+  color: #f59e0b;
 }
 
 .template-item .name {

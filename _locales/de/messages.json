@@ -456,5 +456,81 @@
   "validationBodyEmptyReplace": {
     "message": "Warnung: Der Textkörper ist leer. Der Ersetzen-Modus entfernt den ursprünglichen Nachrichteninhalt.",
     "description": "Warning shown when body is empty/whitespace in replace insert mode"
+  },
+  "popupSearchPlaceholder": {
+    "message": "Suchen… (Enter fügt obersten Treffer ein)",
+    "description": "Placeholder for the popup search box"
+  },
+  "popupNoMatch": {
+    "message": "Keine Vorlage entspricht dem aktuellen Filter.",
+    "description": "Shown when search/category filter hides every template"
+  },
+  "popupPinTemplate": {
+    "message": "Oben anheften",
+    "description": "Tooltip for the pin (favorite) icon when a template is not pinned"
+  },
+  "popupUnpinTemplate": {
+    "message": "Vorlage lösen",
+    "description": "Tooltip for the pin icon when a template is already pinned"
+  },
+  "optionsDefaultsTitle": {
+    "message": "Standardvorlage pro Konto",
+    "description": "Heading of the defaults section on the options page"
+  },
+  "optionsDefaultsHelp": {
+    "message": "Vorlage automatisch einfügen, wenn ein neues Verfassen-Fenster mit dem passenden Konto geöffnet wird. Antworten und Weiterleitungen werden übersprungen.",
+    "description": "Help text for the defaults section"
+  },
+  "optionsDefaultsNone": {
+    "message": "— keine —",
+    "description": "Placeholder option in defaults select"
+  },
+  "optionsDefaultsNoIdentities": {
+    "message": "Keine E-Mail-Konten konfiguriert.",
+    "description": "Shown in defaults section when no identities exist"
+  },
+  "optionsVariableRecipientName": {
+    "message": "{RECIPIENT_NAME} — Name des ersten An:-Empfängers",
+    "description": "Describes RECIPIENT_NAME variable"
+  },
+  "optionsVariableRecipientFirstname": {
+    "message": "{RECIPIENT_FIRSTNAME} — Vorname des ersten An:-Empfängers",
+    "description": "Describes RECIPIENT_FIRSTNAME variable"
+  },
+  "optionsVariableRecipientEmail": {
+    "message": "{RECIPIENT_EMAIL} — E-Mail-Adresse des ersten An:-Empfängers",
+    "description": "Describes RECIPIENT_EMAIL variable"
+  },
+  "optionsVariableReplyQuote": {
+    "message": "{REPLY_QUOTE} — Zitierter Text der ursprünglichen Nachricht",
+    "description": "Describes REPLY_QUOTE variable"
+  },
+  "optionsVariableLastSubject": {
+    "message": "{LAST_MESSAGE_SUBJECT} — Betreff der beantworteten Nachricht (Re:/AW: entfernt)",
+    "description": "Describes LAST_MESSAGE_SUBJECT variable"
+  },
+  "optionsVariableIf": {
+    "message": "Bedingung: {IF lhs==\"wert\"}…{ELSE}…{ENDIF}",
+    "description": "Describes IF/ELSE/ENDIF control flow"
+  },
+  "optionsVariablePrompt": {
+    "message": "{PROMPT:Label:Standard} — Beim Einfügen nach einem Wert fragen",
+    "description": "Describes PROMPT variable"
+  },
+  "optionsVariableChoice": {
+    "message": "{CHOICE:Label:opt1|opt2|opt3} — Beim Einfügen aus mehreren Optionen wählen",
+    "description": "Describes CHOICE variable"
+  },
+  "promptDialogTitle": {
+    "message": "Vorlagenwerte ausfüllen",
+    "description": "Title of the dialog that collects PROMPT/CHOICE answers"
+  },
+  "promptDialogSubmit": {
+    "message": "Einfügen",
+    "description": "Submit button in the prompt dialog"
+  },
+  "promptDialogCancel": {
+    "message": "Abbrechen",
+    "description": "Cancel button in the prompt dialog"
   }
 }

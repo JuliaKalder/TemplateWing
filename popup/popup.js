@@ -3,11 +3,15 @@ import {
   getTemplate,
   trackUsage,
   isTemplateAllowedForIdentity,
+  getPopupSortedTemplates,
+  setPinned,
   INSERT_MODES,
 } from "../modules/template-store.js";
-import { insertTemplateIntoTab } from "../modules/template-insert.js";
-import { filterTemplateList, setFilterOptions } from "../modules/ui-helpers.js";
+import { insertTemplateIntoTab, extractPromptTokens } from "../modules/template-insert.js";
+import { setFilterOptions } from "../modules/ui-helpers.js";
 import { getIdentityIdForTab } from "../modules/compose-utils.js";
+
+const SEARCH_SESSION_KEY = "templatewing.popup.search";
 
 async function getCurrentIdentityId() {
   const tabs = await messenger.tabs.query({
@@ -39,14 +43,9 @@ async function renderTemplateList() {
   const allTemplates = await getTemplates();
   const currentIdentityId = await getCurrentIdentityId();
 
-  const templates = allTemplates
-    .filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
-    .sort((a, b) => {
-      if (!a.lastUsedAt && !b.lastUsedAt) return 0;
-      if (!a.lastUsedAt) return 1;
-      if (!b.lastUsedAt) return -1;
-      return b.lastUsedAt.localeCompare(a.lastUsedAt);
-    });
+  const templates = getPopupSortedTemplates(
+    allTemplates.filter((t) => isTemplateAllowedForIdentity(t, currentIdentityId))
+  );
 
   list.replaceChildren();
 
@@ -63,12 +62,32 @@ async function renderTemplateList() {
     const template = templates[i];
     const item = document.createElement("div");
     item.className = "template-item";
+    item.dataset.id = template.id;
     item.dataset.name = (template.name || "").toLowerCase();
     item.dataset.subject = (template.subject || "").toLowerCase();
     item.dataset.category = (template.category || "").toLowerCase();
 
     const topRow = document.createElement("div");
     topRow.className = "top-row";
+
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "pin-btn" + (template.pinned ? " pinned" : "");
+    pinBtn.type = "button";
+    pinBtn.textContent = template.pinned ? "★" : "☆";
+    pinBtn.title = messenger.i18n.getMessage(
+      template.pinned ? "popupUnpinTemplate" : "popupPinTemplate"
+    );
+    pinBtn.setAttribute(
+      "aria-label",
+      messenger.i18n.getMessage(template.pinned ? "popupUnpinTemplate" : "popupPinTemplate")
+    );
+    pinBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await setPinned(template.id, !template.pinned);
+      await renderTemplateList();
+      applyFilter();
+    });
+    topRow.appendChild(pinBtn);
 
     const name = document.createElement("span");
     name.className = "name";
@@ -78,7 +97,10 @@ async function renderTemplateList() {
     const btn = document.createElement("button");
     btn.className = "insert-btn";
     btn.textContent = messenger.i18n.getMessage("popupInsert");
-    btn.addEventListener("click", () => insertTemplate(template.id));
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      insertTemplate(template.id);
+    });
     topRow.appendChild(btn);
 
     item.appendChild(topRow);
@@ -144,7 +166,13 @@ async function insertTemplate(id) {
   // Delegate to the background page so the popup can close first; the
   // background then runs the insert against the focused compose window.
   // Other modes use setComposeDetails and don't need focus.
-  if (template.insertMode === INSERT_MODES.CURSOR) {
+  // Cursor mode AND prompt-bearing templates both delegate to the background.
+  // Cursor mode needs the popup closed so the compose editor regains focus
+  // for the Range API. Prompt dialogs need to outlive the closing popup, so
+  // the background opens them in a long-lived popup window instead.
+  const hasPrompts =
+    extractPromptTokens(`${template.body || ""}\n${template.subject || ""}`).length > 0;
+  if (template.insertMode === INSERT_MODES.CURSOR || hasPrompts) {
     messenger.runtime.sendMessage({
       action: "templatewing:insertTemplate",
       tabId: tabs[0].id,
@@ -166,6 +194,9 @@ async function insertTemplate(id) {
           "notificationAttachmentFailed",
           err.failedNames.join(", ")
         );
+      } else if (err && err.code === "PROMPT_CANCELLED") {
+        // User cancelled a {PROMPT}/{CHOICE} dialog — silent abort.
+        return;
       } else {
         message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
       }
@@ -184,8 +215,67 @@ async function insertTemplate(id) {
   window.close();
 }
 
-function filterTemplates() {
-  filterTemplateList("#template-list .template-item");
+function getVisibleItems() {
+  return Array.from(document.querySelectorAll("#template-list .template-item")).filter(
+    (item) => !item.hidden
+  );
+}
+
+function applyFilter() {
+  const input = document.getElementById("search-input");
+  const query = input.value.toLowerCase().trim();
+  const selectedCategory = document.getElementById("category-filter").value.toLowerCase();
+
+  for (const item of document.querySelectorAll("#template-list .template-item")) {
+    const matchesSearch =
+      !query ||
+      item.dataset.name.includes(query) ||
+      item.dataset.subject.includes(query) ||
+      item.dataset.category.includes(query);
+    const matchesCategory = !selectedCategory || item.dataset.category === selectedCategory;
+    item.hidden = !(matchesSearch && matchesCategory);
+  }
+
+  // Empty-state for "no template matches the current filter" (distinct
+  // from "no templates exist", which renderTemplateList already handles).
+  const noMatchEl = document.getElementById("no-match-state");
+  const list = document.getElementById("template-list");
+  const anyTemplates = list.children.length > 0;
+  const anyVisible = getVisibleItems().length > 0;
+  noMatchEl.hidden = !(anyTemplates && !anyVisible);
+}
+
+function onSearchInput() {
+  applyFilter();
+  try {
+    sessionStorage.setItem(SEARCH_SESSION_KEY, document.getElementById("search-input").value);
+  } catch (_) {
+    /* sessionStorage may be unavailable in some contexts */
+  }
+}
+
+function onSearchKeydown(e) {
+  const input = e.currentTarget;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const visible = getVisibleItems();
+    if (visible.length > 0) {
+      const firstId = visible[0].dataset.id;
+      if (firstId) insertTemplate(firstId);
+    }
+    return;
+  }
+  if (e.key === "Escape") {
+    e.preventDefault();
+    input.value = "";
+    try {
+      sessionStorage.removeItem(SEARCH_SESSION_KEY);
+    } catch (_) {
+      /* ignore */
+    }
+    applyFilter();
+    input.focus();
+  }
 }
 
 async function populateCategoryFilter() {
@@ -198,8 +288,10 @@ async function populateCategoryFilter() {
   setFilterOptions("category-filter", categories);
 }
 
-document.getElementById("search-input").addEventListener("input", filterTemplates);
-document.getElementById("category-filter").addEventListener("change", filterTemplates);
+const searchInput = document.getElementById("search-input");
+searchInput.addEventListener("input", onSearchInput);
+searchInput.addEventListener("keydown", onSearchKeydown);
+document.getElementById("category-filter").addEventListener("change", applyFilter);
 
 // Thunderbird opens the options page in an Add-ons Manager tab that may live
 // in a background window. Focus the first normal window so it comes to front.
@@ -218,3 +310,18 @@ document.getElementById("btn-manage").addEventListener("click", async () => {
 localize();
 await renderTemplateList();
 await populateCategoryFilter();
+
+// Restore last query from this browser session only — explicitly NOT
+// persisted across restarts (sessionStorage, not localStorage).
+try {
+  const saved = sessionStorage.getItem(SEARCH_SESSION_KEY);
+  if (saved) {
+    searchInput.value = saved;
+    applyFilter();
+  }
+} catch (_) {
+  /* ignore */
+}
+
+searchInput.focus();
+searchInput.select();

@@ -9,7 +9,11 @@ import {
   consumePrefillTemplate,
   exportTemplates,
   importTemplates,
+  getDefaults,
+  setDefault,
+  setPinned,
   PREFILL_KEY,
+  SETTINGS_KEY,
   INSERT_MODES,
 } from "../modules/template-store.js";
 import {
@@ -136,6 +140,22 @@ async function renderTemplateList() {
     const actions = document.createElement("div");
     actions.className = "actions";
 
+    const pinBtn = document.createElement("button");
+    pinBtn.className = "pin-btn" + (template.pinned ? " pinned" : "");
+    pinBtn.textContent = template.pinned ? "★" : "☆";
+    pinBtn.title = messenger.i18n.getMessage(
+      template.pinned ? "popupUnpinTemplate" : "popupPinTemplate"
+    );
+    pinBtn.setAttribute(
+      "aria-label",
+      messenger.i18n.getMessage(template.pinned ? "popupUnpinTemplate" : "popupPinTemplate")
+    );
+    pinBtn.addEventListener("click", async () => {
+      await setPinned(template.id, !template.pinned);
+      await renderTemplateList();
+    });
+    actions.appendChild(pinBtn);
+
     const editBtn = document.createElement("button");
     editBtn.textContent = messenger.i18n.getMessage("optionsEdit");
     editBtn.addEventListener("click", () => openEditor(template.id));
@@ -168,6 +188,60 @@ async function renderTemplateList() {
 
 async function populateCategoryFilter() {
   setFilterOptions("category-filter", await getCategories());
+}
+
+async function renderDefaultsSection() {
+  const list = document.getElementById("defaults-list");
+  list.replaceChildren();
+
+  const [identities, templates, defaults] = await Promise.all([
+    getIdentities(),
+    getTemplates(),
+    getDefaults(),
+  ]);
+
+  if (identities.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "defaults-empty";
+    empty.textContent = messenger.i18n.getMessage("optionsDefaultsNoIdentities");
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const identity of identities) {
+    const row = document.createElement("div");
+    row.className = "defaults-row";
+
+    const label = document.createElement("label");
+    label.className = "defaults-label";
+    label.textContent = identity.label;
+    label.htmlFor = `default-${identity.id}`;
+
+    const select = document.createElement("select");
+    select.id = `default-${identity.id}`;
+    select.className = "defaults-select";
+
+    const noneOption = document.createElement("option");
+    noneOption.value = "";
+    noneOption.textContent = messenger.i18n.getMessage("optionsDefaultsNone");
+    select.appendChild(noneOption);
+
+    for (const t of templates) {
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.name;
+      if (defaults[identity.id] === t.id) opt.selected = true;
+      select.appendChild(opt);
+    }
+
+    select.addEventListener("change", async () => {
+      await setDefault(identity.id, select.value || null);
+    });
+
+    row.appendChild(label);
+    row.appendChild(select);
+    list.appendChild(row);
+  }
 }
 
 async function populateCategorySuggestions() {
@@ -619,6 +693,7 @@ async function handleSave() {
   closeEditor();
   await renderTemplateList();
   await populateCategoryFilter();
+  await renderDefaultsSection();
 }
 
 async function handleExport() {
@@ -907,6 +982,7 @@ localize();
 hideImportDialog();
 await renderTemplateList();
 await populateCategoryFilter();
+await renderDefaultsSection();
 
 messenger.storage.onChanged.addListener(async (changes, area) => {
   if (area !== "local") return;
@@ -922,6 +998,10 @@ messenger.storage.onChanged.addListener(async (changes, area) => {
   if (changes.templates && !document.getElementById("view-list").hidden) {
     await renderTemplateList();
     await populateCategoryFilter();
+    await renderDefaultsSection();
+  }
+  if (changes[SETTINGS_KEY] && !document.getElementById("view-list").hidden) {
+    await renderDefaultsSection();
   }
 });
 

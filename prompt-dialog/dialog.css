@@ -1,0 +1,111 @@
+:root {
+  --color-primary: #0060df;
+  --color-primary-hover: #004ec2;
+  --color-primary-on: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-label: #555555;
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f9f9f9;
+  --color-bg-hover: #eeeeee;
+  --color-border: #cccccc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #73a7f3;
+    --color-primary-hover: #9dc0f7;
+    --color-primary-on: #1a1a1a;
+    --color-text: #e8e8e8;
+    --color-text-label: #bbbbbb;
+    --color-bg: #2b2b2b;
+    --color-bg-secondary: #333333;
+    --color-bg-hover: #3a3a3a;
+    --color-border: #555555;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.dialog-container {
+  padding: 20px;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.prompt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prompt-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--color-text-label);
+}
+
+.prompt-field input[type="text"],
+.prompt-field select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.prompt-field input[type="text"]:focus,
+.prompt-field select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.dialog-actions button {
+  padding: 7px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dialog-actions button:hover {
+  background: var(--color-bg-hover);
+}
+
+.btn-primary {
+  background: var(--color-primary) !important;
+  color: var(--color-primary-on) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover) !important;
+}

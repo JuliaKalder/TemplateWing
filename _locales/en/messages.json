@@ -456,5 +456,81 @@
   "validationBodyEmptyReplace": {
     "message": "Warning: Body is empty. The replace mode will remove the original message content.",
     "description": "Warning shown when body is empty/whitespace in replace insert mode"
+  },
+  "popupSearchPlaceholder": {
+    "message": "Search… (Enter inserts top match)",
+    "description": "Placeholder for the popup search box"
+  },
+  "popupNoMatch": {
+    "message": "No templates match the current filter.",
+    "description": "Shown when search/category filter hides every template"
+  },
+  "popupPinTemplate": {
+    "message": "Pin to top",
+    "description": "Tooltip for the pin (favorite) icon when a template is not pinned"
+  },
+  "popupUnpinTemplate": {
+    "message": "Unpin template",
+    "description": "Tooltip for the pin icon when a template is already pinned"
+  },
+  "optionsDefaultsTitle": {
+    "message": "Default template per account",
+    "description": "Heading of the defaults section on the options page"
+  },
+  "optionsDefaultsHelp": {
+    "message": "Auto-insert the selected template when you open a new compose window with the matching account. Replies and forwards are skipped.",
+    "description": "Help text for the defaults section"
+  },
+  "optionsDefaultsNone": {
+    "message": "— none —",
+    "description": "Placeholder option in defaults select"
+  },
+  "optionsDefaultsNoIdentities": {
+    "message": "No mail accounts configured.",
+    "description": "Shown in defaults section when no identities exist"
+  },
+  "optionsVariableRecipientName": {
+    "message": "{RECIPIENT_NAME} — First To: recipient's display name",
+    "description": "Describes RECIPIENT_NAME variable"
+  },
+  "optionsVariableRecipientFirstname": {
+    "message": "{RECIPIENT_FIRSTNAME} — First To: recipient's first name",
+    "description": "Describes RECIPIENT_FIRSTNAME variable"
+  },
+  "optionsVariableRecipientEmail": {
+    "message": "{RECIPIENT_EMAIL} — First To: recipient's email address",
+    "description": "Describes RECIPIENT_EMAIL variable"
+  },
+  "optionsVariableReplyQuote": {
+    "message": "{REPLY_QUOTE} — Quoted body of the message being replied to",
+    "description": "Describes REPLY_QUOTE variable"
+  },
+  "optionsVariableLastSubject": {
+    "message": "{LAST_MESSAGE_SUBJECT} — Subject of the message being replied to (Re:/Fwd: stripped)",
+    "description": "Describes LAST_MESSAGE_SUBJECT variable"
+  },
+  "optionsVariableIf": {
+    "message": "Conditional: {IF lhs==\"value\"}…{ELSE}…{ENDIF}",
+    "description": "Describes IF/ELSE/ENDIF control flow"
+  },
+  "optionsVariablePrompt": {
+    "message": "{PROMPT:Label:default} — Ask the user for a value at insert time",
+    "description": "Describes PROMPT variable"
+  },
+  "optionsVariableChoice": {
+    "message": "{CHOICE:Label:opt1|opt2|opt3} — Ask the user to pick one option",
+    "description": "Describes CHOICE variable"
+  },
+  "promptDialogTitle": {
+    "message": "Fill in template values",
+    "description": "Title of the dialog that collects PROMPT/CHOICE answers"
+  },
+  "promptDialogSubmit": {
+    "message": "Insert",
+    "description": "Submit button in the prompt dialog"
+  },
+  "promptDialogCancel": {
+    "message": "Cancel",
+    "description": "Cancel button in the prompt dialog"
   }
 }

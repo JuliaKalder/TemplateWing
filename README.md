@@ -23,7 +23,12 @@ Save and reuse email templates — including file attachments — directly from 
 - **One-click insert** — Insert templates via the toolbar button in the compose window or the right-click context menu
 - **Subject, recipients & insertion mode** — Set a default subject, To/Cc/Bcc addresses, and choose whether the template appends to or replaces the current message body
 - **Categories** — Organise templates into categories and filter by them in both the popup and the options page
-- **Variables** — Use `{DATE}`, `{TIME}`, `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{SENDER_NAME}`, `{SENDER_EMAIL}`, `{ACCOUNT_NAME}`, and `{ACCOUNT_EMAIL}` in subject or body; they are resolved on insert. Click a variable chip in the editor to insert it at the cursor
+- **Variables** — Use `{DATE}`, `{TIME}`, `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{SENDER_NAME}`, `{SENDER_EMAIL}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`, `{RECIPIENT_NAME}`, `{RECIPIENT_FIRSTNAME}`, `{RECIPIENT_EMAIL}`, `{REPLY_QUOTE}`, and `{LAST_MESSAGE_SUBJECT}` in subject or body; they are resolved on insert. Click a variable chip in the editor to insert it at the cursor
+- **Conditional content** — `{IF lhs=="value"}…{ELSE}…{ENDIF}` blocks let templates branch on `recipient.domain`, `recipient.firstname`, `identity.email`, etc. Nesting is supported; unknown variables compare as the empty string
+- **Ask-on-insert prompts** — `{PROMPT:Label:default}` and `{CHOICE:Label:opt1|opt2|opt3}` open a small dialog at insert time and substitute the user's answer
+- **Favorites / pinning** — Click the ★ on any template to keep it pinned to the top of the popup, regardless of recent-use sort
+- **Popup search** — Autofocused search box filters templates instantly across name, subject, and category; Enter inserts the top match, Esc clears
+- **Default template per account** — In the options page, pick a template to auto-insert whenever you open a new compose window with a given account (replies and forwards are skipped)
 - **Keyboard shortcuts** — Insert your first 9 templates with `Ctrl+Shift+1` – `Ctrl+Shift+9` directly from the compose window
 - **Recent templates first** — The popup sorts by most recently used, so your go-to templates are always at the top; the options page shows a usage count per template
 - **Import / Export with merge modes** — Back up all templates as a JSON file and restore or share them on any device. On import, choose to *add all*, *skip duplicates*, or *update existing by name*, with a pre-import validation summary
@@ -83,7 +88,7 @@ Alternatively, on any OS with `zip` installed:
 
 ```bash
 zip -r ../templatewing.xpi manifest.json background.html background.js \
-  LICENSE modules/ popup/ options/ images/ _locales/ \
+  LICENSE modules/ popup/ options/ prompt-dialog/ images/ _locales/ \
   -x ".*" -x "*.md" -x "build-xpi.ps1" -x "tests/*" -x "scripts/*" \
   -x "package.json" -x "node_modules/*"
 ```

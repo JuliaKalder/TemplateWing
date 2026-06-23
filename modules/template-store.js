@@ -1,7 +1,8 @@
 export const STORAGE_KEY = "templates";
 export const SCHEMA_KEY = "schemaVersion";
-export const CURRENT_SCHEMA = 1;
-export const EXPORT_FORMAT_VERSION = "2.2";
+export const SETTINGS_KEY = "settings";
+export const CURRENT_SCHEMA = 2;
+export const EXPORT_FORMAT_VERSION = "2.6";
 
 /** Shared insert mode constants used across popup, options, and template-insert. */
 export const INSERT_MODES = Object.freeze({
@@ -73,7 +74,20 @@ export async function migrateV0toV1(templates) {
   return { templates: migrated, changed };
 }
 
-const migrations = [migrateV0toV1];
+// Migration 1 → 2: backfill pinned: false on every template.
+export async function migrateV1toV2(templates) {
+  let changed = false;
+  const migrated = templates.map((t) => {
+    if (typeof t.pinned !== "boolean") {
+      changed = true;
+      return { ...t, pinned: false };
+    }
+    return t;
+  });
+  return { templates: migrated, changed };
+}
+
+const migrations = [migrateV0toV1, migrateV1toV2];
 
 async function migrateIfNeeded() {
   const result = await messenger.storage.local.get({ [SCHEMA_KEY]: 0 });
@@ -163,6 +177,7 @@ export async function saveTemplate(template) {
       cc: [],
       bcc: [],
       identities: [],
+      pinned: false,
       ...rest,
       createdAt: now,
       updatedAt: now,
@@ -182,11 +197,32 @@ export async function getCategories() {
   return [...new Set(templates.map((t) => t.category).filter(Boolean))].sort();
 }
 
-/** Delete a template by ID. */
+/** Delete a template by ID. Also clears it from any identity defaults that pointed at it. */
 export async function deleteTemplate(id) {
   const templates = await getTemplates();
   const filtered = templates.filter((t) => t.id !== id);
   await persistTemplates(filtered);
+
+  // Garbage-collect identity defaults that referenced the now-gone template.
+  const defaults = await getDefaults();
+  let touched = false;
+  for (const [identityId, templateId] of Object.entries(defaults)) {
+    if (templateId === id) {
+      delete defaults[identityId];
+      touched = true;
+    }
+  }
+  if (touched) await setDefaults(defaults);
+}
+
+/** Toggle or set the pinned flag for a template. */
+export async function setPinned(id, pinned) {
+  const templates = await getTemplates();
+  const index = templates.findIndex((t) => t.id === id);
+  if (index === -1) return;
+  const updated = [...templates];
+  updated[index] = { ...updated[index], pinned: !!pinned };
+  await persistTemplates(updated);
 }
 
 /** Increment usageCount and update lastUsedAt for a template. */
@@ -259,7 +295,7 @@ export { PREFILL_KEY };
 export async function exportTemplates() {
   const templates = await getTemplates();
   const safeTemplates = templates.map(
-    ({ id, usageCount, lastUsedAt, createdAt, updatedAt, ...t }) => ({
+    ({ id, usageCount, lastUsedAt, createdAt, updatedAt, pinned, ...t }) => ({
       ...t,
       attachments: (t.attachments || []).map(({ data: _data, ...rest }) => rest),
     })
@@ -306,6 +342,59 @@ export function getSortedTemplates(templates) {
     if (catA !== catB) return catA.localeCompare(catB);
     return (a.name || "").localeCompare(b.name || "");
   });
+}
+
+/**
+ * Sort for the popup: pinned templates first (alpha by name),
+ * then unpinned (most-recently-used first, untouched last).
+ * Pure function — no DOM, no storage.
+ */
+export function getPopupSortedTemplates(templates) {
+  const pinned = templates.filter((t) => t.pinned);
+  const unpinned = templates.filter((t) => !t.pinned);
+  pinned.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  unpinned.sort((a, b) => {
+    if (!a.lastUsedAt && !b.lastUsedAt) return (a.name || "").localeCompare(b.name || "");
+    if (!a.lastUsedAt) return 1;
+    if (!b.lastUsedAt) return -1;
+    return b.lastUsedAt.localeCompare(a.lastUsedAt);
+  });
+  return [...pinned, ...unpinned];
+}
+
+// ---- Settings: per-identity defaults ----
+
+async function readSettings() {
+  const result = await messenger.storage.local.get({ [SETTINGS_KEY]: {} });
+  return result[SETTINGS_KEY] || {};
+}
+
+async function writeSettings(settings) {
+  await messenger.storage.local.set({ [SETTINGS_KEY]: settings });
+}
+
+/** Returns a map of identityId → templateId. Missing key → empty object. */
+export async function getDefaults() {
+  const settings = await readSettings();
+  return { ...(settings.defaults || {}) };
+}
+
+async function setDefaults(defaults) {
+  const settings = await readSettings();
+  settings.defaults = defaults;
+  await writeSettings(settings);
+}
+
+/** Set or clear the default template for an identity. Pass `null`/`""` to clear. */
+export async function setDefault(identityId, templateId) {
+  if (!identityId) return;
+  const defaults = await getDefaults();
+  if (templateId) {
+    defaults[identityId] = templateId;
+  } else {
+    delete defaults[identityId];
+  }
+  await setDefaults(defaults);
 }
 
 // ---- Import merge strategy ----

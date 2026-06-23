@@ -6,12 +6,16 @@ import {
   isTemplateAllowedForIdentity,
   getSortedTemplates,
   groupTemplatesByCategory,
+  getDefaults,
 } from "./modules/template-store.js";
-import { insertTemplateIntoTab } from "./modules/template-insert.js";
+import { insertTemplateIntoTab, extractPromptTokens } from "./modules/template-insert.js";
 import { findPart, extractBody } from "./modules/message-utils.js";
 import { getIdentityIdForTab } from "./modules/compose-utils.js";
+import { collectPromptAnswers } from "./modules/prompt-collector.js";
 
 async function notifyInsertFailure(err) {
+  // User-cancelled prompts are an explicit choice, not a failure — stay silent.
+  if (err && err.code === "PROMPT_CANCELLED") return;
   try {
     const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
     let message;
@@ -32,6 +36,18 @@ async function notifyInsertFailure(err) {
   } catch (notifyErr) {
     console.error("TemplateWing: could not show notification", notifyErr);
   }
+}
+
+/**
+ * If the template body or subject contains {PROMPT}/{CHOICE} tokens, open
+ * the prompt dialog and collect answers. Returns the answers map (possibly
+ * empty). Re-throws PROMPT_CANCELLED so callers can abort the insert.
+ */
+async function collectAnswersForTemplate(template) {
+  const combined = `${template.body || ""}\n${template.subject || ""}`;
+  const tokens = extractPromptTokens(combined);
+  if (tokens.length === 0) return {};
+  return await collectPromptAnswers(tokens);
 }
 
 function getCategoryMenuId(category, index) {
@@ -161,7 +177,8 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   }
 
   try {
-    await insertTemplateIntoTab(tab.id, template);
+    const promptAnswers = await collectAnswersForTemplate(template);
+    await insertTemplateIntoTab(tab.id, template, { promptAnswers });
     await trackUsage(templateId);
   } catch (err) {
     console.error("TemplateWing: insert failed from context menu", err);
@@ -195,7 +212,8 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   const template = templates[index];
 
   try {
-    await insertTemplateIntoTab(tabs[0].id, template);
+    const promptAnswers = await collectAnswersForTemplate(template);
+    await insertTemplateIntoTab(tabs[0].id, template, { promptAnswers });
     await trackUsage(template.id);
   } catch (err) {
     console.error("TemplateWing: insert failed from keyboard shortcut", err);
@@ -236,7 +254,8 @@ async function handleInsertTemplateFromPopup(message, sender) {
       return;
     }
 
-    await insertTemplateIntoTab(message.tabId, template);
+    const promptAnswers = await collectAnswersForTemplate(template);
+    await insertTemplateIntoTab(message.tabId, template, { promptAnswers });
     await trackUsage(message.templateId);
   } catch (err) {
     console.error("TemplateWing: insert failed from popup delegation", err);
@@ -304,6 +323,97 @@ async function injectComposeScript(tabId) {
     console.warn("TemplateWing: compose-script inject failed for tab", tabId, err && err.message);
   }
 }
+
+// ---- Default template per identity (auto-insert on compose open) ----
+
+/**
+ * Returns true when the compose body is effectively empty (i.e. nothing the
+ * user has typed yet). HTML signatures and quoted reply blocks must NOT
+ * count as content — we strip those before testing. If the user already
+ * typed even a single word, we skip auto-insert to avoid clobbering work.
+ */
+function isComposeBodyEmpty(body, isPlainText) {
+  if (!body) return true;
+  if (isPlainText) {
+    // Plaintext signatures live below "-- \n"; reply quotes start with "> ".
+    const stripped = body.replace(/\n--\s*\n[\s\S]*$/, "").replace(/^>.*$/gm, "");
+    return stripped.trim().length === 0;
+  }
+  try {
+    const doc = new DOMParser().parseFromString(body, "text/html");
+    for (const el of doc.body.querySelectorAll(
+      ".moz-signature, .moz-cite-prefix, blockquote[type='cite']"
+    )) {
+      el.remove();
+    }
+    return (doc.body.textContent || "").trim().length === 0;
+  } catch (_) {
+    return body.trim().length === 0;
+  }
+}
+
+async function maybeApplyDefaultTemplate(tabId) {
+  let details;
+  try {
+    details = await messenger.compose.getComposeDetails(tabId);
+  } catch (err) {
+    return;
+  }
+  if (!details) return;
+  // Replies/forwards intentionally skipped per spec: the user is responding
+  // to a specific message and a generic greeting template would overwrite
+  // context Thunderbird has already wired up.
+  if (details.relatedMessageId != null) return;
+  if (!isComposeBodyEmpty(details.body || "", !!details.isPlainText)) return;
+
+  const identityId = details.identityId;
+  if (!identityId) return;
+
+  const defaults = await getDefaults();
+  const templateId = defaults[identityId];
+  if (!templateId) return;
+
+  const template = await getTemplate(templateId);
+  if (!template) return;
+
+  try {
+    const promptAnswers = await collectAnswersForTemplate(template);
+    await insertTemplateIntoTab(tabId, template, { promptAnswers });
+    await trackUsage(template.id);
+  } catch (err) {
+    if (err && err.code === "PROMPT_CANCELLED") return;
+    console.error("TemplateWing: default-template auto-insert failed", err);
+  }
+}
+
+// Auto-insert hook. windows.onCreated fires before compose's tab is fully
+// settled, so we use tabs.onCreated which Thunderbird does fire for new
+// compose tabs (verified TB 128+). We still defer slightly so the editor's
+// initial body/sig get populated before we read them.
+messenger.tabs.onCreated.addListener(async (tab) => {
+  if (!tab || typeof tab.id !== "number") return;
+  // TB tags compose tabs as type:"messageCompose"; everything else (mail
+  // 3-pane, content tabs) skips out cheaply here.
+  if (tab.type !== "messageCompose") {
+    // Some TB builds don't populate `type` on the initial event; fall back
+    // to a compose-details probe — if it succeeds, this is a compose tab.
+    try {
+      const probe = await messenger.compose.getComposeDetails(tab.id);
+      if (!probe) return;
+    } catch (_) {
+      return;
+    }
+  }
+  // Give the compose editor a moment to settle (sig insertion, identity
+  // selection, body initialisation). 300ms is empirically the sweet spot:
+  // long enough for the editor to stabilise, short enough that users don't
+  // see their template arrive late.
+  setTimeout(() => {
+    maybeApplyDefaultTemplate(tab.id).catch((err) =>
+      console.error("TemplateWing: default-template hook failed", err)
+    );
+  }, 300);
+});
 
 (async function setupComposeScripts() {
   try {
