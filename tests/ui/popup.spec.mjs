@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { resolve, dirname } from "node:path";
 import { messengerStubSource } from "./_browser-messenger.mjs";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const popupUrl = pathToFileURL(resolve(here, "../../popup/popup.html")).href;
+const popupUrl = "/popup/popup.html";
 
 function seedScript(templates) {
   return `
