@@ -25,6 +25,15 @@ import {
   parseRecipients,
 } from "../modules/validation.js";
 import { filterTemplateList, setFilterOptions } from "../modules/ui-helpers.js";
+import { lintTemplate, aggregateSeverity, SEVERITY } from "../modules/template-lint.js";
+import {
+  buildUsageRows,
+  filterUnusedSince,
+  sortRows,
+  topNByUsage,
+  toCSV,
+  csvFilename,
+} from "../modules/usage-stats.js";
 
 let editingId = null;
 let pendingAttachments = [];
@@ -84,6 +93,164 @@ function localize() {
 function showView(name) {
   document.getElementById("view-list").hidden = name !== "list";
   document.getElementById("view-editor").hidden = name !== "editor";
+  document.getElementById("view-usage").hidden = name !== "usage";
+  for (const btn of document.querySelectorAll(".tab-btn")) {
+    const target = btn.dataset.tab;
+    const isActive =
+      (target === "usage" && name === "usage") ||
+      (target === "list" && (name === "list" || name === "editor"));
+    btn.classList.toggle("active", isActive);
+  }
+}
+
+// ---- Usage dashboard ----
+
+let usageSortKey = "usageCount";
+let usageSortDir = "desc";
+
+function renderUsageChart(rows) {
+  const container = document.getElementById("usage-chart");
+  container.replaceChildren();
+  const top = topNByUsage(rows, 10).filter((r) => r.usageCount > 0);
+  if (top.length === 0) return;
+  const max = top[0].usageCount;
+  const W = 600;
+  const ROW_H = 22;
+  const LABEL_W = 160;
+  const PAD = 8;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${top.length * ROW_H + PAD * 2}`);
+  svg.setAttribute("class", "usage-chart-svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", messenger.i18n.getMessage("usageChartLabel"));
+  for (let i = 0; i < top.length; i++) {
+    const row = top[i];
+    const y = PAD + i * ROW_H;
+    const barW = ((W - LABEL_W - PAD) * row.usageCount) / max;
+
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", PAD);
+    label.setAttribute("y", y + ROW_H / 2 + 4);
+    label.setAttribute("class", "usage-chart-label");
+    label.textContent = row.name.length > 22 ? row.name.slice(0, 22) + "…" : row.name;
+    svg.appendChild(label);
+
+    const bar = document.createElementNS(svgNS, "rect");
+    bar.setAttribute("x", LABEL_W);
+    bar.setAttribute("y", y + 3);
+    bar.setAttribute("width", String(Math.max(2, barW)));
+    bar.setAttribute("height", String(ROW_H - 8));
+    bar.setAttribute("class", "usage-chart-bar");
+    bar.setAttribute("rx", "2");
+    svg.appendChild(bar);
+
+    const count = document.createElementNS(svgNS, "text");
+    count.setAttribute("x", LABEL_W + Math.max(2, barW) + 4);
+    count.setAttribute("y", y + ROW_H / 2 + 4);
+    count.setAttribute("class", "usage-chart-count");
+    count.textContent = String(row.usageCount);
+    svg.appendChild(count);
+  }
+  container.appendChild(svg);
+}
+
+function formatDate(iso) {
+  if (!iso) return messenger.i18n.getMessage("optionsUsageNever");
+  return new Date(iso).toLocaleDateString();
+}
+
+function renderUsageTable(rows) {
+  const tbody = document.querySelector("#usage-table tbody");
+  tbody.replaceChildren();
+  const emptyEl = document.getElementById("usage-empty");
+  if (rows.length === 0) {
+    emptyEl.hidden = false;
+    document.getElementById("usage-table-wrapper").hidden = true;
+    return;
+  }
+  emptyEl.hidden = true;
+  document.getElementById("usage-table-wrapper").hidden = false;
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    function td(value) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      return cell;
+    }
+    tr.appendChild(td(row.name));
+    tr.appendChild(td(row.category));
+    tr.appendChild(td(row.identities.length === 0 ? "—" : String(row.identities.length)));
+    tr.appendChild(td(row.usageCount));
+    tr.appendChild(td(formatDate(row.lastUsedAt)));
+    tr.appendChild(td(row.avgPerWeek > 0 ? row.avgPerWeek.toFixed(2) : "0"));
+    tbody.appendChild(tr);
+  }
+  // Header active-sort indicator.
+  for (const th of document.querySelectorAll("#usage-table th[data-sort-key]")) {
+    th.classList.toggle("sort-active", th.dataset.sortKey === usageSortKey);
+    th.classList.toggle(
+      "sort-desc",
+      th.dataset.sortKey === usageSortKey && usageSortDir === "desc"
+    );
+  }
+}
+
+async function renderUsageView() {
+  const templates = await getTemplates();
+  const filter = document.getElementById("usage-filter").value;
+  const filterMode = filter === "all" || filter === "never" ? filter : Number(filter);
+  const rows = filterUnusedSince(buildUsageRows(templates), filterMode);
+  const sorted = sortRows(rows, usageSortKey, usageSortDir);
+  renderUsageChart(rows);
+  renderUsageTable(sorted);
+}
+
+async function handleExportUsage() {
+  const templates = await getTemplates();
+  const rows = buildUsageRows(templates);
+  const headers = [
+    "name",
+    "category",
+    "identities",
+    "usageCount",
+    "lastUsedAt",
+    "daysSinceLast",
+    "avgPerWeek",
+  ];
+  const data = rows.map((r) => [
+    r.name,
+    r.category,
+    r.identities.join("|"),
+    r.usageCount,
+    r.lastUsedAt || "",
+    r.daysSinceLast == null ? "" : r.daysSinceLast,
+    r.avgPerWeek.toFixed(4),
+  ]);
+  const csv = toCSV(headers, data);
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = csvFilename();
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function makeLintBadge(issues) {
+  const sev = aggregateSeverity(issues);
+  if (!sev) return null;
+  const badge = document.createElement("span");
+  badge.className = `lint-badge lint-${sev}`;
+  badge.textContent = sev === SEVERITY.error ? "!" : "?";
+  const label = messenger.i18n.getMessage(
+    sev === SEVERITY.error ? "lintBadgeErrors" : "lintBadgeWarnings",
+    String(issues.length)
+  );
+  badge.title = label + "\n— " + issues.map((i) => i.message).join("\n— ");
+  badge.setAttribute("aria-label", label);
+  badge.tabIndex = 0;
+  return badge;
 }
 
 async function renderTemplateList() {
@@ -92,6 +259,37 @@ async function renderTemplateList() {
   const templates = await getTemplates();
 
   list.replaceChildren();
+
+  // Aggregate lint summary across all templates so the user has a single
+  // "everything fine vs N templates need attention" signal at the top.
+  const summaryEl = document.getElementById("lint-summary");
+  if (summaryEl) {
+    let templatesWithIssues = 0;
+    let errors = 0;
+    let warnings = 0;
+    for (const t of templates) {
+      const issues = lintTemplate(t, templates);
+      if (issues.length > 0) {
+        templatesWithIssues++;
+        for (const i of issues) {
+          if (i.severity === SEVERITY.error) errors++;
+          else warnings++;
+        }
+      }
+    }
+    if (templatesWithIssues === 0) {
+      summaryEl.textContent = messenger.i18n.getMessage("lintSummaryClean");
+      summaryEl.className = "lint-summary lint-clean";
+    } else {
+      summaryEl.textContent = messenger.i18n.getMessage("lintSummaryDirty", [
+        String(templatesWithIssues),
+        String(errors),
+        String(warnings),
+      ]);
+      summaryEl.className = "lint-summary lint-dirty";
+    }
+    summaryEl.hidden = false;
+  }
 
   if (templates.length === 0) {
     list.hidden = true;
@@ -122,6 +320,9 @@ async function renderTemplateList() {
       categoryBadge.textContent = template.category;
       name.appendChild(categoryBadge);
     }
+
+    const lintBadge = makeLintBadge(lintTemplate(template, templates));
+    if (lintBadge) name.appendChild(lintBadge);
 
     const subject = document.createElement("div");
     subject.className = "subject";
@@ -730,53 +931,138 @@ function showImportSuccess(message) {
 
 let pendingImportData = null;
 
-function showImportDialog(analysis, validTemplates) {
+function showImportDialog(analysis, validTemplates, existingTemplates) {
   const dialog = document.getElementById("import-dialog");
   const summaryEl = document.getElementById("import-summary");
+  const tbody = document.querySelector("#import-preview-table tbody");
 
-  pendingImportData = { analysis, validTemplates };
+  pendingImportData = { analysis, validTemplates, existingTemplates };
 
   // Build summary
   summaryEl.replaceChildren();
-
   const totalLine = document.createElement("div");
   totalLine.className = "summary-line";
-  const totalSpan = document.createElement("span");
-  totalSpan.textContent = messenger.i18n.getMessage(
+  totalLine.textContent = messenger.i18n.getMessage(
     "importDialogTotal",
     String(validTemplates.length + analysis.invalid)
   );
-  totalLine.appendChild(totalSpan);
   summaryEl.appendChild(totalLine);
-
   if (analysis.invalid > 0) {
     const invalidLine = document.createElement("div");
     invalidLine.className = "summary-line summary-warn";
-    const invalidSpan = document.createElement("span");
-    invalidSpan.textContent = messenger.i18n.getMessage(
+    invalidLine.textContent = messenger.i18n.getMessage(
       "importDialogInvalid",
       String(analysis.invalid)
     );
-    invalidLine.appendChild(invalidSpan);
     summaryEl.appendChild(invalidLine);
   }
-
   if (analysis.duplicates.size > 0) {
     const dupLine = document.createElement("div");
     dupLine.className = "summary-line summary-warn";
-    const dupSpan = document.createElement("span");
-    dupSpan.textContent = messenger.i18n.getMessage(
+    dupLine.textContent = messenger.i18n.getMessage(
       "importDialogDuplicates",
       String(analysis.duplicates.size)
     );
-    dupLine.appendChild(dupSpan);
     summaryEl.appendChild(dupLine);
   }
 
-  // Reset radio to default
-  dialog.querySelector('input[value="append"]').checked = true;
+  // Build per-row preview table.
+  tbody.replaceChildren();
+  const existingNames = new Set(existingTemplates.map((t) => (t.name || "").toLowerCase()));
+
+  validTemplates.forEach((t, index) => {
+    const tr = document.createElement("tr");
+    tr.dataset.index = String(index);
+
+    const isDup = existingNames.has((t.name || "").toLowerCase());
+    const status = isDup ? "duplicate" : "new";
+
+    const nameCell = document.createElement("td");
+    nameCell.className = "import-col-name";
+    const nameSpan = document.createElement("strong");
+    nameSpan.textContent = t.name;
+    nameCell.appendChild(nameSpan);
+    if (t.category) {
+      const cat = document.createElement("span");
+      cat.className = "import-row-cat";
+      cat.textContent = t.category;
+      nameCell.appendChild(cat);
+    }
+    // Inline validation hint: invalid recipients / oversize attachment.
+    const inlineIssues = describeRowIssues(t);
+    if (inlineIssues.length > 0) {
+      const warn = document.createElement("div");
+      warn.className = "import-row-warn";
+      warn.textContent = inlineIssues.join(" · ");
+      nameCell.appendChild(warn);
+    }
+    tr.appendChild(nameCell);
+
+    const statusCell = document.createElement("td");
+    const statusBadge = document.createElement("span");
+    statusBadge.className = `import-status status-${status}`;
+    statusBadge.textContent = messenger.i18n.getMessage(
+      isDup ? "importStatusDuplicate" : "importStatusNew"
+    );
+    statusCell.appendChild(statusBadge);
+    tr.appendChild(statusCell);
+
+    const actionCell = document.createElement("td");
+    const select = document.createElement("select");
+    select.className = "import-action-select";
+    select.dataset.rowIndex = String(index);
+    const opts = isDup
+      ? [
+          ["skip", "importActionSkip"],
+          ["append", "importActionAddCopy"],
+          ["replace", "importActionReplace"],
+          ["rename", "importActionRename"],
+        ]
+      : [
+          ["append", "importActionAdd"],
+          ["skip", "importActionSkip"],
+        ];
+    for (const [value, key] of opts) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = messenger.i18n.getMessage(key);
+      select.appendChild(opt);
+    }
+    select.value = isDup ? "skip" : "append";
+    actionCell.appendChild(select);
+
+    const renameInput = document.createElement("input");
+    renameInput.type = "text";
+    renameInput.className = "import-rename-input";
+    renameInput.placeholder = messenger.i18n.getMessage("importRenamePlaceholder");
+    renameInput.value = t.name + " (imported)";
+    renameInput.hidden = true;
+    actionCell.appendChild(renameInput);
+
+    select.addEventListener("change", () => {
+      renameInput.hidden = select.value !== "rename";
+    });
+    tr.appendChild(actionCell);
+
+    tbody.appendChild(tr);
+  });
 
   dialog.hidden = false;
+}
+
+function describeRowIssues(template) {
+  const issues = [];
+  const toResult = validateRecipients((template.to || []).join(", "));
+  if (!toResult.valid) {
+    issues.push(
+      messenger.i18n.getMessage("validationInvalidRecipients", toResult.invalid.join(", "))
+    );
+  }
+  const totalSize = (template.attachments || []).reduce((sum, a) => sum + (Number(a.size) || 0), 0);
+  if (totalSize >= ATTACHMENT_TOTAL_WARN_SIZE) {
+    issues.push(messenger.i18n.getMessage("attachmentTotalWarning", formatFileSize(totalSize)));
+  }
+  return issues;
 }
 
 function hideImportDialog() {
@@ -811,8 +1097,6 @@ async function executeImport() {
   if (!pendingImportData) return;
 
   const { validTemplates } = pendingImportData;
-  const checkedRadio = document.querySelector('input[name="import-mode"]:checked');
-  const mode = checkedRadio ? checkedRadio.value : INSERT_MODES.APPEND;
 
   // Strip internal tracking fields and sanitize bodies before handing off to the store.
   const sanitized = validTemplates.map((t) => {
@@ -821,7 +1105,20 @@ async function executeImport() {
     return rest;
   });
 
-  const { added, skipped, replaced } = await importTemplates(sanitized, mode);
+  // Collect per-row decisions from the preview table.
+  const perRow = {};
+  for (const select of document.querySelectorAll(".import-action-select")) {
+    const index = Number(select.dataset.rowIndex);
+    const action = select.value;
+    if (action === "rename") {
+      const renameInput = select.parentElement.querySelector(".import-rename-input");
+      perRow[index] = { action, rename: (renameInput.value || "").trim() };
+    } else {
+      perRow[index] = { action };
+    }
+  }
+
+  const { added, skipped, replaced } = await importTemplates(sanitized, { perRow });
 
   hideImportDialog();
 
@@ -834,6 +1131,16 @@ async function executeImport() {
   );
   await renderTemplateList();
   await populateCategoryFilter();
+  await renderDefaultsSection();
+}
+
+function applyBulkAction(action) {
+  for (const select of document.querySelectorAll(".import-action-select")) {
+    // Skip rows that don't offer this action (e.g. NEW rows have no "replace").
+    if (![...select.options].some((o) => o.value === action)) continue;
+    select.value = action;
+    select.dispatchEvent(new Event("change"));
+  }
 }
 
 const IMPORT_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -865,11 +1172,40 @@ async function handleImport(file) {
     return;
   }
 
-  showImportDialog(analysis, analysis.valid);
+  showImportDialog(analysis, analysis.valid, existingTemplates);
 }
 
 function filterTemplates() {
   filterTemplateList("#template-list .template-card");
+}
+
+// Tab navigation
+for (const btn of document.querySelectorAll(".tab-btn")) {
+  btn.addEventListener("click", async () => {
+    const target = btn.dataset.tab;
+    if (target === "usage") {
+      showView("usage");
+      await renderUsageView();
+    } else {
+      showView("list");
+    }
+  });
+}
+
+document.getElementById("usage-filter").addEventListener("change", renderUsageView);
+document.getElementById("btn-export-usage").addEventListener("click", handleExportUsage);
+
+for (const th of document.querySelectorAll("#usage-table th[data-sort-key]")) {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sortKey;
+    if (usageSortKey === key) {
+      usageSortDir = usageSortDir === "asc" ? "desc" : "asc";
+    } else {
+      usageSortKey = key;
+      usageSortDir = key === "name" || key === "category" ? "asc" : "desc";
+    }
+    renderUsageView();
+  });
 }
 
 document.getElementById("search-input").addEventListener("input", filterTemplates);
@@ -895,6 +1231,10 @@ document.getElementById("import-file-input").addEventListener("change", (e) => {
 
 document.getElementById("import-confirm").addEventListener("click", executeImport);
 document.getElementById("import-cancel").addEventListener("click", hideImportDialog);
+
+for (const btn of document.querySelectorAll(".btn-bulk")) {
+  btn.addEventListener("click", () => applyBulkAction(btn.dataset.bulk));
+}
 
 document.getElementById("btn-add-files").addEventListener("click", () => {
   document.getElementById("file-input").click();

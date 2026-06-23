@@ -319,10 +319,7 @@ describe("applyVariables — recipient tokens", () => {
   });
 
   it("replaces {LAST_MESSAGE_SUBJECT}", () => {
-    assert.strictEqual(
-      applyVariables("Re: {LAST_MESSAGE_SUBJECT}", vars),
-      "Re: Project update"
-    );
+    assert.strictEqual(applyVariables("Re: {LAST_MESSAGE_SUBJECT}", vars), "Re: Project update");
   });
 
   it("inserts {REPLY_QUOTE} verbatim (no escaping) so quote markup survives", () => {
@@ -335,10 +332,7 @@ describe("applyVariables — recipient tokens", () => {
   });
 
   it("missing recipient values resolve to empty strings, not 'undefined'", () => {
-    const result = applyVariables(
-      "Hi {RECIPIENT_FIRSTNAME}, your email {RECIPIENT_EMAIL}",
-      {}
-    );
+    const result = applyVariables("Hi {RECIPIENT_FIRSTNAME}, your email {RECIPIENT_EMAIL}", {});
     assert.strictEqual(result, "Hi , your email ");
     assert.ok(!result.includes("undefined"));
   });
@@ -357,7 +351,12 @@ describe("applyVariables — recipient tokens", () => {
 
 describe("resolveControlFlow — {IF}/{ELSE}/{ENDIF}", () => {
   const ctx = {
-    recipient: { name: "Jane", email: "jane@example.com", domain: "example.com", firstname: "Jane" },
+    recipient: {
+      name: "Jane",
+      email: "jane@example.com",
+      domain: "example.com",
+      firstname: "Jane",
+    },
     identity: { email: "me@example.com", name: "Me" },
   };
 
@@ -459,11 +458,9 @@ describe("extractPromptTokens", () => {
 describe("applyPromptAnswers", () => {
   it("substitutes the provided answer at every occurrence", () => {
     const tokens = extractPromptTokens("Hi {PROMPT:Name}, see you {PROMPT:Name}.");
-    const result = applyPromptAnswers(
-      "Hi {PROMPT:Name}, see you {PROMPT:Name}.",
-      tokens,
-      { "{PROMPT:Name}": "Alice" }
-    );
+    const result = applyPromptAnswers("Hi {PROMPT:Name}, see you {PROMPT:Name}.", tokens, {
+      "{PROMPT:Name}": "Alice",
+    });
     assert.strictEqual(result, "Hi Alice, see you Alice.");
   });
 

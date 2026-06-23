@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "20"
+
+      - name: Verify tag matches manifest.json version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          # Strip the leading "v" — tags are v2.7.0, manifest stores 2.7.0.
+          TAG_VERSION="${TAG#v}"
+          MANIFEST_VERSION="$(node -p "require('./manifest.json').version")"
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "::error::Tag $TAG (=$TAG_VERSION) does not match manifest.json version $MANIFEST_VERSION."
+            echo "::error::Bump manifest.json and package.json before tagging."
+            exit 1
+          fi
+          echo "Tag and manifest agree on version $MANIFEST_VERSION."
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Lint locale files
+        run: npm run lint
+
+      - name: Check formatting
+        run: npx prettier --check "**/*.{js,css,html,json}" --ignore-path .gitignore
+
+      - name: Build XPI
+        id: build
+        run: node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP"
+
+      - name: Upload XPI to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.xpi_path }}
+          body: |
+            **TemplateWing ${{ github.ref_name }}**
+
+            Built automatically from tag `${{ github.ref_name }}` by `.github/workflows/release.yml`.
+
+            - File: `templatewing-${{ steps.build.outputs.xpi_version }}.xpi`
+            - Size: `${{ steps.build.outputs.xpi_size }}` bytes
+            - SHA-256: `${{ steps.build.outputs.xpi_sha256 }}`
+
+            See [CHANGELOG / commit history](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for what changed.

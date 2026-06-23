@@ -7,6 +7,30 @@ import {
   extractBody,
 } from "./message-utils.js";
 
+/**
+ * The full set of single-curly `{NAME}` variables the resolver recognises.
+ * Exported so the linter (`modules/template-lint.js`) can flag unknown tokens
+ * — adding a new variable in this module is intentionally the place that
+ * also expands the allow-list (single source of truth). Listed in the order
+ * they're documented in the README.
+ */
+export const SUPPORTED_VARIABLES = Object.freeze([
+  "DATE",
+  "TIME",
+  "DATETIME",
+  "YEAR",
+  "WEEKDAY",
+  "SENDER_NAME",
+  "SENDER_EMAIL",
+  "ACCOUNT_NAME",
+  "ACCOUNT_EMAIL",
+  "RECIPIENT_NAME",
+  "RECIPIENT_FIRSTNAME",
+  "RECIPIENT_EMAIL",
+  "REPLY_QUOTE",
+  "LAST_MESSAGE_SUBJECT",
+]);
+
 export const WEEKDAY_NAMES = Object.freeze([
   "Sunday",
   "Monday",

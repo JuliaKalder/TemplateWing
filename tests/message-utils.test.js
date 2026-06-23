@@ -186,10 +186,7 @@ describe("quotePlaintext", () => {
 
 describe("quoteHtml", () => {
   it("wraps content in a cite blockquote", () => {
-    assert.strictEqual(
-      quoteHtml("<p>hi</p>"),
-      '<blockquote type="cite"><p>hi</p></blockquote>'
-    );
+    assert.strictEqual(quoteHtml("<p>hi</p>"), '<blockquote type="cite"><p>hi</p></blockquote>');
   });
   it("returns empty string for empty input", () => {
     assert.strictEqual(quoteHtml(""), "");

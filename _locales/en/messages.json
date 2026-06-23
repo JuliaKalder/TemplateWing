@@ -532,5 +532,164 @@
   "promptDialogCancel": {
     "message": "Cancel",
     "description": "Cancel button in the prompt dialog"
+  },
+  "lintSummaryClean": {
+    "message": "All templates pass the linter — no issues found.",
+    "description": "Shown above the template list when no template has lint issues"
+  },
+  "lintSummaryDirty": {
+    "message": "$TEMPLATES$ template(s) need attention: $ERRORS$ error(s), $WARNINGS$ warning(s).",
+    "description": "Shown above the template list when at least one template has lint issues",
+    "placeholders": {
+      "templates": { "content": "$1", "example": "3" },
+      "errors": { "content": "$2", "example": "2" },
+      "warnings": { "content": "$3", "example": "5" }
+    }
+  },
+  "lintBadgeErrors": {
+    "message": "$COUNT$ lint issue(s) — error",
+    "description": "ARIA label for the red lint badge",
+    "placeholders": {
+      "count": { "content": "$1", "example": "2" }
+    }
+  },
+  "lintBadgeWarnings": {
+    "message": "$COUNT$ lint issue(s) — warning",
+    "description": "ARIA label for the yellow lint badge",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1" }
+    }
+  },
+  "tabTemplates": {
+    "message": "Templates",
+    "description": "Options page: Templates tab label"
+  },
+  "tabUsage": {
+    "message": "Usage",
+    "description": "Options page: Usage tab label"
+  },
+  "usageTitle": {
+    "message": "Template usage",
+    "description": "Heading of the usage dashboard"
+  },
+  "usageFilterLabel": {
+    "message": "Show",
+    "description": "Label preceding the unused-since filter dropdown"
+  },
+  "usageFilterAll": {
+    "message": "All templates",
+    "description": "Filter option: show every template"
+  },
+  "usageFilter30": {
+    "message": "Unused for 30+ days",
+    "description": "Filter option: unused for ≥30 days"
+  },
+  "usageFilter90": {
+    "message": "Unused for 90+ days",
+    "description": "Filter option: unused for ≥90 days"
+  },
+  "usageFilter365": {
+    "message": "Unused for 1+ year",
+    "description": "Filter option: unused for ≥365 days"
+  },
+  "usageFilterNever": {
+    "message": "Never used",
+    "description": "Filter option: never used templates only"
+  },
+  "usageExportCsv": {
+    "message": "Export CSV",
+    "description": "Button to export usage data as CSV"
+  },
+  "usageColName": {
+    "message": "Name",
+    "description": "Usage table column header: template name"
+  },
+  "usageColCategory": {
+    "message": "Category",
+    "description": "Usage table column header: category"
+  },
+  "usageColIdentities": {
+    "message": "Accounts",
+    "description": "Usage table column header: identity restriction count"
+  },
+  "usageColCount": {
+    "message": "Inserts",
+    "description": "Usage table column header: usage count"
+  },
+  "usageColLastUsed": {
+    "message": "Last used",
+    "description": "Usage table column header: last used date"
+  },
+  "usageColAvgPerWeek": {
+    "message": "Avg / week",
+    "description": "Usage table column header: average inserts per week"
+  },
+  "usageChartLabel": {
+    "message": "Top 10 templates by usage",
+    "description": "Accessible label for the top-10 bar chart"
+  },
+  "usageEmpty": {
+    "message": "No templates match the current filter.",
+    "description": "Shown when the usage filter excludes every template"
+  },
+  "importColName": {
+    "message": "Template",
+    "description": "Import preview column: incoming template name"
+  },
+  "importColStatus": {
+    "message": "Status",
+    "description": "Import preview column: NEW / DUPLICATE / INVALID"
+  },
+  "importColAction": {
+    "message": "Action",
+    "description": "Import preview column: per-row decision"
+  },
+  "importStatusNew": {
+    "message": "NEW",
+    "description": "Status badge: incoming template name does not exist"
+  },
+  "importStatusDuplicate": {
+    "message": "DUPLICATE",
+    "description": "Status badge: a template with this name already exists"
+  },
+  "importActionSkip": {
+    "message": "Skip",
+    "description": "Per-row action: do nothing for this row"
+  },
+  "importActionAdd": {
+    "message": "Add",
+    "description": "Per-row action for NEW rows: add to library"
+  },
+  "importActionAddCopy": {
+    "message": "Add as copy",
+    "description": "Per-row action for DUPLICATE rows: import with a suffixed name"
+  },
+  "importActionReplace": {
+    "message": "Replace existing",
+    "description": "Per-row action for DUPLICATE rows: overwrite the existing template"
+  },
+  "importActionRename": {
+    "message": "Edit name",
+    "description": "Per-row action: import under a user-supplied new name"
+  },
+  "importRenamePlaceholder": {
+    "message": "New template name",
+    "description": "Placeholder in the per-row rename input"
+  },
+  "importBulkLabel": {
+    "message": "Bulk:",
+    "description": "Label preceding the bulk-action buttons in the import preview"
+  },
+  "importBulkSkip": {
+    "message": "Skip all duplicates",
+    "description": "Bulk-action button: set every applicable row to skip"
+  },
+  "importBulkAppend": {
+    "message": "Add all as copies",
+    "description": "Bulk-action button: set every applicable row to add-copy/append"
+  },
+  "importBulkReplace": {
+    "message": "Replace all duplicates",
+    "description": "Bulk-action button: set every applicable row to replace"
   }
 }

@@ -50,7 +50,10 @@ export function parseRecipient(raw) {
 
   const named = s.match(/^\s*(.+?)\s*<\s*([^<>\s]+@[^<>\s]+)\s*>\s*$/);
   if (named) {
-    name = named[1].trim().replace(/^"(.*)"$/, "$1").trim();
+    name = named[1]
+      .trim()
+      .replace(/^"(.*)"$/, "$1")
+      .trim();
     email = named[2].trim();
   } else {
     const bare = s.match(/^\s*([^\s<>@]+@[^\s<>]+)\s*$/);

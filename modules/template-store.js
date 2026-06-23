@@ -400,17 +400,21 @@ export async function setDefault(identityId, templateId) {
 // ---- Import merge strategy ----
 
 /**
- * Import templates into storage using the specified merge mode.
+ * Import templates into storage using either a global merge mode or
+ * per-row decisions.
  *
  * @param {Array<Object>} validTemplates - Pre-validated (and pre-sanitized) template objects to import.
  *   Each template should have tracking fields (id, createdAt, updatedAt, usageCount, lastUsedAt) already stripped.
- * @param {"append"|"skip"|"replace"} mode - Merge strategy:
- *   - "append"  — always add as a new template, even if a duplicate name exists
- *   - "skip"    — leave existing templates unchanged when a name collision is found
- *   - "replace" — overwrite the existing template when a name collision is found
+ * @param {"append"|"skip"|"replace"|object} modeOrDecisions - Either:
+ *   - A legacy global mode string ("append" | "skip" | "replace"), kept for
+ *     backwards compatibility with pre-2.7 callers and tests.
+ *   - An object `{ default?: globalMode, perRow?: { [index]: { action, rename? } } }`,
+ *     where `action` is one of "skip" | "append" | "replace" | "rename".
+ *     For "rename" the row's `rename` field supplies the new name.
+ *     Rows not listed in `perRow` fall through to `default` (defaults to "append").
  * @returns {Promise<{added: number, skipped: number, replaced: number}>}
  */
-export async function importTemplates(validTemplates, mode) {
+export async function importTemplates(validTemplates, modeOrDecisions) {
   const existingTemplates = await getTemplates();
   const existingByName = new Map(existingTemplates.map((t) => [t.name.toLowerCase(), t]));
 
@@ -418,16 +422,37 @@ export async function importTemplates(validTemplates, mode) {
   let skipped = 0;
   let replaced = 0;
 
-  for (const template of validTemplates) {
+  const isLegacyMode = typeof modeOrDecisions === "string";
+  const legacyMode = isLegacyMode ? modeOrDecisions : null;
+  const decisions = isLegacyMode ? {} : modeOrDecisions || {};
+  const defaultAction = decisions.default || "append";
+  const perRow = decisions.perRow || {};
+
+  for (let index = 0; index < validTemplates.length; index++) {
+    const template = validTemplates[index];
     const nameKey = template.name.trim().toLowerCase();
     const existing = existingByName.get(nameKey);
 
+    // Resolve per-row decision. Per-row entries always win; otherwise the
+    // legacy global string is used, then the new-style default.
+    const perRowDecision = perRow[index];
+    let action;
+    let renameTo = null;
+    if (perRowDecision) {
+      action = perRowDecision.action || defaultAction;
+      renameTo = perRowDecision.rename || null;
+    } else if (legacyMode) {
+      action = legacyMode;
+    } else {
+      action = defaultAction;
+    }
+
     if (existing) {
-      if (mode === "skip") {
+      if (action === "skip") {
         skipped++;
         continue;
       }
-      if (mode === "replace") {
+      if (action === "replace") {
         try {
           const saved = await saveTemplate({ ...template, id: existing.id });
           existingByName.set(nameKey, saved);
@@ -438,12 +463,38 @@ export async function importTemplates(validTemplates, mode) {
         }
         continue;
       }
+      if (action === "rename" && renameTo) {
+        try {
+          const saved = await saveTemplate({ ...template, name: renameTo });
+          existingByName.set(saved.name.toLowerCase(), saved);
+          added++;
+        } catch (err) {
+          console.error("TemplateWing: import rename failed for", template.name, err);
+          skipped++;
+        }
+        continue;
+      }
+      // action === "append" with a name collision: defer to the unique-name
+      // branch below by suffixing " (imported)" so saveTemplate doesn't
+      // reject DUPLICATE_NAME.
+      try {
+        const saved = await saveTemplate({
+          ...template,
+          name: dedupeName(template.name, existingByName),
+        });
+        existingByName.set(saved.name.toLowerCase(), saved);
+        added++;
+      } catch (err) {
+        console.error("TemplateWing: import append failed for", template.name, err);
+        skipped++;
+      }
+      continue;
     }
 
-    // mode === "append" or no duplicate
+    // No collision — just save as-is.
     try {
       const saved = await saveTemplate(template);
-      existingByName.set(nameKey, saved);
+      existingByName.set(saved.name.toLowerCase(), saved);
       added++;
     } catch (err) {
       console.error("TemplateWing: import failed for template", template.name, err);
@@ -452,6 +503,21 @@ export async function importTemplates(validTemplates, mode) {
   }
 
   return { added, skipped, replaced };
+}
+
+/**
+ * For the "Add as copy" path: append " (imported)", " (imported 2)", … until
+ * the candidate name is not in `existingByName` (case-insensitive).
+ */
+function dedupeName(originalName, existingByName) {
+  let suffix = "";
+  let n = 1;
+  while (true) {
+    const candidate = (originalName + " (imported" + (n === 1 ? "" : " " + n) + ")").trim();
+    if (!existingByName.has(candidate.toLowerCase())) return candidate;
+    n++;
+    if (n > 50) return originalName + " " + Date.now(); // safety valve
+  }
 }
 
 // Test-only: reset the in-memory cache so tests using a fresh messenger stub

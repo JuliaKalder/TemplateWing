@@ -10,3 +10,5 @@ Thumbs.db
 credentials.json
 .web-ext-config.js
 .claude/
+playwright-report/
+test-results/

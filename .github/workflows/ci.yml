@@ -16,6 +16,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run unit tests
         run: npm test
 
@@ -24,3 +27,9 @@ jobs:
 
       - name: Check formatting
         run: npx prettier --check "**/*.{js,css,html,json}" --ignore-path .gitignore
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium chromium-headless-shell
+
+      - name: Run UI tests
+        run: npm run test:ui

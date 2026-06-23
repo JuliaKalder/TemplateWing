@@ -22,6 +22,7 @@ const {
   getPopupSortedTemplates,
   getDefaults,
   setDefault,
+  importTemplates,
   _resetCacheForTests,
 } = await import("../modules/template-store.js");
 
@@ -485,3 +486,109 @@ describe("getTemplates triggers migration on stale schema", () => {
 
 // Suppress unused-import lint for SETTINGS_KEY (it's re-exported for parity).
 void SETTINGS_KEY;
+
+// ---- importTemplates: legacy global mode + per-row decisions ----
+
+describe("importTemplates — legacy global mode (backwards-compat)", () => {
+  beforeEach(() => {
+    installMessengerMock();
+    _resetCacheForTests();
+  });
+
+  it("'append' renames the imported copy when a name collides", async () => {
+    await saveTemplate({ name: "Hello", body: "old" });
+    const result = await importTemplates([{ name: "Hello", body: "new" }], "append");
+    assert.strictEqual(result.added, 1);
+    assert.strictEqual(result.skipped, 0);
+    const all = await getTemplates();
+    const names = all.map((t) => t.name).sort();
+    assert.deepStrictEqual(names, ["Hello", "Hello (imported)"]);
+  });
+
+  it("'skip' leaves the existing template untouched when names collide", async () => {
+    await saveTemplate({ name: "Hello", body: "original" });
+    const result = await importTemplates([{ name: "Hello", body: "incoming" }], "skip");
+    assert.strictEqual(result.skipped, 1);
+    const all = await getTemplates();
+    assert.strictEqual(all.length, 1);
+    assert.strictEqual(all[0].body, "original");
+  });
+
+  it("'replace' overwrites the existing template on name collision", async () => {
+    await saveTemplate({ name: "Hello", body: "old" });
+    const result = await importTemplates([{ name: "Hello", body: "new" }], "replace");
+    assert.strictEqual(result.replaced, 1);
+    const [tpl] = await getTemplates();
+    assert.strictEqual(tpl.body, "new");
+  });
+});
+
+describe("importTemplates — per-row decisions", () => {
+  beforeEach(() => {
+    installMessengerMock();
+    _resetCacheForTests();
+  });
+
+  it("respects per-row 'skip' / 'replace' choices", async () => {
+    await saveTemplate({ name: "A", body: "orig-A" });
+    await saveTemplate({ name: "B", body: "orig-B" });
+    const result = await importTemplates(
+      [
+        { name: "A", body: "new-A" },
+        { name: "B", body: "new-B" },
+      ],
+      {
+        perRow: {
+          0: { action: "skip" },
+          1: { action: "replace" },
+        },
+      }
+    );
+    assert.strictEqual(result.skipped, 1);
+    assert.strictEqual(result.replaced, 1);
+    const all = await getTemplates();
+    const byName = Object.fromEntries(all.map((t) => [t.name, t.body]));
+    assert.strictEqual(byName["A"], "orig-A");
+    assert.strictEqual(byName["B"], "new-B");
+  });
+
+  it("supports 'rename' action with a per-row new name", async () => {
+    await saveTemplate({ name: "Greeting", body: "" });
+    const result = await importTemplates([{ name: "Greeting", body: "fresh" }], {
+      perRow: {
+        0: { action: "rename", rename: "Greeting from import" },
+      },
+    });
+    assert.strictEqual(result.added, 1);
+    const all = await getTemplates();
+    const names = all.map((t) => t.name).sort();
+    assert.deepStrictEqual(names, ["Greeting", "Greeting from import"]);
+  });
+
+  it("falls back to default action when no per-row entry", async () => {
+    await saveTemplate({ name: "A", body: "orig" });
+    const result = await importTemplates(
+      [
+        { name: "A", body: "new" },
+        { name: "C", body: "fresh" },
+      ],
+      { default: "skip" }
+    );
+    assert.strictEqual(result.skipped, 1);
+    assert.strictEqual(result.added, 1);
+  });
+
+  it("dedupeName escalates the counter when 'imported' is already taken", async () => {
+    await saveTemplate({ name: "A", body: "x" });
+    await saveTemplate({ name: "A (imported)", body: "x" });
+    const result = await importTemplates([{ name: "A", body: "new" }], "append");
+    assert.strictEqual(result.added, 1);
+    const all = await getTemplates();
+    assert.ok(all.some((t) => t.name === "A (imported 2)"));
+  });
+
+  it("handles a non-collision row with default 'append'", async () => {
+    const result = await importTemplates([{ name: "Brand new", body: "x" }], {});
+    assert.strictEqual(result.added, 1);
+  });
+});

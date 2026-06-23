@@ -29,6 +29,9 @@ Save and reuse email templates — including file attachments — directly from 
 - **Favorites / pinning** — Click the ★ on any template to keep it pinned to the top of the popup, regardless of recent-use sort
 - **Popup search** — Autofocused search box filters templates instantly across name, subject, and category; Enter inserts the top match, Esc clears
 - **Default template per account** — In the options page, pick a template to auto-insert whenever you open a new compose window with a given account (replies and forwards are skipped)
+- **Per-row import preview** — Importing a JSON file now opens a preview table where every incoming template gets its own action (Skip / Add as copy / Replace existing / Edit name); bulk-action buttons cover the common cases
+- **Usage dashboard** — New "Usage" tab with a sortable table, a top-10 inline SVG bar chart, "unused since 30/90/365 days / never" filter, and RFC-4180 CSV export
+- **Template linter** — Inline badges flag unknown variables, broken nested-template references, cycles, oversize attachments, and invalid recipients; a one-line summary at the top of the list tells you whether everything is clean
 - **Keyboard shortcuts** — Insert your first 9 templates with `Ctrl+Shift+1` – `Ctrl+Shift+9` directly from the compose window
 - **Recent templates first** — The popup sorts by most recently used, so your go-to templates are always at the top; the options page shows a usage count per template
 - **Import / Export with merge modes** — Back up all templates as a JSON file and restore or share them on any device. On import, choose to *add all*, *skip duplicates*, or *update existing by name*, with a pre-import validation summary
@@ -78,20 +81,17 @@ Reload after changes by clicking **Reload** on the Debug Add-ons page (no restar
 
 ### Build XPI
 
-```powershell
-powershell -ExecutionPolicy Bypass -File build-xpi.ps1
-```
-
-This creates `templatewing-<version>.xpi` in the parent directory.
-
-Alternatively, on any OS with `zip` installed:
+Portable Node-based builder (works on macOS, Linux, Windows; same file list as CI):
 
 ```bash
-zip -r ../templatewing.xpi manifest.json background.html background.js \
-  LICENSE modules/ popup/ options/ prompt-dialog/ images/ _locales/ \
-  -x ".*" -x "*.md" -x "build-xpi.ps1" -x "tests/*" -x "scripts/*" \
-  -x "package.json" -x "node_modules/*"
+npm run build:xpi
 ```
+
+This creates `templatewing-<version>.xpi` in the parent directory and prints the SHA-256.
+
+Tags pushed to GitHub are built and released automatically by `.github/workflows/release.yml`.
+
+The legacy PowerShell script `build-xpi.ps1` now just delegates to the Node builder and is kept only for backwards compatibility.
 
 ### Project structure
 

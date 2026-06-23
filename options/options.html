@@ -6,6 +6,11 @@
   </head>
   <body>
     <div class="options-container">
+      <nav class="tab-nav" id="tab-nav">
+        <button class="tab-btn active" data-tab="list" data-i18n="tabTemplates"></button>
+        <button class="tab-btn" data-tab="usage" data-i18n="tabUsage"></button>
+      </nav>
+
       <!-- View: Template list -->
       <div id="view-list">
         <h1 data-i18n="optionsTitle"></h1>
@@ -30,6 +35,8 @@
           </select>
         </div>
 
+        <div id="lint-summary" class="lint-summary" hidden></div>
+
         <div id="template-list" class="template-list">
           <!-- Filled dynamically -->
         </div>
@@ -45,6 +52,49 @@
             <!-- Filled dynamically: one row per identity. -->
           </div>
         </section>
+      </div>
+
+      <!-- View: Usage dashboard -->
+      <div id="view-usage" hidden>
+        <h1 data-i18n="usageTitle"></h1>
+
+        <div class="usage-toolbar">
+          <label>
+            <span data-i18n="usageFilterLabel"></span>
+            <select id="usage-filter">
+              <option value="all" data-i18n="usageFilterAll"></option>
+              <option value="30" data-i18n="usageFilter30"></option>
+              <option value="90" data-i18n="usageFilter90"></option>
+              <option value="365" data-i18n="usageFilter365"></option>
+              <option value="never" data-i18n="usageFilterNever"></option>
+            </select>
+          </label>
+          <button id="btn-export-usage" data-i18n="usageExportCsv"></button>
+        </div>
+
+        <div id="usage-chart" class="usage-chart" aria-hidden="true"></div>
+
+        <div id="usage-table-wrapper" class="usage-table-wrapper">
+          <table id="usage-table" class="usage-table">
+            <thead>
+              <tr>
+                <th data-sort-key="name" data-i18n="usageColName"></th>
+                <th data-sort-key="category" data-i18n="usageColCategory"></th>
+                <th data-sort-key="identities" data-i18n="usageColIdentities"></th>
+                <th data-sort-key="usageCount" data-i18n="usageColCount"></th>
+                <th data-sort-key="lastUsedAt" data-i18n="usageColLastUsed"></th>
+                <th data-sort-key="avgPerWeek" data-i18n="usageColAvgPerWeek"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filled dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="usage-empty" class="empty-state" hidden>
+          <p data-i18n="usageEmpty"></p>
+        </div>
       </div>
 
       <!-- View: Template editor -->
@@ -337,35 +387,49 @@
       </div>
     </div>
 
-    <!-- Import dialog modal -->
+    <!-- Import preview dialog -->
     <div id="import-dialog" class="modal-overlay" hidden>
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-wide">
         <h3 data-i18n="importDialogTitle"></h3>
         <div id="import-summary" class="import-summary"></div>
-        <fieldset class="import-mode-fieldset">
-          <legend data-i18n="importModeLabel"></legend>
-          <label class="import-mode-option">
-            <input type="radio" name="import-mode" value="append" checked />
-            <span>
-              <strong data-i18n="importModeAppend"></strong>
-              <small data-i18n="importModeAppendDesc"></small>
-            </span>
-          </label>
-          <label class="import-mode-option">
-            <input type="radio" name="import-mode" value="skip" />
-            <span>
-              <strong data-i18n="importModeSkip"></strong>
-              <small data-i18n="importModeSkipDesc"></small>
-            </span>
-          </label>
-          <label class="import-mode-option">
-            <input type="radio" name="import-mode" value="replace" />
-            <span>
-              <strong data-i18n="importModeReplace"></strong>
-              <small data-i18n="importModeReplaceDesc"></small>
-            </span>
-          </label>
-        </fieldset>
+
+        <div class="import-bulk-row">
+          <span data-i18n="importBulkLabel"></span>
+          <button
+            type="button"
+            class="btn-bulk"
+            data-bulk="skip"
+            data-i18n="importBulkSkip"
+          ></button>
+          <button
+            type="button"
+            class="btn-bulk"
+            data-bulk="append"
+            data-i18n="importBulkAppend"
+          ></button>
+          <button
+            type="button"
+            class="btn-bulk"
+            data-bulk="replace"
+            data-i18n="importBulkReplace"
+          ></button>
+        </div>
+
+        <div class="import-table-wrapper">
+          <table class="import-table" id="import-preview-table">
+            <thead>
+              <tr>
+                <th data-i18n="importColName"></th>
+                <th data-i18n="importColStatus"></th>
+                <th data-i18n="importColAction"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filled dynamically -->
+            </tbody>
+          </table>
+        </div>
+
         <div class="modal-actions">
           <button id="import-confirm" class="btn-primary" data-i18n="importDialogConfirm"></button>
           <button id="import-cancel" data-i18n="importDialogCancel"></button>
