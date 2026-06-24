@@ -8,6 +8,26 @@ import {
 } from "./message-utils.js";
 
 /**
+ * If the compose window has no recipient yet (typical for a fresh "Write"
+ * mail, not a reply — TB pre-fills `to` on reply), fall back to the first
+ * address listed in the template itself. Lets `{IF recipient.domain==…}`
+ * branches evaluate against the recipient the template is about to write,
+ * instead of always falling into ELSE on a blank compose.
+ */
+export function applyTemplateRecipientFallback(recipientVars, templateTo) {
+  if (recipientVars.recipientEmail) return recipientVars;
+  if (!Array.isArray(templateTo) || templateTo.length === 0) return recipientVars;
+  const parsed = parseRecipient(templateTo[0]);
+  if (!parsed) return recipientVars;
+  return {
+    ...recipientVars,
+    recipientName: parsed.name,
+    recipientFirstname: parsed.firstname,
+    recipientEmail: parsed.email,
+  };
+}
+
+/**
  * The full set of single-curly `{NAME}` variables the resolver recognises.
  * Exported so the linter (`modules/template-lint.js`) can flag unknown tokens
  * — adding a new variable in this module is intentionally the place that
@@ -750,7 +770,8 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
   // and (for replies) one messages.getFull call, and the buildVariableContext
   // helper still needs them for {IF} expressions.
   const identityVars = await resolveIdentityVars(tabId);
-  const recipientVars = await resolveRecipientVars(tabId, !isPlainText);
+  let recipientVars = await resolveRecipientVars(tabId, !isPlainText);
+  recipientVars = applyTemplateRecipientFallback(recipientVars, template.to);
   const ctx = buildVariableContext({ identityVars, recipientVars });
 
   // Pipeline: nested → vars → control flow → prompts. The current order

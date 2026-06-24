@@ -15,6 +15,7 @@ const {
   extractPromptTokens,
   applyPromptAnswers,
   buildVariableContext,
+  applyTemplateRecipientFallback,
 } = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
@@ -508,5 +509,35 @@ describe("buildVariableContext", () => {
       recipientVars: { recipientEmail: "" },
     });
     assert.strictEqual(ctx.recipient.domain, "");
+  });
+});
+
+describe("applyTemplateRecipientFallback", () => {
+  const empty = { recipientName: "", recipientFirstname: "", recipientEmail: "" };
+
+  it("fills recipient from template.to[0] when compose has no recipient", () => {
+    const result = applyTemplateRecipientFallback(empty, ["Jane Doe <jane@test.com>"]);
+    assert.strictEqual(result.recipientEmail, "jane@test.com");
+    assert.strictEqual(result.recipientName, "Jane Doe");
+    assert.strictEqual(result.recipientFirstname, "Jane");
+  });
+
+  it("keeps existing recipient when compose already has one (reply case)", () => {
+    const existing = {
+      recipientName: "Original",
+      recipientFirstname: "Original",
+      recipientEmail: "orig@other.com",
+    };
+    const result = applyTemplateRecipientFallback(existing, ["jane@test.com"]);
+    assert.strictEqual(result.recipientEmail, "orig@other.com");
+  });
+
+  it("no-op when template.to is empty or missing", () => {
+    assert.deepStrictEqual(applyTemplateRecipientFallback(empty, []), empty);
+    assert.deepStrictEqual(applyTemplateRecipientFallback(empty, undefined), empty);
+  });
+
+  it("no-op when template.to[0] is unparseable", () => {
+    assert.deepStrictEqual(applyTemplateRecipientFallback(empty, ["not an email"]), empty);
   });
 });
