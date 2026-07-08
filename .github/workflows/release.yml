@@ -45,7 +45,7 @@ jobs:
         run: node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP"
 
       - name: Upload XPI to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.build.outputs.xpi_path }}
           body: |
