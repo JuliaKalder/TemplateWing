@@ -458,87 +458,87 @@
     "description": "Warning shown when body is empty/whitespace in replace insert mode"
   },
   "popupSearchPlaceholder": {
-    "message": "Search… (Enter inserts top match)",
+    "message": "Cerca…",
     "description": "Placeholder for the popup search box"
   },
   "popupNoMatch": {
-    "message": "No templates match the current filter.",
+    "message": "Nessun modello corrisponde al filtro attuale.",
     "description": "Shown when search/category filter hides every template"
   },
   "popupPinTemplate": {
-    "message": "Pin to top",
+    "message": "Fissa in alto",
     "description": "Tooltip for the pin (favorite) icon when a template is not pinned"
   },
   "popupUnpinTemplate": {
-    "message": "Unpin template",
+    "message": "Non fissare più in alto",
     "description": "Tooltip for the pin icon when a template is already pinned"
   },
   "optionsDefaultsTitle": {
-    "message": "Default template per account",
+    "message": "Modello predefinito per account",
     "description": "Heading of the defaults section on the options page"
   },
   "optionsDefaultsHelp": {
-    "message": "Auto-insert the selected template when you open a new compose window with the matching account. Replies and forwards are skipped.",
+    "message": "Inserisce automaticamente il modello selezionato all’apertura di una nuova finestra di composizione con l’account corrispondente. Risposte e inoltri vengono ignorati.",
     "description": "Help text for the defaults section"
   },
   "optionsDefaultsNone": {
-    "message": "— none —",
+    "message": "— nessuno —",
     "description": "Placeholder option in defaults select"
   },
   "optionsDefaultsNoIdentities": {
-    "message": "No mail accounts configured.",
+    "message": "Nessun account di posta configurato.",
     "description": "Shown in defaults section when no identities exist"
   },
   "optionsVariableRecipientName": {
-    "message": "{RECIPIENT_NAME} — First To: recipient's display name",
+    "message": "{RECIPIENT_NAME} — Nome visualizzato del primo destinatario A:",
     "description": "Describes RECIPIENT_NAME variable"
   },
   "optionsVariableRecipientFirstname": {
-    "message": "{RECIPIENT_FIRSTNAME} — First To: recipient's first name",
+    "message": "{RECIPIENT_FIRSTNAME} — Nome del primo destinatario A:",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
   "optionsVariableRecipientEmail": {
-    "message": "{RECIPIENT_EMAIL} — First To: recipient's email address",
+    "message": "{RECIPIENT_EMAIL} — Indirizzo email del primo destinatario A:",
     "description": "Describes RECIPIENT_EMAIL variable"
   },
   "optionsVariableReplyQuote": {
-    "message": "{REPLY_QUOTE} — Quoted body of the message being replied to",
+    "message": "{REPLY_QUOTE} — Corpo citato del messaggio a cui stai rispondendo",
     "description": "Describes REPLY_QUOTE variable"
   },
   "optionsVariableLastSubject": {
-    "message": "{LAST_MESSAGE_SUBJECT} — Subject of the message being replied to (Re:/Fwd: stripped)",
+    "message": "{LAST_MESSAGE_SUBJECT} — Oggetto del messaggio a cui stai rispondendo (senza Re:/Fwd:)",
     "description": "Describes LAST_MESSAGE_SUBJECT variable"
   },
   "optionsVariableIf": {
-    "message": "Conditional: {IF lhs==\"value\"}…{ELSE}…{ENDIF}",
+    "message": "Condizione: {IF lhs==\"valore\"}…{ELSE}…{ENDIF}",
     "description": "Describes IF/ELSE/ENDIF control flow"
   },
   "optionsVariablePrompt": {
-    "message": "{PROMPT:Label:default} — Ask the user for a value at insert time",
+    "message": "{PROMPT:Etichetta:predefinito} — Chiede un valore al momento dell’inserimento",
     "description": "Describes PROMPT variable"
   },
   "optionsVariableChoice": {
-    "message": "{CHOICE:Label:opt1|opt2|opt3} — Ask the user to pick one option",
+    "message": "{CHOICE:Etichetta:opz1|opz2|opz3} — Chiede di scegliere un’opzione",
     "description": "Describes CHOICE variable"
   },
   "promptDialogTitle": {
-    "message": "Fill in template values",
+    "message": "Compila i valori del modello",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"
   },
   "promptDialogSubmit": {
-    "message": "Insert",
+    "message": "Inserisci",
     "description": "Submit button in the prompt dialog"
   },
   "promptDialogCancel": {
-    "message": "Cancel",
+    "message": "Annulla",
     "description": "Cancel button in the prompt dialog"
   },
   "lintSummaryClean": {
-    "message": "All templates pass the linter — no issues found.",
+    "message": "Tutti i modelli superano il controllo: nessun problema rilevato.",
     "description": "Shown above the template list when no template has lint issues"
   },
   "lintSummaryDirty": {
-    "message": "$TEMPLATES$ template(s) need attention: $ERRORS$ error(s), $WARNINGS$ warning(s).",
+    "message": "$TEMPLATES$ modello/i da controllare: $ERRORS$ errore/i, $WARNINGS$ avviso/i.",
     "description": "Shown above the template list when at least one template has lint issues",
     "placeholders": {
       "templates": {
@@ -556,7 +556,7 @@
     }
   },
   "lintBadgeErrors": {
-    "message": "$COUNT$ lint issue(s) — error",
+    "message": "$COUNT$ problema/i rilevato/i — errore",
     "description": "ARIA label for the red lint badge",
     "placeholders": {
       "count": {
@@ -566,7 +566,7 @@
     }
   },
   "lintBadgeWarnings": {
-    "message": "$COUNT$ lint issue(s) — warning",
+    "message": "$COUNT$ problema/i rilevato/i — avviso",
     "description": "ARIA label for the yellow lint badge",
     "placeholders": {
       "count": {
@@ -576,135 +576,343 @@
     }
   },
   "tabTemplates": {
-    "message": "Templates",
+    "message": "Modelli",
     "description": "Options page: Templates tab label"
   },
   "tabUsage": {
-    "message": "Usage",
+    "message": "Utilizzo",
     "description": "Options page: Usage tab label"
   },
   "usageTitle": {
-    "message": "Template usage",
+    "message": "Utilizzo dei modelli",
     "description": "Heading of the usage dashboard"
   },
   "usageFilterLabel": {
-    "message": "Show",
+    "message": "Mostra",
     "description": "Label preceding the unused-since filter dropdown"
   },
   "usageFilterAll": {
-    "message": "All templates",
+    "message": "Tutti i modelli",
     "description": "Filter option: show every template"
   },
   "usageFilter30": {
-    "message": "Unused for 30+ days",
+    "message": "Non usati da 30 giorni o più",
     "description": "Filter option: unused for ≥30 days"
   },
   "usageFilter90": {
-    "message": "Unused for 90+ days",
+    "message": "Non usati da 90 giorni o più",
     "description": "Filter option: unused for ≥90 days"
   },
   "usageFilter365": {
-    "message": "Unused for 1+ year",
+    "message": "Non usati da 1 anno o più",
     "description": "Filter option: unused for ≥365 days"
   },
   "usageFilterNever": {
-    "message": "Never used",
+    "message": "Mai usati",
     "description": "Filter option: never used templates only"
   },
   "usageExportCsv": {
-    "message": "Export CSV",
+    "message": "Esporta CSV",
     "description": "Button to export usage data as CSV"
   },
   "usageColName": {
-    "message": "Name",
+    "message": "Nome",
     "description": "Usage table column header: template name"
   },
   "usageColCategory": {
-    "message": "Category",
+    "message": "Categoria",
     "description": "Usage table column header: category"
   },
   "usageColIdentities": {
-    "message": "Accounts",
+    "message": "Account",
     "description": "Usage table column header: identity restriction count"
   },
   "usageColCount": {
-    "message": "Inserts",
+    "message": "Inserimenti",
     "description": "Usage table column header: usage count"
   },
   "usageColLastUsed": {
-    "message": "Last used",
+    "message": "Ultimo utilizzo",
     "description": "Usage table column header: last used date"
   },
   "usageColAvgPerWeek": {
-    "message": "Avg / week",
+    "message": "Media / settimana",
     "description": "Usage table column header: average inserts per week"
   },
   "usageChartLabel": {
-    "message": "Top 10 templates by usage",
+    "message": "I 10 modelli più usati",
     "description": "Accessible label for the top-10 bar chart"
   },
   "usageEmpty": {
-    "message": "No templates match the current filter.",
+    "message": "Nessun modello corrisponde al filtro attuale.",
     "description": "Shown when the usage filter excludes every template"
   },
   "importColName": {
-    "message": "Template",
+    "message": "Modello",
     "description": "Import preview column: incoming template name"
   },
   "importColStatus": {
-    "message": "Status",
+    "message": "Stato",
     "description": "Import preview column: NEW / DUPLICATE / INVALID"
   },
   "importColAction": {
-    "message": "Action",
+    "message": "Azione",
     "description": "Import preview column: per-row decision"
   },
   "importStatusNew": {
-    "message": "NEW",
+    "message": "NUOVO",
     "description": "Status badge: incoming template name does not exist"
   },
   "importStatusDuplicate": {
-    "message": "DUPLICATE",
+    "message": "DUPLICATO",
     "description": "Status badge: a template with this name already exists"
   },
   "importActionSkip": {
-    "message": "Skip",
+    "message": "Salta",
     "description": "Per-row action: do nothing for this row"
   },
   "importActionAdd": {
-    "message": "Add",
+    "message": "Aggiungi",
     "description": "Per-row action for NEW rows: add to library"
   },
   "importActionAddCopy": {
-    "message": "Add as copy",
+    "message": "Aggiungi come copia",
     "description": "Per-row action for DUPLICATE rows: import with a suffixed name"
   },
   "importActionReplace": {
-    "message": "Replace existing",
+    "message": "Sostituisci l’esistente",
     "description": "Per-row action for DUPLICATE rows: overwrite the existing template"
   },
   "importActionRename": {
-    "message": "Edit name",
+    "message": "Modifica il nome",
     "description": "Per-row action: import under a user-supplied new name"
   },
   "importRenamePlaceholder": {
-    "message": "New template name",
+    "message": "Nuovo nome del modello",
     "description": "Placeholder in the per-row rename input"
   },
   "importBulkLabel": {
-    "message": "Bulk:",
+    "message": "In blocco:",
     "description": "Label preceding the bulk-action buttons in the import preview"
   },
   "importBulkSkip": {
-    "message": "Skip all duplicates",
+    "message": "Salta tutti i duplicati",
     "description": "Bulk-action button: set every applicable row to skip"
   },
   "importBulkAppend": {
-    "message": "Add all as copies",
+    "message": "Aggiungi tutti come copie",
     "description": "Bulk-action button: set every applicable row to add-copy/append"
   },
   "importBulkReplace": {
-    "message": "Replace all duplicates",
+    "message": "Sostituisci tutti i duplicati",
     "description": "Bulk-action button: set every applicable row to replace"
+  },
+  "welcomeHeadline": {
+    "message": "Ti diamo il benvenuto in TemplateWing",
+    "description": "Main headline on the post-install welcome tab"
+  },
+  "welcomeSubline": {
+    "message": "Salva le email che scrivi in continuazione e inseriscile in un nuovo messaggio con un clic. Allegati e destinatari vengono inclusi.",
+    "description": "Sub-headline under the welcome tab headline"
+  },
+  "welcomeCtaCreate": {
+    "message": "Crea il tuo primo modello",
+    "description": "Primary button on the welcome tab; opens the options page"
+  },
+  "welcomeCtaDocs": {
+    "message": "Leggi la guida rapida",
+    "description": "Secondary button on the welcome tab; links to the usage guide"
+  },
+  "welcomeStepsTitle": {
+    "message": "Per iniziare",
+    "description": "Heading of the getting-started section on the welcome tab"
+  },
+  "welcomeStep1Title": {
+    "message": "Creare un modello",
+    "description": "Title of getting-started step 1"
+  },
+  "welcomeStep1Body": {
+    "message": "Apri la gestione dei modelli e salva un testo che invii spesso. Oggetto, corpo, destinatari e allegati fanno tutti parte del modello.",
+    "description": "Body of getting-started step 1"
+  },
+  "welcomeStep2Title": {
+    "message": "Aprire una finestra di composizione",
+    "description": "Title of getting-started step 2"
+  },
+  "welcomeStep2Body": {
+    "message": "Fai clic sul pulsante TemplateWing nella barra degli strumenti di composizione, oppure fai clic con il tasto destro nel corpo del messaggio e scegli «Inserisci modello».",
+    "description": "Body of getting-started step 2"
+  },
+  "welcomeStep3Title": {
+    "message": "Inserire e inviare",
+    "description": "Title of getting-started step 3"
+  },
+  "welcomeStep3Body": {
+    "message": "Scegli un modello e viene compilato tutto in una volta. Per i primi nove modelli puoi anche premere Ctrl+Maiusc+1 fino a Ctrl+Maiusc+9.",
+    "description": "Body of getting-started step 3"
+  },
+  "welcomeFeaturesTitle": {
+    "message": "Cosa puoi fare",
+    "description": "Heading of the feature section on the welcome tab"
+  },
+  "welcomeFeatureAttachmentsTitle": {
+    "message": "Modelli con allegati",
+    "description": "Feature card title: attachments"
+  },
+  "welcomeFeatureAttachmentsBody": {
+    "message": "I file vengono salvati insieme al modello e allegati automaticamente a ogni inserimento.",
+    "description": "Feature card body: attachments"
+  },
+  "welcomeFeatureVariablesTitle": {
+    "message": "Variabili",
+    "description": "Feature card title: variables"
+  },
+  "welcomeFeatureVariablesBody": {
+    "message": "Segnaposto come {DATE}, {RECIPIENT_FIRSTNAME} o {SENDER_NAME} vengono sostituiti quando inserisci il modello.",
+    "description": "Feature card body: variables"
+  },
+  "welcomeFeatureConditionalsTitle": {
+    "message": "Blocchi condizionali",
+    "description": "Feature card title: conditional blocks"
+  },
+  "welcomeFeatureConditionalsBody": {
+    "message": "Con {IF recipient.domain==\"acme.com\"} … {ELSE} … {ENDIF} lo stesso modello può mostrare un testo diverso a seconda di chi stai scrivendo.",
+    "description": "Feature card body: conditional blocks"
+  },
+  "welcomeFeaturePromptsTitle": {
+    "message": "Chiedere all’inserimento",
+    "description": "Feature card title: ask-on-insert prompts"
+  },
+  "welcomeFeaturePromptsBody": {
+    "message": "{PROMPT:Numero d’ordine} e {CHOICE:Tono:formale|informale} aprono una piccola finestra prima dell’inserimento, così compili ciò che cambia ogni volta.",
+    "description": "Feature card body: ask-on-insert prompts"
+  },
+  "welcomeFeatureDefaultsTitle": {
+    "message": "Modello predefinito per account",
+    "description": "Feature card title: default template per account"
+  },
+  "welcomeFeatureDefaultsBody": {
+    "message": "Scegli un modello che compare automaticamente in ogni nuovo messaggio di una determinata identità. Risposte e inoltri restano intatti.",
+    "description": "Feature card body: default template per account"
+  },
+  "welcomeFeaturePrivacyTitle": {
+    "message": "I tuoi dati restano in locale",
+    "description": "Feature card title: privacy"
+  },
+  "welcomeFeaturePrivacyBody": {
+    "message": "Tutto resta nell’archivio locale di Thunderbird. Nessun account, nessuna telemetria, nessuna richiesta di rete.",
+    "description": "Feature card body: privacy"
+  },
+  "welcomeSupportTitle": {
+    "message": "TemplateWing è gratuito",
+    "description": "Heading of the donation section on the welcome tab"
+  },
+  "welcomeSupportBody": {
+    "message": "Lo sviluppo nel tempo libero. Se ti fa risparmiare tempo, una piccola donazione aiuta.",
+    "description": "Body text of the donation section on the welcome tab"
+  },
+  "welcomeCtaDonate": {
+    "message": "Offrimi un caffè",
+    "description": "Donation button on the welcome tab"
+  },
+  "welcomeCtaGithub": {
+    "message": "Metti una stella su GitHub",
+    "description": "Link to the GitHub repository on the welcome tab"
+  },
+  "welcomeCtaFeedback": {
+    "message": "Segnala un problema",
+    "description": "Link to the issue tracker on the welcome tab"
+  },
+  "welcomeFooterVersion": {
+    "message": "TemplateWing",
+    "description": "Footer label preceding the version number on the welcome tab"
+  },
+  "selectionSelectAll": {
+    "message": "Seleziona tutto",
+    "description": "Label of the select-all checkbox above the template list"
+  },
+  "selectionSelectTemplate": {
+    "message": "Seleziona il modello «$NAME$»",
+    "description": "Accessible label of the per-row selection checkbox",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "selectionCount": {
+    "message": "$COUNT$ selezionato/i",
+    "description": "Selection bar: how many templates are currently selected",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategoryPlaceholder": {
+    "message": "Categoria",
+    "description": "Placeholder of the category input in the selection bar"
+  },
+  "selectionApplyCategory": {
+    "message": "Imposta la categoria",
+    "description": "Selection bar button: apply the typed category to the selection"
+  },
+  "selectionExport": {
+    "message": "Esporta la selezione",
+    "description": "Selection bar button: export only the selected templates"
+  },
+  "selectionDelete": {
+    "message": "Elimina la selezione",
+    "description": "Selection bar button: delete the selected templates"
+  },
+  "selectionClear": {
+    "message": "Annulla la selezione",
+    "description": "Selection bar button: unselect everything"
+  },
+  "selectionConfirmDelete": {
+    "message": "Eliminare $COUNT$ modello/i? L’operazione non può essere annullata.",
+    "description": "Confirm prompt before deleting several templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionDeleted": {
+    "message": "$COUNT$ modello/i eliminato/i.",
+    "description": "Feedback after a bulk delete",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategorySet": {
+    "message": "Categoria modificata per $COUNT$ modello/i.",
+    "description": "Feedback after a bulk category change",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionConfirmClearCategory": {
+    "message": "Il campo categoria è vuoto. Rimuovere la categoria da $COUNT$ modello/i selezionato/i?",
+    "description": "Confirm prompt when applying an empty category, which clears it",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "popupSearchHint": {
+    "message": "Digita per filtrare. Invio inserisce il primo risultato, Esc cancella.",
+    "description": "Tooltip on the popup search box explaining Enter and Esc"
   }
 }

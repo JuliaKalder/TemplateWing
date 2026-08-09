@@ -33,17 +33,16 @@ TemplateWing is a Thunderbird 128+ MailExtension (WebExtension-based) that allow
 5. Click **Inspect** to access the developer tools/console.
 
 ### Building the XPI (Package)
-The XPI is a simple zip archive of the source files.
+The XPI is a zip archive of the source files, built from the file list in
+`scripts/xpi-files.mjs`.
 
-**Windows (PowerShell):**
-```powershell
-./build-xpi.ps1
-```
-
-**Linux / macOS / Bash:**
 ```bash
-zip -r ../templatewing.xpi manifest.json background.html background.js LICENSE modules/ popup/ options/ images/ _locales/ -x ".*"
+npm run build:xpi      # writes templatewing-<version>.xpi to the parent directory
+npm run build:source   # source archive for the Thunderbird Add-ons submission
 ```
+
+Do not hand-roll a `zip` command: files added to the project must be added to
+`scripts/xpi-files.mjs`, otherwise they are silently missing from the package.
 
 ---
 

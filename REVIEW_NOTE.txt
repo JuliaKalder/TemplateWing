@@ -1,88 +1,222 @@
 TemplateWing — Review Notes for ATN Review Team
 =================================================
 
-Submitted version: 2.2.0 (bundled v2.1 + v2.2 release)
+Submitted version: 2.8.0
 Minimum Thunderbird version: 128.0
 License: Mozilla Public License 2.0
 
 Overview
 --------
 TemplateWing is a compose-window add-on that lets users save, manage, and
-insert reusable email templates — including rich-text bodies, file attachments,
-recipients, and subject lines.
+insert reusable email templates — including rich-text bodies, file
+attachments, recipients, subject lines, and dynamic variables.
 
-Changes since last published version (2.0.0)
----------------------------------------------
+Why 2.7.1 and not 2.7.0
+-----------------------
+2.7.0 was withdrawn from GitHub the same day it was tagged. A regression
+was found in conditional-variable evaluation: {IF recipient.domain==...}
+in a fresh "Write" compose always took the ELSE branch, because the
+recipient context was read from the (still empty) compose window before
+the template's own `to` field was written. 2.7.1 is the same feature set
+as 2.7.0 plus the fix and four additional unit tests covering the new
+fallback helper `applyTemplateRecipientFallback`.
 
-v2.1 — Stabilisation & Guardrails
-  1. Import guardrails: Import dialog now shows a pre-import validation summary
-     (total / invalid / duplicate counts) and offers three merge modes:
-     "Add all as new", "Skip existing names", "Update existing by name".
-  2. Recipient validation: To/Cc/Bcc fields are validated for correct email
-     format on save. Invalid entries are highlighted with a field error state.
-  3. Attachment hardening: Per-file size warning (>=5 MB), total size warning
-     (>=10 MB), and per-file error handling during insertion so a single
-     attachment failure does not block the entire template.
-  4. Automated checks: 25 unit tests (Node.js built-in test runner, zero
-     external dependencies) and a locale consistency lint that verifies all
-     7 locale files share the same set of message keys. GitHub Actions CI
-     runs both on every push/PR.
+Changes since last published version (2.5.x)
+--------------------------------------------
 
-v2.2 — Productivity & Maintainability
-  1. Variable system expansion: Five new variables ({DATETIME}, {YEAR},
-     {WEEKDAY}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL}). Clickable variable picker
-     chips in the editor toolbar insert variables at the cursor position.
-  2. Editor UX upgrades: "Paste as plain text" toggle strips HTML formatting
-     from clipboard. Toolbar active-state feedback (bold/italic/underline
-     buttons highlight when active). Duplicate template name check on save.
-  3. State consistency: In-memory template cache eliminates repeated storage
-     reads. Cache invalidated automatically via storage.onChanged listener.
-  4. Storage schema versioning: Schema version field in storage.local with
-     sequential migration hooks for forward-compatible data upgrades.
+v2.6 — Favorites, popup search, recipient variables, conditionals, defaults
+  1. Favorites / pinning: Templates can be pinned. Pinned templates are
+     listed first in the popup and context menu. Stored as a per-template
+     `pinned` boolean; schema migration adds it as `false` for existing
+     templates.
+  2. Popup search: Live filter input at the top of the popup. Esc clears.
+  3. Recipient variables: {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME},
+     {RECIPIENT_EMAIL} resolved from the first To: entry of the compose
+     window. For replies/forwards, also {REPLY_QUOTE} and
+     {LAST_MESSAGE_SUBJECT}.
+  4. Conditional variables: {IF expr}…{ELSE}…{ENDIF} with simple equality
+     (==, !=) on dot-paths like recipient.domain or identity.email.
+     Recursive-descent parser, supports nesting. Unknown vars compare as
+     empty string. Unmatched {IF} is left literal with a console warning.
+  5. Per-identity default template: An identity can have a default
+     template that auto-inserts when a new compose window opens for that
+     identity AND the body is empty. Skipped on reply/forward (the user
+     is responding to a specific message). Configured on the Options page.
+
+v2.7 — Workshop release (import preview, usage stats, linter, release CI)
+  1. Per-row import preview: Import dialog shows each template with a
+     NEW / DUPLICATE badge and per-row action (Skip / Add as copy /
+     Replace existing / Edit name) plus bulk-action buttons.
+     `importTemplates()` accepts either the existing global mode string
+     or a new `{ default, perRow }` object.
+  2. Usage dashboard: New Usage tab on the Options page surfaces the
+     long-tracked usageCount / lastUsedAt as a sortable table with a
+     top-10 inline-SVG bar chart, "unused for X days" filter, and a
+     CSV export. No additional permissions; derived from existing data.
+  3. Template linter: Templates are linted at display time for:
+     unknown variables, broken nested includes, include cycles,
+     oversize attachments / total, invalid recipients. Badges appear on
+     each row plus a summary line.
+  4. Automated release: Pushing a `v*` tag runs .github/workflows/release.yml
+     which verifies the tag/manifest version match, runs tests + locale
+     lint + Prettier, builds the XPI via scripts/build-xpi.mjs, and
+     attaches it to the GitHub release with its SHA-256.
+  5. Playwright UI tests: First browser-based tests for popup search /
+     pinning UI and Options page tabs/badges/editor flows. Tests load
+     the real HTML files via a tiny static server against a stubbed
+     messenger.* namespace. Run with `npm run test:ui`.
+
+v2.7.1 — Bugfix on top of v2.7
+  1. {IF recipient.*} now falls back to the template's own `to[0]` when
+     the compose window has no recipient yet. Reply behavior unchanged
+     (TB pre-fills `to` on reply, so the fallback does not kick in).
+     New helper `applyTemplateRecipientFallback` in
+     modules/template-insert.js with four unit tests.
+
+v2.8.0 — Welcome tab + multi-select bulk actions
+  1. Welcome tab: On first install only (runtime.onInstalled with
+     reason === "install") a local page welcome/welcome.html opens in a
+     tab. It explains the main features and how to create a first
+     template, and carries four links: the usage guide and the
+     repository on GitHub, the GitHub issue tracker, and a donation
+     page. Version updates do NOT reopen it.
+     The page loads only local resources. The four outbound links are
+     plain <a href> elements routed through
+     messenger.windows.openDefaultBrowser() on click, because Thunderbird
+     does not follow http(s) links inside extension pages. Nothing is
+     sent anywhere until the user clicks a link.
+  2. Multi-select and bulk actions in the options list: A checkbox per
+     row plus a "Select all" that covers whatever the current
+     search/category filter leaves visible. With a selection active, a
+     bar offers: set category, export only the selection, delete the
+     selection. Deleting asks for confirmation and reports the count.
+     Backed by three new store functions — deleteTemplates(ids),
+     setCategoryForTemplates(ids, category) and an optional ids
+     parameter on the existing exportTemplates(). Each performs a single
+     storage.local write instead of one per template, so a bulk delete
+     triggers one storage.onChanged event and one context-menu rebuild
+     rather than N. Identity defaults pointing at deleted templates are
+     garbage-collected in the same batch, matching the single-delete
+     path. 12 new unit tests, 11 new Playwright UI tests.
+  3. Localisation completed. 100 keys read as English in fr/es/it/nl/pt:
+     57 inherited from earlier versions and 43 introduced by this
+     release. 98 of them are now translated; the remaining two are the
+     product name itself (extensionName, welcomeFooterVersion). All
+     seven locales are complete; `npm run lint` enforces key parity.
+  No new permissions.
 
 Permissions used
 ----------------
-- compose        — Read/write compose window details (subject, body, recipients)
-- storage        — Persist templates in local storage
-- unlimitedStorage — Templates may contain base64-encoded file attachments
-- menus          — Context menu for inserting templates from compose body
-                   and "Save as Template" from message list
-- messagesRead   — Read message body when saving an email as a template
-- accountsRead   — List account identities for account-specific template
-                   filtering and {ACCOUNT_NAME}/{ACCOUNT_EMAIL} variables
+- compose          — Read/write compose window details (subject, body,
+                     recipients, identity)
+- storage          — Persist templates in local storage
+- unlimitedStorage — Templates may carry base64-encoded file attachments
+- menus            — Context menu for inserting templates from the compose
+                     body and "Save as Template" from the message list
+- messagesRead     — Read message body when saving an email as a template
+                     and to build {REPLY_QUOTE} / {LAST_MESSAGE_SUBJECT}
+                     for replies
+- accountsRead     — List account identities for identity-based template
+                     filtering, per-identity default templates, and
+                     {ACCOUNT_NAME} / {ACCOUNT_EMAIL} / {SENDER_NAME} /
+                     {SENDER_EMAIL} variables
+- notifications    — Show a desktop notification when template insertion
+                     fails (e.g. attachment decode error)
 
 No remote connections
 ---------------------
-TemplateWing does not make any network requests. All data stays on the user's
-device in messenger.storage.local. No telemetry, no analytics, no external APIs.
+TemplateWing makes no network requests. All data stays on the user's
+device in messenger.storage.local. No telemetry, no analytics, no
+external APIs, no remote scripts, no CDNs. The popup, options,
+prompt-dialog and welcome pages load only local resources.
+
+The welcome page shown after installation contains four outbound links
+(the usage guide and the repository on GitHub, the GitHub issue
+tracker, and a donation page). They are
+handed to the operating system's default browser via
+messenger.windows.openDefaultBrowser() and only when the user clicks
+them. The add-on itself never opens a connection.
 
 Source code
 -----------
-The full source is included in the source zip archive. The project uses vanilla
-ES6 modules with no build step, no bundler, and no external dependencies.
-The code in the XPI is identical to the source files.
+The full source is in the source zip archive. The project uses vanilla
+ES6 modules with no transpiler, bundler, or runtime dependencies; the
+packaging step only zips the files listed in scripts/xpi-files.mjs. The code in
+the XPI is identical to the source files. The only devDependency is
+@playwright/test, used by the optional UI test suite — it is not bundled
+into the XPI.
 
-Build instructions
-------------------
-The XPI can be reproduced by running:
+Reproducing the XPI
+-------------------
+The official build uses a portable Node script. It requires Node.js 20+
+and the `zip` command-line utility:
 
-  PowerShell:  ./build-xpi.ps1
-  Bash:        zip -r templatewing.xpi manifest.json background.html \
-                 background.js LICENSE modules/ popup/ options/ images/ \
-                 _locales/ -x ".*" -x "*.md"
+  node scripts/build-xpi.mjs
+
+Output: templatewing-2.8.0.xpi (124 KB / 126,798 bytes).
+
+The release workflow (.github/workflows/release.yml) runs the same
+script in CI and uploads the result.
+
+The build is byte-reproducible: rebuilding from the source archive
+produces an XPI with an identical SHA-256, on any machine and in any
+timezone. Files are staged into a scratch directory, stamped with a
+fixed timestamp (2020-01-01T00:00:00Z) and normalised to mode 0644; zip
+runs with -X to drop the 0x5455 timestamp and 0x7875 uid/gid extra
+fields; and TZ is pinned to UTC. Without those steps a zip embeds
+checkout times, access times, the packager's uid/gid and umask, and
+local-time encoding, none of which reproduce. .gitattributes pins line
+endings to LF so a Windows clone does not change the bytes either.
+
+The source archive is packaged the same way, so it too has a stable
+hash and carries no uid/gid.
+
+Simply compare the hash:
+
+  sha256sum rebuilt.xpi          # macOS: shasum -a 256 rebuilt.xpi
+
+SHA-256 of the artifact built for this submission:
+8bb5cda21937c9cd570dddb03eccafaeed4786dc18e545023edefa4497eebdc2
+
+CI verifies this on every push: it builds the XPI, builds the source
+archive, rebuilds the XPI from the extracted archive under
+TZ=Pacific/Auckland, and fails if the two hashes differ.
+
+Source archive
+--------------
+Built with:
+
+  node scripts/build-source-zip.mjs
+
+It contains every file in the XPI plus the build scripts, both test
+suites, and the CI workflows. The list is derived from
+scripts/xpi-files.mjs — the same module the XPI builder reads — so the
+two cannot drift apart.
 
 Testing
 -------
-  npm test       — 25 unit tests for validation helpers
-  npm run lint   — Locale file consistency check (87 keys across 7 locales)
+  npm test       — 246 Node unit tests (built-in node:test runner)
+                   covering template store, variable substitution,
+                   conditional resolution, prompt extraction, nested
+                   template resolution, importer decisions, linter,
+                   usage stats, validation helpers.
+  npm run lint   — Locale consistency check (192 keys × 7 languages).
+  npm run test:ui — Playwright UI smoke tests on Chromium (optional;
+                   not required for review reproduction).
 
-Manual QA covers: template CRUD, insert via popup / context menu / keyboard
-shortcut, import/export with all three merge modes, attachment add/remove,
-variable replacement (all 9 variables), nested template resolution,
-identity-based filtering, paste sanitization, duplicate name detection,
-toolbar active-state feedback, schema migration on first load.
-
-Contact
--------
-Julia Kalder <mail@julia-kalder.de>
-https://github.com/JuliaKalder/TemplateWing
+Manual QA coverage for this submission
+--------------------------------------
+- Template CRUD on the Options page; import with per-row preview in all
+  four row modes plus the three bulk modes.
+- Insert via popup (with live search and pinned-first sorting), context
+  menu, keyboard shortcut, and per-identity default on new compose.
+- Variables: all 14 supported variables, including the new recipient
+  family and {REPLY_QUOTE} on reply / forward.
+- Conditionals: {IF recipient.domain==…}{ELSE}{ENDIF} on both fresh
+  Write (verifying the 2.7.1 fallback) and Reply.
+- Prompt dialogs: {PROMPT:label:default} and {CHOICE:label:o1|o2|…},
+  including cancel via Esc.
+- Attachments: per-file size warning ≥ 5 MB, total ≥ 10 MB.
+- Schema migrations from v2.5 / v2.6 storage shapes on first load.
+- Identity-restricted templates: only listed for matching identities;
+  enforcement re-checked at insert time in the background page.

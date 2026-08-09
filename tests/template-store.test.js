@@ -16,6 +16,9 @@ const {
   getTemplate,
   saveTemplate,
   deleteTemplate,
+  deleteTemplates,
+  setCategoryForTemplates,
+  exportTemplates,
   getCategories,
   trackUsage,
   setPinned,
@@ -425,6 +428,107 @@ describe("getDefaults / setDefault", () => {
   it("setDefault ignores empty identityId", async () => {
     await setDefault("", "tpl-A");
     assert.deepStrictEqual(await getDefaults(), {});
+  });
+});
+
+// ---- Bulk operations ----
+
+describe("deleteTemplates / setCategoryForTemplates / exportTemplates(ids)", () => {
+  beforeEach(() => {
+    installMessengerMock();
+    _resetCacheForTests();
+  });
+
+  async function seedThree() {
+    const a = await saveTemplate({ name: "Alpha", body: "a", category: "Work" });
+    const b = await saveTemplate({ name: "Beta", body: "b", category: "Work" });
+    const c = await saveTemplate({ name: "Gamma", body: "c", category: "Private" });
+    return { a, b, c };
+  }
+
+  it("deleteTemplates removes every listed template and keeps the rest", async () => {
+    const { a, b, c } = await seedThree();
+    const removed = await deleteTemplates([a.id, c.id]);
+    assert.strictEqual(removed, 2);
+    const remaining = await getTemplates();
+    assert.deepStrictEqual(
+      remaining.map((t) => t.id),
+      [b.id]
+    );
+  });
+
+  it("deleteTemplates counts only IDs that actually existed", async () => {
+    const { a } = await seedThree();
+    assert.strictEqual(await deleteTemplates([a.id, "ghost-id"]), 1);
+  });
+
+  it("deleteTemplates with an empty list is a no-op", async () => {
+    await seedThree();
+    assert.strictEqual(await deleteTemplates([]), 0);
+    assert.strictEqual((await getTemplates()).length, 3);
+  });
+
+  it("deleteTemplates clears identity defaults pointing at removed templates", async () => {
+    const { a, b } = await seedThree();
+    await setDefault("identity-1", a.id);
+    await setDefault("identity-2", b.id);
+    await deleteTemplates([a.id]);
+    const defaults = await getDefaults();
+    assert.strictEqual(defaults["identity-1"], undefined);
+    assert.strictEqual(defaults["identity-2"], b.id);
+  });
+
+  it("setCategoryForTemplates moves only the listed templates", async () => {
+    const { a, b, c } = await seedThree();
+    const changed = await setCategoryForTemplates([a.id, c.id], "Archive");
+    assert.strictEqual(changed, 2);
+    assert.strictEqual((await getTemplate(a.id)).category, "Archive");
+    assert.strictEqual((await getTemplate(c.id)).category, "Archive");
+    assert.strictEqual((await getTemplate(b.id)).category, "Work");
+  });
+
+  it("setCategoryForTemplates trims whitespace around the category", async () => {
+    const { a } = await seedThree();
+    await setCategoryForTemplates([a.id], "  Archive  ");
+    assert.strictEqual((await getTemplate(a.id)).category, "Archive");
+  });
+
+  it("setCategoryForTemplates with an empty string clears the category", async () => {
+    const { a } = await seedThree();
+    await setCategoryForTemplates([a.id], "");
+    assert.strictEqual((await getTemplate(a.id)).category, "");
+  });
+
+  it("setCategoryForTemplates does not count templates already in that category", async () => {
+    const { a, b } = await seedThree();
+    assert.strictEqual(await setCategoryForTemplates([a.id, b.id], "Work"), 0);
+  });
+
+  it("setCategoryForTemplates leaves the category available via getCategories", async () => {
+    const { a } = await seedThree();
+    await setCategoryForTemplates([a.id], "Archive");
+    assert.deepStrictEqual(await getCategories(), ["Archive", "Private", "Work"]);
+  });
+
+  it("exportTemplates(ids) exports only the selected templates", async () => {
+    const { a, c } = await seedThree();
+    const payload = JSON.parse(await exportTemplates([a.id, c.id]));
+    assert.deepStrictEqual(
+      payload.templates.map((t) => t.name),
+      ["Alpha", "Gamma"]
+    );
+  });
+
+  it("exportTemplates() without ids still exports everything", async () => {
+    await seedThree();
+    const payload = JSON.parse(await exportTemplates());
+    assert.strictEqual(payload.templates.length, 3);
+  });
+
+  it("exportTemplates(ids) ignores unknown IDs rather than emitting holes", async () => {
+    const { a } = await seedThree();
+    const payload = JSON.parse(await exportTemplates([a.id, "ghost-id"]));
+    assert.strictEqual(payload.templates.length, 1);
   });
 });
 

@@ -225,6 +225,87 @@ h1 {
   color: #f59e0b;
 }
 
+/* Multi-select and bulk actions */
+
+.select-row {
+  margin-bottom: 8px;
+}
+
+.select-all-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.template-card .select-box {
+  flex-shrink: 0;
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: var(--color-bg-highlight);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+}
+
+.selection-count {
+  font-size: 13px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.selection-category {
+  width: 160px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.selection-bar button {
+  padding: 5px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.selection-bar button:hover {
+  background: var(--color-bg-hover);
+}
+
+.selection-bar .btn-delete {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.selection-bar .btn-delete:hover {
+  background: var(--color-error-bg);
+}
+
+/* Pushed to the far end: it undoes rather than performs. */
+.selection-bar .selection-clear {
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
 /* Import preview table */
 .modal-dialog-wide {
   width: 720px;

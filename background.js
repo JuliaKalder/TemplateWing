@@ -287,6 +287,22 @@ messenger.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// ---- Welcome tab on first install ----
+
+// Fires for "install", "update", "browser_update" and "shared_module_update".
+// Only a genuine first install gets the welcome tab: showing it on every
+// version bump would hijack a tab of an established user for no reason.
+messenger.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason !== "install") return;
+  try {
+    await messenger.tabs.create({
+      url: messenger.runtime.getURL("welcome/welcome.html"),
+    });
+  } catch (err) {
+    console.error("TemplateWing: could not open welcome tab", err);
+  }
+});
+
 messenger.menus.onShown.addListener(async (info, tab) => {
   if (!info.contexts || !info.contexts.includes("compose_body") || !tab || !tab.id) {
     return;

@@ -1,62 +1,31 @@
 #!/usr/bin/env node
 /**
- * Portable XPI builder. Replaces the Windows-only build-xpi.ps1 — both produce
- * the same file list. Used locally and from .github/workflows/release.yml.
+ * Portable, byte-reproducible XPI builder. Used locally and from
+ * .github/workflows/release.yml.
  *
  * Usage:
  *   node scripts/build-xpi.mjs [--out-dir ../]
  *
  * Writes templatewing-<version>.xpi (version read from manifest.json).
  * Exits 0 on success; non-zero with a clear message on failure.
+ *
+ * Two builds of the same commit produce a byte-identical XPI on any machine,
+ * so the published SHA-256 can be verified rather than taken on trust. See
+ * scripts/zip-utils.mjs for what that requires and why; .gitattributes pins
+ * line endings to LF, without which a Windows clone would hash differently.
  */
 
-import { readFileSync, mkdirSync, writeFileSync, statSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync, statSync, rmSync } from "node:fs";
 import { resolve, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { XPI_FILES } from "./xpi-files.mjs";
+import { sourceDateEpoch, stageFiles, deterministicZip } from "./zip-utils.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 
-// The single source of truth for the XPI file list. Anything not listed
-// here is excluded — tests, scripts, lockfiles, screenshots, source maps, etc.
-const FILES = [
-  "manifest.json",
-  "background.html",
-  "background.js",
-  "LICENSE",
-  "modules/template-store.js",
-  "modules/template-insert.js",
-  "modules/template-lint.js",
-  "modules/validation.js",
-  "modules/compose-script.js",
-  "modules/compose-utils.js",
-  "modules/message-utils.js",
-  "modules/ui-helpers.js",
-  "modules/prompt-collector.js",
-  "modules/usage-stats.js",
-  "popup/popup.html",
-  "popup/popup.css",
-  "popup/popup.js",
-  "options/options.html",
-  "options/options.css",
-  "options/options.js",
-  "prompt-dialog/dialog.html",
-  "prompt-dialog/dialog.css",
-  "prompt-dialog/dialog.js",
-  "images/icon-16.png",
-  "images/icon-32.png",
-  "images/icon-64.png",
-  "images/icon-128.png",
-  "_locales/en/messages.json",
-  "_locales/de/messages.json",
-  "_locales/fr/messages.json",
-  "_locales/es/messages.json",
-  "_locales/it/messages.json",
-  "_locales/nl/messages.json",
-  "_locales/pt/messages.json",
-];
+const FILES = XPI_FILES;
 
 function parseArgs(argv) {
   const opts = { outDir: resolve(root, "..") };
@@ -95,18 +64,6 @@ function verifyFilesExist() {
   }
 }
 
-function buildZip(outPath) {
-  // Use the platform `zip` binary for cross-platform deterministic output.
-  // It exists on macOS, Linux, and the GitHub `ubuntu-latest` runner. We
-  // intentionally do not depend on a Node-side zip library to keep this
-  // script dependency-free in line with the project's vanilla policy.
-  const r = spawnSync("zip", ["-r", outPath, ...FILES], { cwd: root, stdio: "inherit" });
-  if (r.status !== 0) {
-    console.error("zip failed — install the `zip` utility or use a runner that has it");
-    process.exit(4);
-  }
-}
-
 function sha256(file) {
   const hash = createHash("sha256");
   hash.update(readFileSync(file));
@@ -119,17 +76,18 @@ verifyFilesExist();
 mkdirSync(outDir, { recursive: true });
 const outPath = join(outDir, `templatewing-${version}.xpi`);
 
-// Recreate from scratch each run so partial appends from prior failures
-// can't leak in.
-try {
-  if (statSync(outPath)) {
-    spawnSync("rm", ["-f", outPath]);
-  }
-} catch {
-  /* file doesn't exist — fine */
-}
+// Recreate from scratch each run so partial appends from prior failures can't
+// leak in: `zip` UPDATES an existing archive rather than replacing it, so a
+// failed delete would silently preserve stale entries.
+rmSync(outPath, { force: true });
 
-buildZip(outPath);
+const epoch = sourceDateEpoch();
+const staging = stageFiles(root, FILES, epoch);
+try {
+  deterministicZip(outPath, staging, FILES);
+} finally {
+  rmSync(staging, { recursive: true, force: true });
+}
 
 const size = statSync(outPath).size;
 const digest = sha256(outPath);
@@ -138,6 +96,7 @@ console.log("");
 console.log(`Created: ${relative(process.cwd(), outPath)}`);
 console.log(`Size:    ${(size / 1024).toFixed(1)} KB`);
 console.log(`SHA-256: ${digest}`);
+console.log(`Stamped: ${new Date(epoch * 1000).toISOString()} (SOURCE_DATE_EPOCH=${epoch})`);
 
 // Emit machine-readable output for CI when invoked under GitHub Actions.
 if (process.env.GITHUB_OUTPUT) {

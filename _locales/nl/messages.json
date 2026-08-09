@@ -458,87 +458,87 @@
     "description": "Warning shown when body is empty/whitespace in replace insert mode"
   },
   "popupSearchPlaceholder": {
-    "message": "Search… (Enter inserts top match)",
+    "message": "Zoeken…",
     "description": "Placeholder for the popup search box"
   },
   "popupNoMatch": {
-    "message": "No templates match the current filter.",
+    "message": "Geen enkel sjabloon voldoet aan het huidige filter.",
     "description": "Shown when search/category filter hides every template"
   },
   "popupPinTemplate": {
-    "message": "Pin to top",
+    "message": "Bovenaan vastzetten",
     "description": "Tooltip for the pin (favorite) icon when a template is not pinned"
   },
   "popupUnpinTemplate": {
-    "message": "Unpin template",
+    "message": "Niet meer bovenaan vastzetten",
     "description": "Tooltip for the pin icon when a template is already pinned"
   },
   "optionsDefaultsTitle": {
-    "message": "Default template per account",
+    "message": "Standaardsjabloon per account",
     "description": "Heading of the defaults section on the options page"
   },
   "optionsDefaultsHelp": {
-    "message": "Auto-insert the selected template when you open a new compose window with the matching account. Replies and forwards are skipped.",
+    "message": "Voegt het gekozen sjabloon automatisch in wanneer je een nieuw opstelvenster met het bijbehorende account opent. Antwoorden en doorgestuurde berichten worden overgeslagen.",
     "description": "Help text for the defaults section"
   },
   "optionsDefaultsNone": {
-    "message": "— none —",
+    "message": "— geen —",
     "description": "Placeholder option in defaults select"
   },
   "optionsDefaultsNoIdentities": {
-    "message": "No mail accounts configured.",
+    "message": "Geen e-mailaccounts ingesteld.",
     "description": "Shown in defaults section when no identities exist"
   },
   "optionsVariableRecipientName": {
-    "message": "{RECIPIENT_NAME} — First To: recipient's display name",
+    "message": "{RECIPIENT_NAME} — Weergavenaam van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_NAME variable"
   },
   "optionsVariableRecipientFirstname": {
-    "message": "{RECIPIENT_FIRSTNAME} — First To: recipient's first name",
+    "message": "{RECIPIENT_FIRSTNAME} — Voornaam van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
   "optionsVariableRecipientEmail": {
-    "message": "{RECIPIENT_EMAIL} — First To: recipient's email address",
+    "message": "{RECIPIENT_EMAIL} — E-mailadres van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_EMAIL variable"
   },
   "optionsVariableReplyQuote": {
-    "message": "{REPLY_QUOTE} — Quoted body of the message being replied to",
+    "message": "{REPLY_QUOTE} — Geciteerde tekst van het bericht waarop je antwoordt",
     "description": "Describes REPLY_QUOTE variable"
   },
   "optionsVariableLastSubject": {
-    "message": "{LAST_MESSAGE_SUBJECT} — Subject of the message being replied to (Re:/Fwd: stripped)",
+    "message": "{LAST_MESSAGE_SUBJECT} — Onderwerp van het bericht waarop je antwoordt (zonder Re:/Fwd:)",
     "description": "Describes LAST_MESSAGE_SUBJECT variable"
   },
   "optionsVariableIf": {
-    "message": "Conditional: {IF lhs==\"value\"}…{ELSE}…{ENDIF}",
+    "message": "Voorwaarde: {IF lhs==\"waarde\"}…{ELSE}…{ENDIF}",
     "description": "Describes IF/ELSE/ENDIF control flow"
   },
   "optionsVariablePrompt": {
-    "message": "{PROMPT:Label:default} — Ask the user for a value at insert time",
+    "message": "{PROMPT:Label:standaard} — Bij het invoegen om een waarde vragen",
     "description": "Describes PROMPT variable"
   },
   "optionsVariableChoice": {
-    "message": "{CHOICE:Label:opt1|opt2|opt3} — Ask the user to pick one option",
+    "message": "{CHOICE:Label:optie1|optie2|optie3} — Bij het invoegen een optie laten kiezen",
     "description": "Describes CHOICE variable"
   },
   "promptDialogTitle": {
-    "message": "Fill in template values",
+    "message": "Sjabloonwaarden invullen",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"
   },
   "promptDialogSubmit": {
-    "message": "Insert",
+    "message": "Invoegen",
     "description": "Submit button in the prompt dialog"
   },
   "promptDialogCancel": {
-    "message": "Cancel",
+    "message": "Annuleren",
     "description": "Cancel button in the prompt dialog"
   },
   "lintSummaryClean": {
-    "message": "All templates pass the linter — no issues found.",
+    "message": "Alle sjablonen komen door de controle — geen problemen gevonden.",
     "description": "Shown above the template list when no template has lint issues"
   },
   "lintSummaryDirty": {
-    "message": "$TEMPLATES$ template(s) need attention: $ERRORS$ error(s), $WARNINGS$ warning(s).",
+    "message": "$TEMPLATES$ sjabloon(en) hebben aandacht nodig: $ERRORS$ fout(en), $WARNINGS$ waarschuwing(en).",
     "description": "Shown above the template list when at least one template has lint issues",
     "placeholders": {
       "templates": {
@@ -556,7 +556,7 @@
     }
   },
   "lintBadgeErrors": {
-    "message": "$COUNT$ lint issue(s) — error",
+    "message": "$COUNT$ probleem(en) gevonden — fout",
     "description": "ARIA label for the red lint badge",
     "placeholders": {
       "count": {
@@ -566,7 +566,7 @@
     }
   },
   "lintBadgeWarnings": {
-    "message": "$COUNT$ lint issue(s) — warning",
+    "message": "$COUNT$ probleem(en) gevonden — waarschuwing",
     "description": "ARIA label for the yellow lint badge",
     "placeholders": {
       "count": {
@@ -576,51 +576,51 @@
     }
   },
   "tabTemplates": {
-    "message": "Templates",
+    "message": "Sjablonen",
     "description": "Options page: Templates tab label"
   },
   "tabUsage": {
-    "message": "Usage",
+    "message": "Gebruik",
     "description": "Options page: Usage tab label"
   },
   "usageTitle": {
-    "message": "Template usage",
+    "message": "Sjabloongebruik",
     "description": "Heading of the usage dashboard"
   },
   "usageFilterLabel": {
-    "message": "Show",
+    "message": "Tonen",
     "description": "Label preceding the unused-since filter dropdown"
   },
   "usageFilterAll": {
-    "message": "All templates",
+    "message": "Alle sjablonen",
     "description": "Filter option: show every template"
   },
   "usageFilter30": {
-    "message": "Unused for 30+ days",
+    "message": "30+ dagen ongebruikt",
     "description": "Filter option: unused for ≥30 days"
   },
   "usageFilter90": {
-    "message": "Unused for 90+ days",
+    "message": "90+ dagen ongebruikt",
     "description": "Filter option: unused for ≥90 days"
   },
   "usageFilter365": {
-    "message": "Unused for 1+ year",
+    "message": "1+ jaar ongebruikt",
     "description": "Filter option: unused for ≥365 days"
   },
   "usageFilterNever": {
-    "message": "Never used",
+    "message": "Nooit gebruikt",
     "description": "Filter option: never used templates only"
   },
   "usageExportCsv": {
-    "message": "Export CSV",
+    "message": "CSV exporteren",
     "description": "Button to export usage data as CSV"
   },
   "usageColName": {
-    "message": "Name",
+    "message": "Naam",
     "description": "Usage table column header: template name"
   },
   "usageColCategory": {
-    "message": "Category",
+    "message": "Categorie",
     "description": "Usage table column header: category"
   },
   "usageColIdentities": {
@@ -628,27 +628,27 @@
     "description": "Usage table column header: identity restriction count"
   },
   "usageColCount": {
-    "message": "Inserts",
+    "message": "Invoegingen",
     "description": "Usage table column header: usage count"
   },
   "usageColLastUsed": {
-    "message": "Last used",
+    "message": "Laatst gebruikt",
     "description": "Usage table column header: last used date"
   },
   "usageColAvgPerWeek": {
-    "message": "Avg / week",
+    "message": "Gem. / week",
     "description": "Usage table column header: average inserts per week"
   },
   "usageChartLabel": {
-    "message": "Top 10 templates by usage",
+    "message": "Top 10 meest gebruikte sjablonen",
     "description": "Accessible label for the top-10 bar chart"
   },
   "usageEmpty": {
-    "message": "No templates match the current filter.",
+    "message": "Geen enkel sjabloon voldoet aan het huidige filter.",
     "description": "Shown when the usage filter excludes every template"
   },
   "importColName": {
-    "message": "Template",
+    "message": "Sjabloon",
     "description": "Import preview column: incoming template name"
   },
   "importColStatus": {
@@ -656,39 +656,39 @@
     "description": "Import preview column: NEW / DUPLICATE / INVALID"
   },
   "importColAction": {
-    "message": "Action",
+    "message": "Actie",
     "description": "Import preview column: per-row decision"
   },
   "importStatusNew": {
-    "message": "NEW",
+    "message": "NIEUW",
     "description": "Status badge: incoming template name does not exist"
   },
   "importStatusDuplicate": {
-    "message": "DUPLICATE",
+    "message": "DUBBEL",
     "description": "Status badge: a template with this name already exists"
   },
   "importActionSkip": {
-    "message": "Skip",
+    "message": "Overslaan",
     "description": "Per-row action: do nothing for this row"
   },
   "importActionAdd": {
-    "message": "Add",
+    "message": "Toevoegen",
     "description": "Per-row action for NEW rows: add to library"
   },
   "importActionAddCopy": {
-    "message": "Add as copy",
+    "message": "Als kopie toevoegen",
     "description": "Per-row action for DUPLICATE rows: import with a suffixed name"
   },
   "importActionReplace": {
-    "message": "Replace existing",
+    "message": "Bestaande vervangen",
     "description": "Per-row action for DUPLICATE rows: overwrite the existing template"
   },
   "importActionRename": {
-    "message": "Edit name",
+    "message": "Naam bewerken",
     "description": "Per-row action: import under a user-supplied new name"
   },
   "importRenamePlaceholder": {
-    "message": "New template name",
+    "message": "Nieuwe sjabloonnaam",
     "description": "Placeholder in the per-row rename input"
   },
   "importBulkLabel": {
@@ -696,15 +696,223 @@
     "description": "Label preceding the bulk-action buttons in the import preview"
   },
   "importBulkSkip": {
-    "message": "Skip all duplicates",
+    "message": "Alle duplicaten overslaan",
     "description": "Bulk-action button: set every applicable row to skip"
   },
   "importBulkAppend": {
-    "message": "Add all as copies",
+    "message": "Alles als kopie toevoegen",
     "description": "Bulk-action button: set every applicable row to add-copy/append"
   },
   "importBulkReplace": {
-    "message": "Replace all duplicates",
+    "message": "Alle duplicaten vervangen",
     "description": "Bulk-action button: set every applicable row to replace"
+  },
+  "welcomeHeadline": {
+    "message": "Welkom bij TemplateWing",
+    "description": "Main headline on the post-install welcome tab"
+  },
+  "welcomeSubline": {
+    "message": "Bewaar de e-mails die je steeds opnieuw schrijft en zet ze met één klik in een nieuw bericht. Bijlagen en ontvangers gaan mee.",
+    "description": "Sub-headline under the welcome tab headline"
+  },
+  "welcomeCtaCreate": {
+    "message": "Maak je eerste sjabloon",
+    "description": "Primary button on the welcome tab; opens the options page"
+  },
+  "welcomeCtaDocs": {
+    "message": "Lees de beknopte handleiding",
+    "description": "Secondary button on the welcome tab; links to the usage guide"
+  },
+  "welcomeStepsTitle": {
+    "message": "Aan de slag",
+    "description": "Heading of the getting-started section on the welcome tab"
+  },
+  "welcomeStep1Title": {
+    "message": "Een sjabloon maken",
+    "description": "Title of getting-started step 1"
+  },
+  "welcomeStep1Body": {
+    "message": "Open het sjabloonbeheer en sla een tekst op die je vaak verstuurt. Onderwerp, bericht, ontvangers en bijlagen horen allemaal bij het sjabloon.",
+    "description": "Body of getting-started step 1"
+  },
+  "welcomeStep2Title": {
+    "message": "Een opstelvenster openen",
+    "description": "Title of getting-started step 2"
+  },
+  "welcomeStep2Body": {
+    "message": "Klik op de TemplateWing-knop in de werkbalk van het opstelvenster, of klik met rechts in het bericht en kies ‘Sjabloon invoegen’.",
+    "description": "Body of getting-started step 2"
+  },
+  "welcomeStep3Title": {
+    "message": "Invoegen en versturen",
+    "description": "Title of getting-started step 3"
+  },
+  "welcomeStep3Body": {
+    "message": "Kies een sjabloon en alles wordt in één keer ingevuld. Voor de eerste negen sjablonen kun je ook Ctrl+Shift+1 tot Ctrl+Shift+9 gebruiken.",
+    "description": "Body of getting-started step 3"
+  },
+  "welcomeFeaturesTitle": {
+    "message": "Wat je ermee kunt",
+    "description": "Heading of the feature section on the welcome tab"
+  },
+  "welcomeFeatureAttachmentsTitle": {
+    "message": "Sjablonen met bijlagen",
+    "description": "Feature card title: attachments"
+  },
+  "welcomeFeatureAttachmentsBody": {
+    "message": "Bestanden worden bij het sjabloon bewaard en bij elke invoeging automatisch bijgevoegd.",
+    "description": "Feature card body: attachments"
+  },
+  "welcomeFeatureVariablesTitle": {
+    "message": "Variabelen",
+    "description": "Feature card title: variables"
+  },
+  "welcomeFeatureVariablesBody": {
+    "message": "Tijdelijke aanduidingen zoals {DATE}, {RECIPIENT_FIRSTNAME} of {SENDER_NAME} worden vervangen zodra je het sjabloon invoegt.",
+    "description": "Feature card body: variables"
+  },
+  "welcomeFeatureConditionalsTitle": {
+    "message": "Voorwaardelijke blokken",
+    "description": "Feature card title: conditional blocks"
+  },
+  "welcomeFeatureConditionalsBody": {
+    "message": "Met {IF recipient.domain==\"acme.com\"} … {ELSE} … {ENDIF} laat hetzelfde sjabloon andere tekst zien, afhankelijk van aan wie je schrijft.",
+    "description": "Feature card body: conditional blocks"
+  },
+  "welcomeFeaturePromptsTitle": {
+    "message": "Vragen bij het invoegen",
+    "description": "Feature card title: ask-on-insert prompts"
+  },
+  "welcomeFeaturePromptsBody": {
+    "message": "{PROMPT:Ordernummer} en {CHOICE:Toon:formeel|informeel} openen een klein venster vóór het invoegen, zodat je invult wat elke keer verschilt.",
+    "description": "Feature card body: ask-on-insert prompts"
+  },
+  "welcomeFeatureDefaultsTitle": {
+    "message": "Standaardsjabloon per account",
+    "description": "Feature card title: default template per account"
+  },
+  "welcomeFeatureDefaultsBody": {
+    "message": "Kies een sjabloon dat automatisch verschijnt in elk nieuw bericht van een bepaalde identiteit. Antwoorden en doorgestuurde berichten blijven ongemoeid.",
+    "description": "Feature card body: default template per account"
+  },
+  "welcomeFeaturePrivacyTitle": {
+    "message": "Je gegevens blijven lokaal",
+    "description": "Feature card title: privacy"
+  },
+  "welcomeFeaturePrivacyBody": {
+    "message": "Alles blijft in de lokale opslag van Thunderbird. Geen account, geen telemetrie, geen netwerkverzoeken.",
+    "description": "Feature card body: privacy"
+  },
+  "welcomeSupportTitle": {
+    "message": "TemplateWing is gratis",
+    "description": "Heading of the donation section on the welcome tab"
+  },
+  "welcomeSupportBody": {
+    "message": "Ik bouw het in mijn vrije tijd. Als het jou tijd bespaart, helpt een kleine donatie.",
+    "description": "Body text of the donation section on the welcome tab"
+  },
+  "welcomeCtaDonate": {
+    "message": "Trakteer me op een koffie",
+    "description": "Donation button on the welcome tab"
+  },
+  "welcomeCtaGithub": {
+    "message": "Geef een ster op GitHub",
+    "description": "Link to the GitHub repository on the welcome tab"
+  },
+  "welcomeCtaFeedback": {
+    "message": "Een probleem melden",
+    "description": "Link to the issue tracker on the welcome tab"
+  },
+  "welcomeFooterVersion": {
+    "message": "TemplateWing",
+    "description": "Footer label preceding the version number on the welcome tab"
+  },
+  "selectionSelectAll": {
+    "message": "Alles selecteren",
+    "description": "Label of the select-all checkbox above the template list"
+  },
+  "selectionSelectTemplate": {
+    "message": "Sjabloon ‘$NAME$’ selecteren",
+    "description": "Accessible label of the per-row selection checkbox",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "selectionCount": {
+    "message": "$COUNT$ geselecteerd",
+    "description": "Selection bar: how many templates are currently selected",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategoryPlaceholder": {
+    "message": "Categorie",
+    "description": "Placeholder of the category input in the selection bar"
+  },
+  "selectionApplyCategory": {
+    "message": "Categorie instellen",
+    "description": "Selection bar button: apply the typed category to the selection"
+  },
+  "selectionExport": {
+    "message": "Selectie exporteren",
+    "description": "Selection bar button: export only the selected templates"
+  },
+  "selectionDelete": {
+    "message": "Selectie verwijderen",
+    "description": "Selection bar button: delete the selected templates"
+  },
+  "selectionClear": {
+    "message": "Selectie opheffen",
+    "description": "Selection bar button: unselect everything"
+  },
+  "selectionConfirmDelete": {
+    "message": "$COUNT$ sjabloon(en) verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "description": "Confirm prompt before deleting several templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionDeleted": {
+    "message": "$COUNT$ sjabloon(en) verwijderd.",
+    "description": "Feedback after a bulk delete",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategorySet": {
+    "message": "Categorie gewijzigd voor $COUNT$ sjabloon(en).",
+    "description": "Feedback after a bulk category change",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionConfirmClearCategory": {
+    "message": "Het categorieveld is leeg. Categorie verwijderen van $COUNT$ geselecteerde sjabloon(en)?",
+    "description": "Confirm prompt when applying an empty category, which clears it",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "popupSearchHint": {
+    "message": "Typ om te filteren. Enter voegt de bovenste treffer in, Esc wist.",
+    "description": "Tooltip on the popup search box explaining Enter and Esc"
   }
 }

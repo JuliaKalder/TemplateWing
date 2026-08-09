@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-TemplateWing is a Thunderbird 128+ MailExtension (WebExtension-based add-on) for managing and inserting email templates with attachments. Vanilla JavaScript, no build step required.
+TemplateWing is a Thunderbird 128+ MailExtension (WebExtension-based add-on) for managing and inserting email templates with attachments. Vanilla JavaScript — no transpiler or bundler. Packaging only zips the files listed in `scripts/xpi-files.mjs`.
 
 ## Architecture
 
 - **manifest.json** — Manifest V2, targets TB 128+ (`strict_min_version: 128.0`), permissions: `compose`, `storage`, `menus`
 - **background.html / background.js** — Background page with ES6 module support. Registers context menus in compose windows, handles message passing, listens for storage changes.
 - **modules/template-store.js** — ES6 module providing CRUD operations (`getTemplates`, `getTemplate`, `saveTemplate`, `deleteTemplate`) over `messenger.storage.local` with in-memory cache and schema versioning (migrations). Template schema: `{ id, name, subject, body, attachments[], category, to, cc, bcc, identities, insertMode, createdAt, updatedAt, usageCount, lastUsedAt }`
-- **modules/template-insert.js** — Template insertion logic: variable replacement (`{DATE}`, `{TIME}`, `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{SENDER_NAME}`, `{SENDER_EMAIL}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`), nested template resolution with cycle detection, per-file attachment error handling.
+- **modules/template-insert.js** — Template insertion logic. `SUPPORTED_VARIABLES` is the authoritative list of the 14 variables (`{DATE}`, `{TIME}`, `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{SENDER_NAME}`, `{SENDER_EMAIL}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`, `{RECIPIENT_NAME}`, `{RECIPIENT_FIRSTNAME}`, `{RECIPIENT_EMAIL}`, `{REPLY_QUOTE}`, `{LAST_MESSAGE_SUBJECT}`) — the linter reads it, so add new variables there. Also: `{IF}`/`{ELSE}`/`{ENDIF}` conditionals, `{PROMPT}`/`{CHOICE}` ask-on-insert tokens, nested template resolution with cycle detection, per-file attachment error handling.
 - **modules/validation.js** — Pure validation helpers (no messenger.* dependency): `isValidRecipient`, `validateRecipients`, `formatFileSize`, `analyseImport`. Tested via Node.js built-in test runner.
 - **popup/** — Compose-action popup shown when clicking the toolbar button in a compose window. Lists templates and inserts selected template into the active compose window via `messenger.compose.setComposeDetails`.
 - **options/** — Options page for creating, editing, and deleting templates. Includes import dialog with merge modes, recipient validation, attachment size warnings. Opened via Add-ons Manager or from the popup.
@@ -37,13 +37,18 @@ TemplateWing is a Thunderbird 128+ MailExtension (WebExtension-based add-on) for
 
 **Package as XPI:**
 ```bash
-cd TemplateWing && zip -r ../templatewing.xpi * -x ".*"
+npm run build:xpi      # XPI, file list from scripts/xpi-files.mjs
+npm run build:source   # source archive for the Thunderbird Add-ons submission
 ```
+
+New files must be added to `scripts/xpi-files.mjs` or they are silently left out
+of the package. Both builders read that one list.
 
 ## Testing
 
 - `npm test` — Runs unit tests via Node.js built-in test runner (zero dependencies)
 - `npm run lint` — Validates all locale files have consistent keys with `en`
+- `npm run test:ui` — Playwright UI tests (needs `npx playwright install chromium`)
 
 ## Conventions
 

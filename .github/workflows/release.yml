@@ -31,6 +31,13 @@ jobs:
           fi
           echo "Tag and manifest agree on version $MANIFEST_VERSION."
 
+      # prettier is a pinned devDependency, so it must be installed before
+      # the formatting gate. Without npm ci, `npx prettier` would fetch
+      # whatever version is latest and could fail a tagged release with no
+      # code change.
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run unit tests
         run: npm test
 
@@ -38,16 +45,24 @@ jobs:
         run: npm run lint
 
       - name: Check formatting
-        run: npx prettier --check "**/*.{js,css,html,json}" --ignore-path .gitignore
+        run: npm run format:check
 
       - name: Build XPI
         id: build
         run: node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP"
 
-      - name: Upload XPI to GitHub Release
-        uses: softprops/action-gh-release@v3
+      # ATN requires a source archive alongside the XPI. Building it here keeps
+      # it in lockstep with the released binary instead of being produced by
+      # hand at submission time.
+      - name: Build source archive
+        run: node scripts/build-source-zip.mjs --out-dir "$RUNNER_TEMP"
+
+      - name: Upload XPI and source archive to GitHub Release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
-          files: ${{ steps.build.outputs.xpi_path }}
+          files: |
+            ${{ steps.build.outputs.xpi_path }}
+            ${{ runner.temp }}/templatewing-${{ steps.build.outputs.xpi_version }}-source.zip
           body: |
             **TemplateWing ${{ github.ref_name }}**
 
@@ -56,5 +71,7 @@ jobs:
             - File: `templatewing-${{ steps.build.outputs.xpi_version }}.xpi`
             - Size: `${{ steps.build.outputs.xpi_size }}` bytes
             - SHA-256: `${{ steps.build.outputs.xpi_sha256 }}`
+
+            `templatewing-${{ steps.build.outputs.xpi_version }}-source.zip` contains everything needed to rebuild the XPI (see `SOURCE_README.md`).
 
             See [CHANGELOG / commit history](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for what changed.

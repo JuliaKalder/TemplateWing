@@ -41,8 +41,10 @@ Save and reuse email templates — including file attachments — directly from 
 - **Attachment guardrails** — Large-file warnings per attachment and total size indicator; per-file error handling during insertion
 - **Storage schema versioning** — Automatic data migration keeps templates intact across add-on updates
 - **Save from email** — Right-click any message in the message list → *Save as Template* to create a template pre-filled with subject and body
+- **Multi-select & bulk actions** — Tick several templates in the options list, then change their category, export just that selection, or delete them in one go. "Select all" applies to whatever the current search/category filter shows
+- **Welcome tab** — Opens once after installation with a short overview of the features, how to create a first template, and links to the project page, the issue tracker, and a donation page. It does not reappear on updates
 - **Dark mode** — Follows the system colour scheme automatically
-- **Localized** — Full English and German localization; community translations for French, Spanish, Italian, Portuguese, and Dutch
+- **Localized** — Fully localized in English, German, French, Spanish, Italian, Portuguese, and Dutch. `npm run lint` enforces that every locale carries every key
 
 ## Installation
 
@@ -81,7 +83,7 @@ Reload after changes by clicking **Reload** on the Debug Add-ons page (no restar
 
 ### Build XPI
 
-Portable Node-based builder (works on macOS, Linux, Windows; same file list as CI):
+Portable Node-based builder (same file list as CI). Needs Node.js 20+ and the `zip` CLI — on Windows that means Git Bash or WSL:
 
 ```bash
 npm run build:xpi
@@ -89,9 +91,21 @@ npm run build:xpi
 
 This creates `templatewing-<version>.xpi` in the parent directory and prints the SHA-256.
 
-Tags pushed to GitHub are built and released automatically by `.github/workflows/release.yml`.
+The build is byte-reproducible: the same commit yields the same SHA-256 on any machine, in any timezone, under any umask, so a published hash can be verified rather than trusted. Files are staged and stamped with a fixed timestamp and mode, `zip -X` drops the timestamp/uid extra fields, `TZ` is pinned to UTC, and `.gitattributes` pins line endings to LF. Set `SOURCE_DATE_EPOCH` to build against a different fixed date. CI verifies all of this on every push and fails if `REVIEW_NOTE.txt` quotes a stale hash.
 
-The legacy PowerShell script `build-xpi.ps1` now just delegates to the Node builder and is kept only for backwards compatibility.
+Tags pushed to GitHub are built and released automatically by `.github/workflows/release.yml`, which attaches both the XPI and the source archive.
+
+### Build the source archive
+
+The archive submitted to Thunderbird Add-ons alongside the XPI:
+
+```bash
+npm run build:source
+```
+
+It contains every file in the XPI plus the build scripts, both test suites, and the CI workflows. The file list is derived from `scripts/xpi-files.mjs`, the same module `build:xpi` reads, so the two cannot drift apart. CI builds both archives on every push and verifies that the source archive rebuilds identical XPI contents.
+
+The legacy PowerShell scripts `build-xpi.ps1` and `build-source-zip.ps1` now just delegate to the Node builders and are kept only for backwards compatibility.
 
 ### Project structure
 
@@ -109,7 +123,7 @@ _locales/{en,de,fr,es,it,pt,nl}/ — Localization strings
 tests/                      — Unit tests (Node.js built-in test runner)
 ```
 
-No build step, no bundler, no external dependencies — just vanilla ES6 modules.
+No transpiler, no bundler, no runtime dependencies — just vanilla ES6 modules. The packaging step only zips the files listed in `scripts/xpi-files.mjs`; the code in the XPI is the source as-is.
 
 ## Privacy
 

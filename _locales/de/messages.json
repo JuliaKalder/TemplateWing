@@ -458,7 +458,7 @@
     "description": "Warning shown when body is empty/whitespace in replace insert mode"
   },
   "popupSearchPlaceholder": {
-    "message": "Suchen… (Enter fügt obersten Treffer ein)",
+    "message": "Suchen…",
     "description": "Placeholder for the popup search box"
   },
   "popupNoMatch": {
@@ -541,20 +541,39 @@
     "message": "$TEMPLATES$ Vorlage(n) benötigen Aufmerksamkeit: $ERRORS$ Fehler, $WARNINGS$ Warnung(en).",
     "description": "Shown above the template list when at least one template has lint issues",
     "placeholders": {
-      "templates": { "content": "$1", "example": "3" },
-      "errors": { "content": "$2", "example": "2" },
-      "warnings": { "content": "$3", "example": "5" }
+      "templates": {
+        "content": "$1",
+        "example": "3"
+      },
+      "errors": {
+        "content": "$2",
+        "example": "2"
+      },
+      "warnings": {
+        "content": "$3",
+        "example": "5"
+      }
     }
   },
   "lintBadgeErrors": {
     "message": "$COUNT$ Lint-Problem(e) — Fehler",
     "description": "ARIA label for the red lint badge",
-    "placeholders": { "count": { "content": "$1", "example": "2" } }
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
   },
   "lintBadgeWarnings": {
     "message": "$COUNT$ Lint-Problem(e) — Warnung",
     "description": "ARIA label for the yellow lint badge",
-    "placeholders": { "count": { "content": "$1", "example": "1" } }
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
   },
   "tabTemplates": {
     "message": "Vorlagen",
@@ -687,5 +706,213 @@
   "importBulkReplace": {
     "message": "Alle Duplikate ersetzen",
     "description": "Bulk-action button: set every applicable row to replace"
+  },
+  "welcomeHeadline": {
+    "message": "Willkommen bei TemplateWing",
+    "description": "Main headline on the post-install welcome tab"
+  },
+  "welcomeSubline": {
+    "message": "Speichere E-Mails, die du immer wieder schreibst, und setze sie mit einem Klick in eine neue Nachricht ein. Anhänge und Empfänger kommen mit.",
+    "description": "Sub-headline under the welcome tab headline"
+  },
+  "welcomeCtaCreate": {
+    "message": "Erste Vorlage erstellen",
+    "description": "Primary button on the welcome tab; opens the options page"
+  },
+  "welcomeCtaDocs": {
+    "message": "Kurzanleitung lesen",
+    "description": "Secondary button on the welcome tab; links to the usage guide"
+  },
+  "welcomeStepsTitle": {
+    "message": "Erste Schritte",
+    "description": "Heading of the getting-started section on the welcome tab"
+  },
+  "welcomeStep1Title": {
+    "message": "Vorlage anlegen",
+    "description": "Title of getting-started step 1"
+  },
+  "welcomeStep1Body": {
+    "message": "Öffne die Vorlagenverwaltung und speichere einen Text, den du oft verschickst. Betreff, Nachricht, Empfänger und Dateianhänge gehören alle zur Vorlage.",
+    "description": "Body of getting-started step 1"
+  },
+  "welcomeStep2Title": {
+    "message": "Verfassen-Fenster öffnen",
+    "description": "Title of getting-started step 2"
+  },
+  "welcomeStep2Body": {
+    "message": "Klicke auf die TemplateWing-Schaltfläche in der Symbolleiste oder mach einen Rechtsklick im Nachrichtentext und wähle „Vorlage einfügen“.",
+    "description": "Body of getting-started step 2"
+  },
+  "welcomeStep3Title": {
+    "message": "Einfügen und senden",
+    "description": "Title of getting-started step 3"
+  },
+  "welcomeStep3Body": {
+    "message": "Wähle eine Vorlage aus, dann wird alles auf einmal eingesetzt. Für die ersten neun Vorlagen kannst du auch Strg+Umschalt+1 bis Strg+Umschalt+9 drücken.",
+    "description": "Body of getting-started step 3"
+  },
+  "welcomeFeaturesTitle": {
+    "message": "Was du damit machen kannst",
+    "description": "Heading of the feature section on the welcome tab"
+  },
+  "welcomeFeatureAttachmentsTitle": {
+    "message": "Vorlagen mit Anhängen",
+    "description": "Feature card title: attachments"
+  },
+  "welcomeFeatureAttachmentsBody": {
+    "message": "Dateien werden mit der Vorlage gespeichert und bei jedem Einfügen automatisch angehängt.",
+    "description": "Feature card body: attachments"
+  },
+  "welcomeFeatureVariablesTitle": {
+    "message": "Variablen",
+    "description": "Feature card title: variables"
+  },
+  "welcomeFeatureVariablesBody": {
+    "message": "Platzhalter wie {DATE}, {RECIPIENT_FIRSTNAME} oder {SENDER_NAME} werden beim Einfügen der Vorlage ersetzt.",
+    "description": "Feature card body: variables"
+  },
+  "welcomeFeatureConditionalsTitle": {
+    "message": "Bedingte Textblöcke",
+    "description": "Feature card title: conditional blocks"
+  },
+  "welcomeFeatureConditionalsBody": {
+    "message": "Mit {IF recipient.domain==\"acme.com\"} … {ELSE} … {ENDIF} zeigt dieselbe Vorlage unterschiedlichen Text, je nachdem, wem du schreibst.",
+    "description": "Feature card body: conditional blocks"
+  },
+  "welcomeFeaturePromptsTitle": {
+    "message": "Beim Einfügen nachfragen",
+    "description": "Feature card title: ask-on-insert prompts"
+  },
+  "welcomeFeaturePromptsBody": {
+    "message": "{PROMPT:Auftragsnummer} und {CHOICE:Tonfall:förmlich|locker} öffnen vor dem Einfügen einen kleinen Dialog, in den du eintragen kannst, was sich jedes Mal ändert.",
+    "description": "Feature card body: ask-on-insert prompts"
+  },
+  "welcomeFeatureDefaultsTitle": {
+    "message": "Standardvorlage pro Konto",
+    "description": "Feature card title: default template per account"
+  },
+  "welcomeFeatureDefaultsBody": {
+    "message": "Lege eine Vorlage fest, die bei jeder neuen Nachricht dieses Kontos automatisch erscheint. Antworten und Weiterleitungen bleiben unverändert.",
+    "description": "Feature card body: default template per account"
+  },
+  "welcomeFeaturePrivacyTitle": {
+    "message": "Deine Daten bleiben lokal",
+    "description": "Feature card title: privacy"
+  },
+  "welcomeFeaturePrivacyBody": {
+    "message": "Alles liegt im lokalen Speicher von Thunderbird. Kein Konto, keine Telemetrie, keine Netzwerkzugriffe.",
+    "description": "Feature card body: privacy"
+  },
+  "welcomeSupportTitle": {
+    "message": "TemplateWing ist kostenlos",
+    "description": "Heading of the donation section on the welcome tab"
+  },
+  "welcomeSupportBody": {
+    "message": "Ich entwickle es in meiner Freizeit. Wenn es dir Zeit spart, hilft eine kleine Spende.",
+    "description": "Body text of the donation section on the welcome tab"
+  },
+  "welcomeCtaDonate": {
+    "message": "Spendier mir einen Kaffee",
+    "description": "Donation button on the welcome tab"
+  },
+  "welcomeCtaGithub": {
+    "message": "Auf GitHub mit Stern versehen",
+    "description": "Link to the GitHub repository on the welcome tab"
+  },
+  "welcomeCtaFeedback": {
+    "message": "Problem melden",
+    "description": "Link to the issue tracker on the welcome tab"
+  },
+  "welcomeFooterVersion": {
+    "message": "TemplateWing",
+    "description": "Footer label preceding the version number on the welcome tab"
+  },
+  "selectionSelectAll": {
+    "message": "Alle auswählen",
+    "description": "Label of the select-all checkbox above the template list"
+  },
+  "selectionSelectTemplate": {
+    "message": "Vorlage \"$NAME$\" auswählen",
+    "description": "Accessible label of the per-row selection checkbox",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Welcome Email"
+      }
+    }
+  },
+  "selectionCount": {
+    "message": "$COUNT$ ausgewählt",
+    "description": "Selection bar: how many templates are currently selected",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategoryPlaceholder": {
+    "message": "Kategorie",
+    "description": "Placeholder of the category input in the selection bar"
+  },
+  "selectionApplyCategory": {
+    "message": "Kategorie setzen",
+    "description": "Selection bar button: apply the typed category to the selection"
+  },
+  "selectionExport": {
+    "message": "Auswahl exportieren",
+    "description": "Selection bar button: export only the selected templates"
+  },
+  "selectionDelete": {
+    "message": "Auswahl löschen",
+    "description": "Selection bar button: delete the selected templates"
+  },
+  "selectionClear": {
+    "message": "Auswahl aufheben",
+    "description": "Selection bar button: unselect everything"
+  },
+  "selectionConfirmDelete": {
+    "message": "$COUNT$ Vorlage(n) löschen? Das lässt sich nicht rückgängig machen.",
+    "description": "Confirm prompt before deleting several templates",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionDeleted": {
+    "message": "$COUNT$ Vorlage(n) gelöscht.",
+    "description": "Feedback after a bulk delete",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionCategorySet": {
+    "message": "Kategorie für $COUNT$ Vorlage(n) geändert.",
+    "description": "Feedback after a bulk category change",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectionConfirmClearCategory": {
+    "message": "Das Kategoriefeld ist leer. Kategorie von $COUNT$ ausgewählten Vorlage(n) entfernen?",
+    "description": "Confirm prompt when applying an empty category, which clears it",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "popupSearchHint": {
+    "message": "Tippen zum Filtern. Enter fügt den obersten Treffer ein, Esc leert.",
+    "description": "Tooltip on the popup search box explaining Enter and Esc"
   }
 }

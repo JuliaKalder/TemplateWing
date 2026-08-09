@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Welcome to TemplateWing</title>
+    <link rel="stylesheet" href="welcome.css" />
+  </head>
+  <body>
+    <!--
+      Text nodes carry English fallback content so this page is readable when
+      opened outside Thunderbird (design preview in a browser). welcome.js
+      overwrites every [data-i18n] node via messenger.i18n at runtime.
+    -->
+    <div class="welcome">
+      <header class="hero">
+        <img class="hero-icon" src="../images/icon.svg" alt="" width="72" height="72" />
+        <h1 data-i18n="welcomeHeadline">Welcome to TemplateWing</h1>
+        <p class="hero-sub" data-i18n="welcomeSubline">
+          Save the emails you write again and again, then drop them into a new message with one
+          click. Attachments and recipients come along.
+        </p>
+        <div class="hero-actions">
+          <button id="btn-create" class="btn btn-primary" data-i18n="welcomeCtaCreate">
+            Create your first template
+          </button>
+          <a
+            class="btn btn-ghost"
+            id="link-docs"
+            href="https://github.com/JuliaKalder/TemplateWing#usage"
+            data-i18n="welcomeCtaDocs"
+            >Read the quick guide</a
+          >
+        </div>
+      </header>
+
+      <section class="steps" aria-labelledby="steps-title">
+        <h2 id="steps-title" data-i18n="welcomeStepsTitle">Getting started</h2>
+        <ol class="step-list">
+          <li class="step">
+            <span class="step-num" aria-hidden="true">1</span>
+            <h3 data-i18n="welcomeStep1Title">Create a template</h3>
+            <p data-i18n="welcomeStep1Body">
+              Open the template manager and save a text you send often. Subject, body, recipients
+              and file attachments are all part of the template.
+            </p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">2</span>
+            <h3 data-i18n="welcomeStep2Title">Open a compose window</h3>
+            <p data-i18n="welcomeStep2Body">
+              Click the TemplateWing button in the compose toolbar, or right-click in the message
+              body and choose “Insert Template”.
+            </p>
+          </li>
+          <li class="step">
+            <span class="step-num" aria-hidden="true">3</span>
+            <h3 data-i18n="welcomeStep3Title">Insert and send</h3>
+            <p data-i18n="welcomeStep3Body">
+              Pick a template and everything is filled in at once. For the first nine templates you
+              can also press Ctrl+Shift+1 to Ctrl+Shift+9.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="features" aria-labelledby="features-title">
+        <h2 id="features-title" data-i18n="welcomeFeaturesTitle">What you can do</h2>
+        <div class="feature-grid">
+          <article class="feature">
+            <h3 data-i18n="welcomeFeatureAttachmentsTitle">Templates with attachments</h3>
+            <p data-i18n="welcomeFeatureAttachmentsBody">
+              Files are stored with the template and get attached automatically every time you
+              insert it.
+            </p>
+          </article>
+          <article class="feature">
+            <h3 data-i18n="welcomeFeatureVariablesTitle">Variables</h3>
+            <p data-i18n="welcomeFeatureVariablesBody">
+              Placeholders like {DATE}, {RECIPIENT_FIRSTNAME} or {SENDER_NAME} are replaced when you
+              insert the template.
+            </p>
+          </article>
+          <article class="feature">
+            <h3 data-i18n="welcomeFeatureConditionalsTitle">Conditional blocks</h3>
+            <p data-i18n="welcomeFeatureConditionalsBody">
+              With {IF recipient.domain=="acme.com"} … {ELSE} … {ENDIF} the same template can show
+              different text depending on who you are writing to.
+            </p>
+          </article>
+          <article class="feature">
+            <h3 data-i18n="welcomeFeaturePromptsTitle">Ask on insert</h3>
+            <p data-i18n="welcomeFeaturePromptsBody">
+              {PROMPT:Order number} and {CHOICE:Tone:formal|casual} open a small dialog before
+              insertion, so you can fill in whatever changes each time.
+            </p>
+          </article>
+          <article class="feature">
+            <h3 data-i18n="welcomeFeatureDefaultsTitle">Default template per account</h3>
+            <p data-i18n="welcomeFeatureDefaultsBody">
+              Pick a template that appears automatically in every new message for a given identity.
+              Replies and forwards are left alone.
+            </p>
+          </article>
+          <article class="feature">
+            <h3 data-i18n="welcomeFeaturePrivacyTitle">Your data stays local</h3>
+            <p data-i18n="welcomeFeaturePrivacyBody">
+              Everything is kept in Thunderbird’s local storage. No account, no telemetry, no
+              network requests.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="support" aria-labelledby="support-title">
+        <h2 id="support-title" data-i18n="welcomeSupportTitle">TemplateWing is free</h2>
+        <p data-i18n="welcomeSupportBody">
+          I build it in my free time. If it saves you some of yours, a small donation helps.
+        </p>
+        <div class="support-actions">
+          <a
+            class="btn btn-donate"
+            id="link-donate"
+            href="https://www.paypal.com/paypalme/tkalder"
+            data-i18n="welcomeCtaDonate"
+            >Buy me a coffee</a
+          >
+          <a
+            class="btn btn-ghost"
+            id="link-github"
+            href="https://github.com/JuliaKalder/TemplateWing"
+            data-i18n="welcomeCtaGithub"
+            >Star on GitHub</a
+          >
+          <a
+            class="btn btn-ghost"
+            id="link-issues"
+            href="https://github.com/JuliaKalder/TemplateWing/issues"
+            data-i18n="welcomeCtaFeedback"
+            >Report a problem</a
+          >
+        </div>
+      </section>
+
+      <footer class="foot">
+        <p>
+          <span data-i18n="welcomeFooterVersion">TemplateWing</span>
+          <span id="version-badge" class="version-badge"></span>
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="welcome.js"></script>
+  </body>
+</html>

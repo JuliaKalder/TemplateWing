@@ -37,6 +37,44 @@
 
         <div id="lint-summary" class="lint-summary" hidden></div>
 
+        <!--
+          Selection bar: revealed by options.js as soon as one row is ticked.
+          Named "selection" rather than "bulk" because the import dialog already
+          owns the .btn-bulk class for its own per-row bulk actions.
+        -->
+        <div id="selection-bar" class="selection-bar" hidden>
+          <span
+            id="selection-count"
+            class="selection-count"
+            role="status"
+            aria-live="polite"
+          ></span>
+          <input
+            type="text"
+            id="selection-category"
+            class="selection-category"
+            list="selection-category-list"
+            data-i18n-placeholder="selectionCategoryPlaceholder"
+            data-i18n-aria-label="selectionCategoryPlaceholder"
+          />
+          <datalist id="selection-category-list"></datalist>
+          <button id="btn-selection-category" data-i18n="selectionApplyCategory"></button>
+          <button id="btn-selection-export" data-i18n="selectionExport"></button>
+          <button id="btn-selection-delete" class="btn-delete" data-i18n="selectionDelete"></button>
+          <button
+            id="btn-selection-clear"
+            class="selection-clear"
+            data-i18n="selectionClear"
+          ></button>
+        </div>
+
+        <div class="select-row" hidden>
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all" />
+            <span data-i18n="selectionSelectAll"></span>
+          </label>
+        </div>
+
         <div id="template-list" class="template-list">
           <!-- Filled dynamically -->
         </div>

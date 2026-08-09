@@ -1,0 +1,12 @@
+# The XPI is a zip of the working-tree files, so the published SHA-256 depends
+# on their exact bytes. Git for Windows defaults to core.autocrlf=true, which
+# would hand a Windows clone CRLF line endings and change every text file —
+# verified: a CRLF checkout builds a different hash and a different size.
+# Pinning the working tree to LF everywhere is what makes "byte-reproducible on
+# any machine" true rather than "on any Unix machine".
+* text=auto eol=lf
+
+# Never line-ending-convert binaries.
+*.png binary
+*.xpi binary
+*.zip binary

@@ -26,6 +26,10 @@ export function filterTemplateList(itemSelector) {
  */
 export function setFilterOptions(filterId, categories) {
   const filter = document.getElementById(filterId);
+  // Removing the currently selected <option> makes the select fall back to
+  // option 0, silently resetting an active filter to "All" on every re-render.
+  // Remember the choice and restore it if that category still exists.
+  const previous = filter.value;
   const options = filter.querySelectorAll("option:not(:first-child)");
   options.forEach((opt) => opt.remove());
   for (const cat of categories) {
@@ -34,4 +38,5 @@ export function setFilterOptions(filterId, categories) {
     option.textContent = cat;
     filter.appendChild(option);
   }
+  if (previous && categories.includes(previous)) filter.value = previous;
 }

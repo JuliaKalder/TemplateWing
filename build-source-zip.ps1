@@ -1,56 +1,20 @@
-Add-Type -AssemblyName System.IO.Compression
-Add-Type -AssemblyName System.IO.Compression.FileSystem
+# Legacy Windows-only source-archive builder. Kept as a thin wrapper around
+# scripts/build-source-zip.mjs so the file list lives in one place.
+#
+# Prefer: node scripts/build-source-zip.mjs
+#
+# The previous version of this script carried its own hand-maintained file
+# list, which fell behind the XPI and shipped incomplete source to reviewers.
+# There is deliberately no PowerShell fallback list here — an out-of-date
+# source archive is worse than a clear error telling you to install Node.
+
+# Arguments are forwarded, so `./build-source-zip.ps1 --out-dir C:\tmp` works.
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$manifest = Get-Content (Join-Path $root "manifest.json") | ConvertFrom-Json
-$version = $manifest.version
-$zipPath = Join-Path (Split-Path $root) "templatewing-$version-source.zip"
-
-if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-
-$zip = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
-
-$files = @(
-    "SOURCE_README.md"
-    "manifest.json"
-    "background.html"
-    "background.js"
-    "build-xpi.ps1"
-    "LICENSE"
-    "modules/template-store.js"
-    "modules/template-insert.js"
-    "modules/validation.js"
-    "modules/compose-script.js"
-    "popup/popup.html"
-    "popup/popup.css"
-    "popup/popup.js"
-    "options/options.html"
-    "options/options.css"
-    "options/options.js"
-    "images/icon.svg"
-    "images/icon-16.png"
-    "images/icon-32.png"
-    "images/icon-64.png"
-    "images/icon-128.png"
-    "_locales/en/messages.json"
-    "_locales/de/messages.json"
-    "_locales/fr/messages.json"
-    "_locales/es/messages.json"
-    "_locales/it/messages.json"
-    "_locales/nl/messages.json"
-    "_locales/pt/messages.json"
-    "package.json"
-    "tests/validation.test.js"
-    "scripts/lint-locales.js"
-)
-
-foreach ($f in $files) {
-    $fullPath = Join-Path $root ($f.Replace("/", "\"))
-    [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $fullPath, $f) | Out-Null
-    Write-Host "  + $f"
+if (Get-Command node -ErrorAction SilentlyContinue) {
+    & node (Join-Path $root "scripts/build-source-zip.mjs") @args
+    exit $LASTEXITCODE
 }
 
-$zip.Dispose()
-
-$info = Get-Item $zipPath
-Write-Host "`nCreated: $($info.FullName) ($([math]::Round($info.Length / 1KB, 1)) KB)"
+Write-Error "Node.js is required to build the source archive: https://nodejs.org (the 'zip' CLI is also needed)"
+exit 1

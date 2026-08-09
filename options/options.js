@@ -3,6 +3,8 @@ import {
   getTemplate,
   saveTemplate,
   deleteTemplate,
+  deleteTemplates,
+  setCategoryForTemplates,
   getCategories,
   generateId,
   getIdentities,
@@ -87,6 +89,12 @@ function localize() {
   for (const el of document.querySelectorAll("[data-i18n-title]")) {
     const key = el.getAttribute("data-i18n-title");
     el.title = messenger.i18n.getMessage(key);
+  }
+  // A placeholder is not a reliable accessible name and disappears as soon as
+  // the user types, so inputs that have no visible <label> get one explicitly.
+  for (const el of document.querySelectorAll("[data-i18n-aria-label]")) {
+    const key = el.getAttribute("data-i18n-aria-label");
+    el.setAttribute("aria-label", messenger.i18n.getMessage(key));
   }
 }
 
@@ -294,6 +302,8 @@ async function renderTemplateList() {
   if (templates.length === 0) {
     list.hidden = true;
     emptyState.hidden = false;
+    selectedIds.clear();
+    renderSelectionBar();
     return;
   }
 
@@ -303,9 +313,27 @@ async function renderTemplateList() {
   for (const template of templates) {
     const card = document.createElement("div");
     card.className = "template-card";
+    card.dataset.id = template.id;
     card.dataset.name = (template.name || "").toLowerCase();
     card.dataset.subject = (template.subject || "").toLowerCase();
     card.dataset.category = (template.category || "").toLowerCase();
+
+    const selectBox = document.createElement("input");
+    selectBox.type = "checkbox";
+    selectBox.className = "select-box";
+    selectBox.checked = selectedIds.has(template.id);
+    // Name the template: without it a screen reader announces an identical
+    // "Select template" for every row in the list.
+    selectBox.setAttribute(
+      "aria-label",
+      messenger.i18n.getMessage("selectionSelectTemplate", template.name)
+    );
+    selectBox.addEventListener("change", () => {
+      if (selectBox.checked) selectedIds.add(template.id);
+      else selectedIds.delete(template.id);
+      renderSelectionBar();
+    });
+    card.appendChild(selectBox);
 
     const info = document.createElement("div");
     info.className = "info";
@@ -385,10 +413,181 @@ async function renderTemplateList() {
     card.appendChild(actions);
     list.appendChild(card);
   }
+
+  // Templates deleted elsewhere (editor, import replace) must not linger in the
+  // selection, or a later bulk action would target IDs that no longer exist.
+  const liveIds = new Set(templates.map((t) => t.id));
+  for (const id of selectedIds) {
+    if (!liveIds.has(id)) selectedIds.delete(id);
+  }
+
+  // Cards are rebuilt without their hidden flags, so an active search/category
+  // filter has to be re-applied on every render — including renders triggered
+  // by the storage listener when another surface (popup insert, background
+  // trackUsage) writes templates. Doing it here rather than at each call site
+  // is what keeps the filter and the select-all scope honest.
+  filterTemplates();
+}
+
+// ---- Multi-select and bulk actions ----
+
+/**
+ * IDs ticked in the template list. Deliberately survives re-render and
+ * filtering: a user who selects three templates, then searches for a fourth,
+ * still has the first three selected. The count in the selection bar is what
+ * tells them how many rows an action will hit.
+ */
+const selectedIds = new Set();
+
+/** Cards currently passing the search/category filter. */
+function visibleCards() {
+  return [...document.querySelectorAll("#template-list .template-card")].filter((c) => !c.hidden);
+}
+
+function renderSelectionBar() {
+  const bar = document.getElementById("selection-bar");
+  const count = document.getElementById("selection-count");
+  const selectAll = document.getElementById("select-all");
+  if (!bar || !count || !selectAll) return;
+
+  bar.hidden = selectedIds.size === 0;
+  count.textContent = messenger.i18n.getMessage("selectionCount", String(selectedIds.size));
+
+  // Nothing to select at all: hide the row rather than show a dead checkbox.
+  const selectRow = document.querySelector(".select-row");
+  const cardCount = document.querySelectorAll("#template-list .template-card").length;
+  if (selectRow) selectRow.hidden = cardCount === 0;
+
+  // "Select all" reflects the visible rows only, matching what it acts on.
+  const visible = visibleCards();
+  const selectedVisible = visible.filter((c) => selectedIds.has(c.dataset.id)).length;
+  selectAll.checked = visible.length > 0 && selectedVisible === visible.length;
+  selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visible.length;
+  selectAll.disabled = visible.length === 0;
+}
+
+function syncCheckboxes() {
+  for (const card of document.querySelectorAll("#template-list .template-card")) {
+    const box = card.querySelector(".select-box");
+    if (box) box.checked = selectedIds.has(card.dataset.id);
+  }
+}
+
+/**
+ * Move focus off the selection bar before it is hidden, otherwise the button
+ * that was just clicked keeps focus inside a display:none subtree and Tab
+ * restarts at the top of the document. "Select all" is the natural landing
+ * spot, but it is disabled when no row is visible and gone entirely when the
+ * list is empty, so fall back down the page.
+ */
+function restoreFocusFromSelectionBar() {
+  if (!document.activeElement?.closest("#selection-bar")) return;
+  const selectAll = document.getElementById("select-all");
+  const selectRow = document.querySelector(".select-row");
+  if (selectAll && !selectAll.disabled && !selectRow?.hidden) selectAll.focus();
+  else document.getElementById("search-input")?.focus();
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  syncCheckboxes();
+  restoreFocusFromSelectionBar();
+  renderSelectionBar();
+}
+
+function handleSelectAll(event) {
+  if (!event.target.checked) {
+    // Unticking clears everything, not just the visible rows. Otherwise a
+    // selection made before the filter narrowed survives with no ticked row on
+    // screen, and the next bulk action hits a template the user cannot see.
+    clearSelection();
+    return;
+  }
+  for (const card of visibleCards()) selectedIds.add(card.dataset.id);
+  syncCheckboxes();
+  renderSelectionBar();
+}
+
+/**
+ * Names of the selected templates, for confirmation prompts. Bounded so a
+ * 200-template selection cannot produce an unreadable dialog.
+ */
+async function selectedNames(limit = 12) {
+  const templates = await getTemplates();
+  const names = templates.filter((t) => selectedIds.has(t.id)).map((t) => t.name);
+  if (names.length <= limit) return names.join("\n");
+  return names.slice(0, limit).join("\n") + `\n… (+${names.length - limit})`;
+}
+
+async function handleSelectionDelete() {
+  if (selectedIds.size === 0) return;
+  // Name what is about to be destroyed: the selection survives filtering, so
+  // a count alone can describe rows that are not on screen.
+  const msg = messenger.i18n.getMessage("selectionConfirmDelete", String(selectedIds.size));
+  if (!confirm(`${msg}\n\n${await selectedNames()}`)) return;
+
+  const removed = await deleteTemplates([...selectedIds]);
+  selectedIds.clear();
+  syncCheckboxes();
+  await renderTemplateList();
+  await populateCategoryFilter();
+  await renderDefaultsSection();
+  // After the re-render, so focus does not land on a row that just vanished.
+  restoreFocusFromSelectionBar();
+  renderSelectionBar();
+  showListFeedback(messenger.i18n.getMessage("selectionDeleted", String(removed)));
+}
+
+async function handleSelectionCategory() {
+  if (selectedIds.size === 0) return;
+  const input = document.getElementById("selection-category");
+  const category = input.value.trim();
+
+  // An empty field would strip the category off every selected template — a
+  // destructive, unconfirmed action one stray click away from a successful
+  // run, since the field is cleared afterwards. Make the user say so.
+  if (!category) {
+    const msg = messenger.i18n.getMessage(
+      "selectionConfirmClearCategory",
+      String(selectedIds.size)
+    );
+    if (!confirm(msg)) {
+      input.focus();
+      return;
+    }
+  }
+
+  const changed = await setCategoryForTemplates([...selectedIds], category);
+  input.value = "";
+  await renderTemplateList();
+  await populateCategoryFilter();
+  await populateSelectionCategoryList();
+  showListFeedback(messenger.i18n.getMessage("selectionCategorySet", String(changed)));
+}
+
+async function handleSelectionExport() {
+  if (selectedIds.size === 0) return;
+  const json = await exportTemplates([...selectedIds]);
+  downloadJson(json, "templatewing-selection.json");
+}
+
+async function populateSelectionCategoryList() {
+  const datalist = document.getElementById("selection-category-list");
+  if (!datalist) return;
+  datalist.replaceChildren();
+  for (const category of await getCategories()) {
+    const option = document.createElement("option");
+    option.value = category;
+    datalist.appendChild(option);
+  }
 }
 
 async function populateCategoryFilter() {
   setFilterOptions("category-filter", await getCategories());
+  // The selected category can vanish when its last template is deleted or
+  // recategorised; the select then falls back to "All" and the rows have to
+  // be re-evaluated against the new filter state.
+  filterTemplates();
 }
 
 async function renderDefaultsSection() {
@@ -897,25 +1096,34 @@ async function handleSave() {
   await renderDefaultsSection();
 }
 
-async function handleExport() {
-  const json = await exportTemplates();
+function downloadJson(json, filename) {
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "templatewing-templates.json";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
+
+async function handleExport() {
+  downloadJson(await exportTemplates(), "templatewing-templates.json");
+}
+
+let feedbackTimer = null;
 
 function showImportFeedback(message, isError) {
   const el = document.getElementById("import-feedback");
   el.textContent = message;
   el.className = "import-feedback" + (isError ? " error" : "");
   el.hidden = false;
+  // Without clearing, an earlier banner's timer hides this one early: an
+  // import followed a second later by a bulk action would flash for 1s.
+  if (feedbackTimer !== null) clearTimeout(feedbackTimer);
   const FEEDBACK_DISMISS_MS = 6000;
-  setTimeout(() => {
+  feedbackTimer = setTimeout(() => {
     el.hidden = true;
+    feedbackTimer = null;
   }, FEEDBACK_DISMISS_MS);
 }
 
@@ -924,6 +1132,13 @@ function showImportError(message) {
 }
 
 function showImportSuccess(message) {
+  showImportFeedback(message, false);
+}
+
+// Bulk actions report through the same transient banner as import: it already
+// sits directly above the template list, which is exactly where the user is
+// looking after confirming one.
+function showListFeedback(message) {
   showImportFeedback(message, false);
 }
 
@@ -1177,6 +1392,8 @@ async function handleImport(file) {
 
 function filterTemplates() {
   filterTemplateList("#template-list .template-card");
+  // Which rows are visible decides the select-all tri-state, so refresh it.
+  renderSelectionBar();
 }
 
 // Tab navigation
@@ -1217,6 +1434,14 @@ document.getElementById("btn-back").addEventListener("click", closeEditor);
 document.getElementById("btn-insert-nested").addEventListener("click", insertNestedTemplate);
 
 document.getElementById("btn-export").addEventListener("click", handleExport);
+
+document.getElementById("select-all").addEventListener("change", handleSelectAll);
+document.getElementById("btn-selection-clear").addEventListener("click", clearSelection);
+document.getElementById("btn-selection-delete").addEventListener("click", handleSelectionDelete);
+document
+  .getElementById("btn-selection-category")
+  .addEventListener("click", handleSelectionCategory);
+document.getElementById("btn-selection-export").addEventListener("click", handleSelectionExport);
 
 document.getElementById("btn-import").addEventListener("click", () => {
   document.getElementById("import-file-input").click();
@@ -1322,6 +1547,7 @@ localize();
 hideImportDialog();
 await renderTemplateList();
 await populateCategoryFilter();
+await populateSelectionCategoryList();
 await renderDefaultsSection();
 
 messenger.storage.onChanged.addListener(async (changes, area) => {
@@ -1338,6 +1564,7 @@ messenger.storage.onChanged.addListener(async (changes, area) => {
   if (changes.templates && !document.getElementById("view-list").hidden) {
     await renderTemplateList();
     await populateCategoryFilter();
+    await populateSelectionCategoryList();
     await renderDefaultsSection();
   }
   if (changes[SETTINGS_KEY] && !document.getElementById("view-list").hidden) {

@@ -215,6 +215,67 @@ export async function deleteTemplate(id) {
   if (touched) await setDefaults(defaults);
 }
 
+/**
+ * Delete several templates in one storage write.
+ *
+ * Looping deleteTemplate() would work but costs one storage.local.set and one
+ * storage.onChanged event per template, and every event rebuilds the compose
+ * context menu in the background page. For a 30-template cleanup that is 30
+ * menu rebuilds; here it is one.
+ *
+ * @param {string[]} ids
+ * @returns {Promise<number>} how many templates were actually removed
+ */
+export async function deleteTemplates(ids) {
+  const idSet = new Set(ids || []);
+  if (idSet.size === 0) return 0;
+
+  const templates = await getTemplates();
+  const remaining = templates.filter((t) => !idSet.has(t.id));
+  const removed = templates.length - remaining.length;
+  if (removed === 0) return 0;
+  await persistTemplates(remaining);
+
+  // Same defaults garbage collection as the single-template path, batched.
+  const defaults = await getDefaults();
+  let touched = false;
+  for (const [identityId, templateId] of Object.entries(defaults)) {
+    if (idSet.has(templateId)) {
+      delete defaults[identityId];
+      touched = true;
+    }
+  }
+  if (touched) await setDefaults(defaults);
+
+  return removed;
+}
+
+/**
+ * Assign one category to several templates in a single storage write.
+ * An empty string clears the category.
+ *
+ * @param {string[]} ids
+ * @param {string} category
+ * @returns {Promise<number>} how many templates changed category
+ */
+export async function setCategoryForTemplates(ids, category) {
+  const idSet = new Set(ids || []);
+  if (idSet.size === 0) return 0;
+
+  const next = (category || "").trim();
+  const templates = await getTemplates();
+  let changed = 0;
+  const updated = templates.map((t) => {
+    if (!idSet.has(t.id) || (t.category || "") === next) return t;
+    changed++;
+    return { ...t, category: next, updatedAt: new Date().toISOString() };
+  });
+
+  if (changed === 0) return 0;
+  await persistTemplates(updated);
+  return changed;
+}
+
 /** Toggle or set the pinned flag for a template. */
 export async function setPinned(id, pinned) {
   const templates = await getTemplates();
@@ -291,9 +352,16 @@ export { PREFILL_KEY };
 
 // ---- Export ----
 
-/** Serialise all templates into an export payload string. Strips internal-only fields. */
-export async function exportTemplates() {
-  const templates = await getTemplates();
+/**
+ * Serialise templates into an export payload string. Strips internal-only fields.
+ *
+ * @param {string[]} [ids] restrict the export to these template IDs; omit for all.
+ *   Output keeps storage order, not the order of `ids`.
+ */
+export async function exportTemplates(ids) {
+  const all = await getTemplates();
+  const idSet = ids ? new Set(ids) : null;
+  const templates = idSet ? all.filter((t) => idSet.has(t.id)) : all;
   const safeTemplates = templates.map(
     ({ id, usageCount, lastUsedAt, createdAt, updatedAt, pinned, ...t }) => ({
       ...t,

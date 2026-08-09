@@ -10,9 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "20"
 
@@ -26,7 +26,57 @@ jobs:
         run: npm run lint
 
       - name: Check formatting
-        run: npx prettier --check "**/*.{js,css,html,json}" --ignore-path .gitignore
+        run: npm run format:check
+
+      # Both archives are built on every push. This is what stops the source
+      # archive drifting behind the XPI again: a file added to
+      # scripts/xpi-files.mjs but missing from disk fails the build here
+      # instead of reaching a reviewer.
+      - name: Build XPI
+        run: node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP"
+
+      - name: Build source archive
+        run: node scripts/build-source-zip.mjs --out-dir "$RUNNER_TEMP"
+
+      # The XPI is byte-reproducible, so this asserts hash equality rather than
+      # merely comparing extracted contents. It catches source-archive drift
+      # and the three nondeterminism traps the builder defuses. The rebuild is
+      # deliberately perturbed along every axis that has bitten us:
+      #   TZ     — zip encodes DOS timestamps in local time
+      #   chmod  — file modes land in the central directory (zip -X does NOT
+      #            cover this; the first version of the fix missed it, and a
+      #            check without this perturbation passed with the fix removed)
+      #   umask  — decides the modes a fresh checkout gets
+      # Line endings are the fourth axis; .gitattributes pins them to LF, which
+      # a Linux-only CI job cannot exercise.
+      - name: Verify the source archive rebuilds a byte-identical XPI
+        run: |
+          VERSION="$(node -p "require('./manifest.json').version")"
+          mkdir -p "$RUNNER_TEMP/src"
+          unzip -q "$RUNNER_TEMP/templatewing-$VERSION-source.zip" -d "$RUNNER_TEMP/src"
+          chmod -R go-rwx "$RUNNER_TEMP/src"
+          chmod 0755 "$RUNNER_TEMP/src/manifest.json" "$RUNNER_TEMP/src/background.js"
+          (cd "$RUNNER_TEMP/src" && umask 077 && TZ=Pacific/Auckland node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP/rebuilt")
+          ORIGINAL="$(sha256sum "$RUNNER_TEMP/templatewing-$VERSION.xpi" | cut -d' ' -f1)"
+          REBUILT="$(sha256sum "$RUNNER_TEMP/rebuilt/templatewing-$VERSION.xpi" | cut -d' ' -f1)"
+          echo "original: $ORIGINAL"
+          echo "rebuilt:  $REBUILT"
+          if [ "$ORIGINAL" != "$REBUILT" ]; then
+            echo "::error::XPI is not reproducible from the source archive."
+            exit 1
+          fi
+
+      # A hand-copied hash rots the moment anything ships. REVIEW_NOTE.txt is
+      # what the ATN reviewer checks against, so a stale value there is worse
+      # than none at all.
+      - name: Verify REVIEW_NOTE.txt quotes the current SHA-256
+        run: |
+          VERSION="$(node -p "require('./manifest.json').version")"
+          BUILT="$(sha256sum "$RUNNER_TEMP/templatewing-$VERSION.xpi" | cut -d' ' -f1)"
+          if ! grep -qF "$BUILT" REVIEW_NOTE.txt; then
+            echo "::error::REVIEW_NOTE.txt does not contain the built SHA-256 ($BUILT). Update it."
+            exit 1
+          fi
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium chromium-headless-shell
