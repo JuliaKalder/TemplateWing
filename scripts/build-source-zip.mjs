@@ -38,6 +38,9 @@ const EXTRA_FILES = [
   "playwright.config.mjs",
   ".prettierrc.json",
   ".editorconfig",
+  // Pins line endings to LF. A reviewer who clones the repo instead of using
+  // this archive needs it to reproduce the published hash on Windows.
+  ".gitattributes",
   "build-xpi.ps1",
   "build-source-zip.ps1",
 ];
