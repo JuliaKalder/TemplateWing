@@ -6,119 +6,8 @@ License: Mozilla Public License 2.0
 Author: Julia Kalder <mail@julia-kalder.de>
 Repository: https://github.com/JuliaKalder/TemplateWing
 
-TemplateWing saves and inserts reusable email templates, including file
-attachments, recipients, subject lines and dynamic variables. All data
-stays in messenger.storage.local. The add-on makes no network requests.
-
-The last version published on ATN is 2.5.x, so this submission bundles
-2.6, 2.7, 2.7.1, 2.8.0 and 2.8.1.
-
-
-Points that may need explanation
---------------------------------
-
-1. A tab opens after installation (new in 2.8.0).
-   runtime.onInstalled opens welcome/welcome.html, but only when
-   details.reason === "install". Updates do not reopen it. The page
-   loads only files from inside the XPI (welcome.css, welcome.js,
-   images/icon.svg) and nothing else.
-
-2. That page contains a donation link.
-   Four outbound links: usage guide and repository on GitHub, the issue
-   tracker, and https://www.paypal.com/paypalme/tkalder, which is the
-   author's own account. No third party product is promoted anywhere in
-   the add-on. The links are ordinary <a href> elements; since
-   Thunderbird does not follow http(s) links inside extension pages,
-   welcome.js intercepts the click and calls
-   messenger.windows.openDefaultBrowser(). Nothing is sent anywhere
-   unless the user clicks, and then the system browser makes the
-   request, not the add-on.
-   If the placement on the first run page is a problem, we will move it
-   to the options page instead. Please just say so.
-
-3. unlimitedStorage.
-   Templates can carry file attachments, stored base64 encoded. A few
-   templates with a PDF attached already exceed the default quota. The
-   add-on warns at 5 MB per file and 10 MB in total.
-
-
-Permissions
------------
-compose           Read and write compose window details (the core
-                  feature).
-storage           Persist templates locally.
-unlimitedStorage  Base64 encoded attachments (see point 3).
-menus             "Insert Template" in the compose body context menu,
-                  "Save as Template" in the message list.
-messagesRead      Read a message body for "Save as Template" and build
-                  {REPLY_QUOTE} / {LAST_MESSAGE_SUBJECT} on reply.
-accountsRead      List identities for identity restricted templates,
-                  per identity defaults and the {ACCOUNT_*} /
-                  {SENDER_*} variables.
-notifications     Report a failed insertion, which would otherwise fail
-                  silently.
-
-Every permission is exercised in the code. tabs.create and
-windows.openDefaultBrowser require no permission and none is declared.
-
-
-No network access, no data collection
--------------------------------------
-No requests of any kind, no telemetry, no analytics, no error
-reporting, no remote scripts, no CDN. All four extension pages (popup,
-options, prompt dialog, welcome) load local resources only. Export
-writes a JSON file the user chooses to save; import reads one the user
-chooses to open.
-
-No inline scripts and no inline event handlers, so the default MV2 CSP
-applies unmodified. The manifest declares no content_security_policy.
-
-
-Changes since 2.5.x
--------------------
-
-2.6
-  Favorites and pinning (pinned templates sort first).
-  Live search in the popup.
-  Recipient variables {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME},
-  {RECIPIENT_EMAIL}, plus {REPLY_QUOTE} and {LAST_MESSAGE_SUBJECT} on
-  reply and forward.
-  Conditionals {IF expr}...{ELSE}...{ENDIF} with == and != on dot paths
-  such as recipient.domain. Nesting supported, unknown variables
-  compare as the empty string.
-  Per identity default template, auto inserted only when a new compose
-  window opens with an empty body. Skipped on reply and forward.
-
-2.7
-  Import preview with a per row decision (skip, add as copy, replace,
-  rename) and bulk buttons.
-  Usage tab with a sortable table, a top 10 inline SVG chart and CSV
-  export, derived from data already stored locally.
-  Template linter flagging unknown variables, broken or cyclic nested
-  includes, oversize attachments and invalid recipients.
-  Release automation and the first Playwright UI tests.
-
-2.7.1
-  Bugfix: {IF recipient.*} in a fresh compose always took the ELSE
-  branch because the recipient context was read before the template's
-  own "to" field was written. It now falls back to the template's
-  to[0]. Reply behaviour unchanged.
-
-2.8.0
-  Welcome tab on first install (see point 1).
-  Multi select in the options list with bulk actions: set category,
-  export the selection, delete the selection. Deleting asks for
-  confirmation and names the templates it will remove. Backed by
-  deleteTemplates(ids) and setCategoryForTemplates(ids, category), each
-  doing a single storage write rather than one per template. Identity
-  defaults pointing at deleted templates are cleaned up in the same
-  batch.
-  Localisation completed: French, Spanish, Italian, Dutch and
-  Portuguese no longer fall back to English. All seven locales are
-  complete.
-  Accessibility: row checkboxes name their template, the bulk category
-  field has an accessible name, the selection count is a live region.
-  No new permissions.
+Changes
+-------
 
 2.8.1
   Bugfix: templates set to "Insert at beginning" did not insert their
@@ -156,31 +45,6 @@ drop the timestamp and uid/gid extra fields, and pins TZ to UTC.
 .gitattributes pins line endings to LF so a Windows clone produces the
 same bytes. CI performs this check on every push and also fails if this
 file quotes a stale hash.
-
-
-Source archive
---------------
-  node scripts/build-source-zip.mjs
-
-67 files, of which 38 ship in the XPI. The list is derived from
-scripts/xpi-files.mjs, the same module the XPI builder reads, so the
-two cannot drift apart. The code in the XPI is the source unchanged:
-vanilla ES6 modules, no transpiler, bundler, minifier or runtime
-dependency. devDependencies are @playwright/test and prettier, neither
-of which is bundled.
-
-
-Tests
------
-  npm test        269 unit tests (node:test), covering the store and
-                  its migrations, variable substitution, conditionals,
-                  prompt tokens, nested templates with cycle detection,
-                  import decisions, linter, usage stats, validation.
-  npm run lint    Locale key parity (192 keys x 7 languages).
-Both run in the extracted source archive without npm install.
-
-  npm install && npm run test:ui       21 Playwright UI tests.
-  npm install && npm run format:check  Prettier, pinned.
 
 
 Questions or requested changes: mail@julia-kalder.de or an issue at
