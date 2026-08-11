@@ -158,6 +158,17 @@ export function insertHtmlAtBodyStart(existingBody, html) {
   return existingBody.slice(0, at) + html + existingBody.slice(at);
 }
 
+/**
+ * Concatenate two plain-text blocks with exactly one newline between them,
+ * so a template never runs into the first line of what is already there.
+ * Either side being empty yields the other side unchanged.
+ */
+export function joinPlainText(first, second) {
+  if (!first) return second || "";
+  if (!second) return first;
+  return first.endsWith("\n") ? first + second : first + "\n" + second;
+}
+
 /** Counterpart of {@link insertHtmlAtBodyStart}: splice in before `</body>`. */
 export function insertHtmlAtBodyEnd(existingBody, html) {
   if (!existingBody) return html || "";
@@ -710,8 +721,11 @@ async function tryCursorInsert(tabId, body, existingDetails) {
   // insert at a user-meaningful anchor rather than blindly appending.
   // Priority: before cite-prefix (reply quote), before signature,
   // else append. Keeps the template from landing after the sign-off.
+  // In plain-text compose the editor content to merge with is
+  // `plainTextBody`; `body` carries an HTML rendering that Thunderbird will
+  // not accept back on a plain-text composer (see insertTemplateIntoTab).
   const fallbackBody = isPlainText
-    ? smartInsertPlaintext(existingDetails.body || "", htmlToPlainText(body))
+    ? smartInsertPlaintext(existingDetails.plainTextBody || "", htmlToPlainText(body))
     : smartInsertHtml(existingDetails.body || "", body);
   console.log(
     "TemplateWing: cursor fallback wrote template",
@@ -832,7 +846,33 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
     const body = pipeline(resolvedBody, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const fallbackBody = await tryCursorInsert(tabId, body, existing);
-    if (fallbackBody !== null) details.body = fallbackBody;
+    if (fallbackBody !== null) {
+      if (isPlainText) details.plainTextBody = fallbackBody;
+      else details.body = fallbackBody;
+    }
+  } else if (resolvedBody && isPlainText) {
+    // Thunderbird drops `body` on a plain-text composer without raising an
+    // error (mail/components/extensions/parent/ext-compose.js), so every
+    // insert mode has to hand the template over as `plainTextBody` instead.
+    // Substitution still runs in HTML mode and is flattened afterwards, the
+    // same order the cursor path uses, so entity handling stays consistent.
+    const text = htmlToPlainText(pipeline(resolvedBody, true));
+    const existing = await messenger.compose.getComposeDetails(tabId);
+    const existingText = existing.plainTextBody || "";
+    if (mode === INSERT_MODES.REPLACE) {
+      details.plainTextBody = text;
+    } else if (mode === INSERT_MODES.PREPEND) {
+      details.plainTextBody = joinPlainText(text, existingText);
+    } else {
+      if (mode !== INSERT_MODES.APPEND) {
+        console.warn(
+          "TemplateWing: unknown insert mode:",
+          JSON.stringify(mode),
+          "— defaulting to append"
+        );
+      }
+      details.plainTextBody = joinPlainText(existingText, text);
+    }
   } else if (resolvedBody) {
     const body = pipeline(resolvedBody, true);
     if (mode === INSERT_MODES.REPLACE) {

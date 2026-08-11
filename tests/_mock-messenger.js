@@ -85,6 +85,31 @@ export function createMessengerMock() {
   };
 }
 
+/**
+ * Minimal stand-in for the DOMParser that htmlToPlainText() uses. Mirrors
+ * `textContent`: markup is removed and entities decoded, but no newlines are
+ * invented for block elements — the real textContent does not add any either.
+ */
+export function installDomParserMock() {
+  globalThis.DOMParser = class {
+    parseFromString(html) {
+      const text = String(html ?? "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, "&");
+      return { body: { textContent: text } };
+    }
+  };
+}
+
+export function uninstallDomParserMock() {
+  delete globalThis.DOMParser;
+}
+
 export function installMessengerMock() {
   globalThis.messenger = createMessengerMock();
   return globalThis.messenger;
