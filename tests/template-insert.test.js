@@ -16,6 +16,7 @@ const {
   applyPromptAnswers,
   buildVariableContext,
   applyTemplateRecipientFallback,
+  insertTemplateIntoTab,
 } = await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
@@ -539,5 +540,55 @@ describe("applyTemplateRecipientFallback", () => {
 
   it("no-op when template.to[0] is unparseable", () => {
     assert.deepStrictEqual(applyTemplateRecipientFallback(empty, ["not an email"]), empty);
+  });
+});
+
+// ---- Insert modes end-to-end (issue #221) ----
+
+describe("insertTemplateIntoTab insert modes", () => {
+  // Thunderbird rebuilds the compose document from this string: anything
+  // before <body> becomes head content and is invisible to the user.
+  const COMPOSE_DOC =
+    '<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"></head>' +
+    '<body><p><br></p><div class="moz-signature">-- <br>Alice</div></body></html>';
+
+  function setup(insertMode) {
+    messenger.compose._details = { 1: { identityId: null, isPlainText: false, body: COMPOSE_DOC } };
+    return {
+      id: "t1",
+      name: "Test",
+      body: "THIS IS A TEMPLATE BODY TEST",
+      insertMode,
+      attachments: [],
+    };
+  }
+
+  it("prepend puts the body inside <body>, above existing content", async () => {
+    await insertTemplateIntoTab(1, setup("prepend"));
+    const body = messenger.compose._details[1].body;
+    const tmplIdx = body.indexOf("THIS IS A TEMPLATE BODY TEST");
+    assert.ok(tmplIdx !== -1, "template body was inserted");
+    assert.ok(tmplIdx > body.indexOf("<body>"), "not stranded in the document head");
+    assert.ok(tmplIdx < body.indexOf("moz-signature"), "above the signature");
+    assert.ok(tmplIdx < body.indexOf("</body>"));
+  });
+
+  it("append puts the body inside <body>, below existing content", async () => {
+    await insertTemplateIntoTab(1, setup("append"));
+    const body = messenger.compose._details[1].body;
+    const tmplIdx = body.indexOf("THIS IS A TEMPLATE BODY TEST");
+    assert.ok(tmplIdx > body.indexOf("moz-signature"));
+    assert.ok(tmplIdx < body.indexOf("</body>"), "not after the closing tags");
+  });
+
+  it("replace overwrites the whole body", async () => {
+    await insertTemplateIntoTab(1, setup("replace"));
+    assert.strictEqual(messenger.compose._details[1].body, "THIS IS A TEMPLATE BODY TEST");
+  });
+
+  it("an unknown mode falls back to append inside <body>", async () => {
+    await insertTemplateIntoTab(1, setup("bogus-mode"));
+    const body = messenger.compose._details[1].body;
+    assert.ok(body.indexOf("THIS IS A TEMPLATE BODY TEST") < body.indexOf("</body>"));
   });
 });

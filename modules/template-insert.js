@@ -129,6 +129,47 @@ export function smartInsertPlaintext(existingBody, insertText) {
   return existingBody + insertText;
 }
 
+const BODY_OPEN_TAG_RE = /<body\b[^>]*>/i;
+const BODY_CLOSE_TAG_RE = /<\/body\s*>/i;
+
+/**
+ * Splice `html` in directly after the `<body …>` start tag of an existing
+ * compose document.
+ *
+ * Thunderbird rebuilds the whole compose document from the string passed to
+ * `setComposeDetails({ body })`: everything *before* the first `<body>` start
+ * tag becomes head content, everything after it becomes the body. Plain string
+ * concatenation therefore silently moves a prepended template into the
+ * document head, where it never shows up (issue #221). Appending happens to
+ * survive because trailing content still sits after `<body>`, but we route it
+ * through the sibling helper so both modes stay structurally correct.
+ *
+ * Falls back to concatenation when the existing body is a bare fragment with
+ * no document wrapper. Regex rather than DOMParser, for the same reason
+ * smartInsertHtml uses one: no parse-serialize round-trip over the user's
+ * in-flight HTML.
+ */
+export function insertHtmlAtBodyStart(existingBody, html) {
+  if (!existingBody) return html || "";
+  if (!html) return existingBody;
+  const match = existingBody.match(BODY_OPEN_TAG_RE);
+  if (!match) return html + existingBody;
+  const at = match.index + match[0].length;
+  return existingBody.slice(0, at) + html + existingBody.slice(at);
+}
+
+/** Counterpart of {@link insertHtmlAtBodyStart}: splice in before `</body>`. */
+export function insertHtmlAtBodyEnd(existingBody, html) {
+  if (!existingBody) return html || "";
+  if (!html) return existingBody;
+  // Last occurrence — a quoted reply could carry an escaped-looking one.
+  let at = -1;
+  const re = new RegExp(BODY_CLOSE_TAG_RE.source, "gi");
+  for (let m = re.exec(existingBody); m; m = re.exec(existingBody)) at = m.index;
+  if (at < 0) return existingBody + html;
+  return existingBody.slice(0, at) + html + existingBody.slice(at);
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -798,10 +839,10 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
       details.body = body;
     } else if (mode === INSERT_MODES.PREPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = body + (existing.body || "");
+      details.body = insertHtmlAtBodyStart(existing.body || "", body);
     } else if (mode === INSERT_MODES.APPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = (existing.body || "") + body;
+      details.body = insertHtmlAtBodyEnd(existing.body || "", body);
     } else {
       console.warn(
         "TemplateWing: unknown insert mode:",
@@ -809,7 +850,7 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
         "— defaulting to append"
       );
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = (existing.body || "") + body;
+      details.body = insertHtmlAtBodyEnd(existing.body || "", body);
     }
   }
 
