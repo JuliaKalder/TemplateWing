@@ -6,7 +6,8 @@ import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.
 // strictly needed for the pure helpers but keeps the import graph happy.
 installMessengerMock();
 
-const { smartInsertHtml, smartInsertPlaintext } = await import("../modules/template-insert.js");
+const { smartInsertHtml, smartInsertPlaintext, insertHtmlAtBodyStart, insertHtmlAtBodyEnd } =
+  await import("../modules/template-insert.js");
 
 after(() => uninstallMessengerMock());
 
@@ -172,5 +173,81 @@ describe("smartInsertPlaintext", () => {
   it("returns empty string when both inputs are empty", () => {
     assert.strictEqual(smartInsertPlaintext("", ""), "");
     assert.strictEqual(smartInsertPlaintext(null, null), "");
+  });
+});
+
+// ---- Body-tag splicing (issue #221) ----
+
+// Shape of what compose.getComposeDetails() hands back for a fresh HTML
+// compose window: a full document, signature inside <body>.
+const COMPOSE_DOC =
+  '<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"></head>' +
+  '<body><p><br></p><div class="moz-signature">-- <br>Alice</div></body></html>';
+
+describe("insertHtmlAtBodyStart", () => {
+  it("inserts after the <body> start tag, not before <html>", () => {
+    const result = insertHtmlAtBodyStart(COMPOSE_DOC, "<p>TEMPLATE</p>");
+    const bodyIdx = result.indexOf("<body>");
+    const tmplIdx = result.indexOf("TEMPLATE");
+    assert.ok(bodyIdx !== -1 && tmplIdx !== -1);
+    assert.ok(tmplIdx > bodyIdx, "template must land inside <body>, not in the head");
+    // Nothing may precede the document wrapper.
+    assert.ok(result.startsWith("<html>"));
+  });
+
+  it("puts the template ahead of existing body content and the signature", () => {
+    const result = insertHtmlAtBodyStart(COMPOSE_DOC, "<p>TEMPLATE</p>");
+    assert.ok(result.indexOf("TEMPLATE") < result.indexOf("moz-signature"));
+    assert.ok(result.indexOf("TEMPLATE") < result.indexOf("<p><br></p>"));
+  });
+
+  it("handles a <body> tag carrying attributes", () => {
+    const doc = '<html><body bgcolor="#ffffff" dir="ltr"><p>old</p></body></html>';
+    const result = insertHtmlAtBodyStart(doc, "<p>NEW</p>");
+    assert.strictEqual(
+      result,
+      '<html><body bgcolor="#ffffff" dir="ltr"><p>NEW</p><p>old</p></body></html>'
+    );
+  });
+
+  it("matches <BODY> case-insensitively", () => {
+    const result = insertHtmlAtBodyStart("<HTML><BODY><p>old</p></BODY></HTML>", "X");
+    assert.strictEqual(result, "<HTML><BODY>X<p>old</p></BODY></HTML>");
+  });
+
+  it("falls back to concatenation for a bare fragment", () => {
+    assert.strictEqual(insertHtmlAtBodyStart("<p>old</p>", "<p>NEW</p>"), "<p>NEW</p><p>old</p>");
+  });
+
+  it("handles empty inputs", () => {
+    assert.strictEqual(insertHtmlAtBodyStart("", "<p>NEW</p>"), "<p>NEW</p>");
+    assert.strictEqual(insertHtmlAtBodyStart(null, "<p>NEW</p>"), "<p>NEW</p>");
+    assert.strictEqual(insertHtmlAtBodyStart(COMPOSE_DOC, ""), COMPOSE_DOC);
+    assert.strictEqual(insertHtmlAtBodyStart("", ""), "");
+  });
+});
+
+describe("insertHtmlAtBodyEnd", () => {
+  it("inserts before </body>, keeping the document wrapper intact", () => {
+    const result = insertHtmlAtBodyEnd(COMPOSE_DOC, "<p>TEMPLATE</p>");
+    assert.ok(result.endsWith("</body></html>"));
+    assert.ok(result.indexOf("TEMPLATE") > result.indexOf("moz-signature"));
+    assert.ok(result.indexOf("TEMPLATE") < result.indexOf("</body>"));
+  });
+
+  it("uses the last </body> when a quoted reply carries one", () => {
+    const doc = "<html><body><blockquote>a</body>b</blockquote>c</body></html>";
+    const result = insertHtmlAtBodyEnd(doc, "X");
+    assert.strictEqual(result, "<html><body><blockquote>a</body>b</blockquote>cX</body></html>");
+  });
+
+  it("falls back to concatenation for a bare fragment", () => {
+    assert.strictEqual(insertHtmlAtBodyEnd("<p>old</p>", "<p>NEW</p>"), "<p>old</p><p>NEW</p>");
+  });
+
+  it("handles empty inputs", () => {
+    assert.strictEqual(insertHtmlAtBodyEnd("", "<p>NEW</p>"), "<p>NEW</p>");
+    assert.strictEqual(insertHtmlAtBodyEnd(COMPOSE_DOC, ""), COMPOSE_DOC);
+    assert.strictEqual(insertHtmlAtBodyEnd(null, null), "");
   });
 });

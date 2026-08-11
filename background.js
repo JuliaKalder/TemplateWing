@@ -380,7 +380,11 @@ async function maybeApplyDefaultTemplate(tabId) {
   // to a specific message and a generic greeting template would overwrite
   // context Thunderbird has already wired up.
   if (details.relatedMessageId != null) return;
-  if (!isComposeBodyEmpty(details.body || "", !!details.isPlainText)) return;
+  // On a plain-text composer `body` still carries an HTML rendering, against
+  // which the plain-text emptiness heuristics below never match — read the
+  // text the user actually sees instead.
+  const existingText = details.isPlainText ? details.plainTextBody || "" : details.body || "";
+  if (!isComposeBodyEmpty(existingText, !!details.isPlainText)) return;
 
   const identityId = details.identityId;
   if (!identityId) return;

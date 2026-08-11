@@ -129,6 +129,58 @@ export function smartInsertPlaintext(existingBody, insertText) {
   return existingBody + insertText;
 }
 
+const BODY_OPEN_TAG_RE = /<body\b[^>]*>/i;
+const BODY_CLOSE_TAG_RE = /<\/body\s*>/i;
+
+/**
+ * Splice `html` in directly after the `<body …>` start tag of an existing
+ * compose document.
+ *
+ * Thunderbird rebuilds the whole compose document from the string passed to
+ * `setComposeDetails({ body })`: everything *before* the first `<body>` start
+ * tag becomes head content, everything after it becomes the body. Plain string
+ * concatenation therefore silently moves a prepended template into the
+ * document head, where it never shows up (issue #221). Appending happens to
+ * survive because trailing content still sits after `<body>`, but we route it
+ * through the sibling helper so both modes stay structurally correct.
+ *
+ * Falls back to concatenation when the existing body is a bare fragment with
+ * no document wrapper. Regex rather than DOMParser, for the same reason
+ * smartInsertHtml uses one: no parse-serialize round-trip over the user's
+ * in-flight HTML.
+ */
+export function insertHtmlAtBodyStart(existingBody, html) {
+  if (!existingBody) return html || "";
+  if (!html) return existingBody;
+  const match = existingBody.match(BODY_OPEN_TAG_RE);
+  if (!match) return html + existingBody;
+  const at = match.index + match[0].length;
+  return existingBody.slice(0, at) + html + existingBody.slice(at);
+}
+
+/**
+ * Concatenate two plain-text blocks with exactly one newline between them,
+ * so a template never runs into the first line of what is already there.
+ * Either side being empty yields the other side unchanged.
+ */
+export function joinPlainText(first, second) {
+  if (!first) return second || "";
+  if (!second) return first;
+  return first.endsWith("\n") ? first + second : first + "\n" + second;
+}
+
+/** Counterpart of {@link insertHtmlAtBodyStart}: splice in before `</body>`. */
+export function insertHtmlAtBodyEnd(existingBody, html) {
+  if (!existingBody) return html || "";
+  if (!html) return existingBody;
+  // Last occurrence — a quoted reply could carry an escaped-looking one.
+  let at = -1;
+  const re = new RegExp(BODY_CLOSE_TAG_RE.source, "gi");
+  for (let m = re.exec(existingBody); m; m = re.exec(existingBody)) at = m.index;
+  if (at < 0) return existingBody + html;
+  return existingBody.slice(0, at) + html + existingBody.slice(at);
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replace(/&/g, "&amp;")
@@ -669,8 +721,11 @@ async function tryCursorInsert(tabId, body, existingDetails) {
   // insert at a user-meaningful anchor rather than blindly appending.
   // Priority: before cite-prefix (reply quote), before signature,
   // else append. Keeps the template from landing after the sign-off.
+  // In plain-text compose the editor content to merge with is
+  // `plainTextBody`; `body` carries an HTML rendering that Thunderbird will
+  // not accept back on a plain-text composer (see insertTemplateIntoTab).
   const fallbackBody = isPlainText
-    ? smartInsertPlaintext(existingDetails.body || "", htmlToPlainText(body))
+    ? smartInsertPlaintext(existingDetails.plainTextBody || "", htmlToPlainText(body))
     : smartInsertHtml(existingDetails.body || "", body);
   console.log(
     "TemplateWing: cursor fallback wrote template",
@@ -791,17 +846,43 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
     const body = pipeline(resolvedBody, true);
     const existing = await messenger.compose.getComposeDetails(tabId);
     const fallbackBody = await tryCursorInsert(tabId, body, existing);
-    if (fallbackBody !== null) details.body = fallbackBody;
+    if (fallbackBody !== null) {
+      if (isPlainText) details.plainTextBody = fallbackBody;
+      else details.body = fallbackBody;
+    }
+  } else if (resolvedBody && isPlainText) {
+    // Thunderbird drops `body` on a plain-text composer without raising an
+    // error (mail/components/extensions/parent/ext-compose.js), so every
+    // insert mode has to hand the template over as `plainTextBody` instead.
+    // Substitution still runs in HTML mode and is flattened afterwards, the
+    // same order the cursor path uses, so entity handling stays consistent.
+    const text = htmlToPlainText(pipeline(resolvedBody, true));
+    const existing = await messenger.compose.getComposeDetails(tabId);
+    const existingText = existing.plainTextBody || "";
+    if (mode === INSERT_MODES.REPLACE) {
+      details.plainTextBody = text;
+    } else if (mode === INSERT_MODES.PREPEND) {
+      details.plainTextBody = joinPlainText(text, existingText);
+    } else {
+      if (mode !== INSERT_MODES.APPEND) {
+        console.warn(
+          "TemplateWing: unknown insert mode:",
+          JSON.stringify(mode),
+          "— defaulting to append"
+        );
+      }
+      details.plainTextBody = joinPlainText(existingText, text);
+    }
   } else if (resolvedBody) {
     const body = pipeline(resolvedBody, true);
     if (mode === INSERT_MODES.REPLACE) {
       details.body = body;
     } else if (mode === INSERT_MODES.PREPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = body + (existing.body || "");
+      details.body = insertHtmlAtBodyStart(existing.body || "", body);
     } else if (mode === INSERT_MODES.APPEND) {
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = (existing.body || "") + body;
+      details.body = insertHtmlAtBodyEnd(existing.body || "", body);
     } else {
       console.warn(
         "TemplateWing: unknown insert mode:",
@@ -809,7 +890,7 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
         "— defaulting to append"
       );
       const existing = await messenger.compose.getComposeDetails(tabId);
-      details.body = (existing.body || "") + body;
+      details.body = insertHtmlAtBodyEnd(existing.body || "", body);
     }
   }
 

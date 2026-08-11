@@ -1,9 +1,15 @@
 import { describe, it, after } from "node:test";
 import assert from "node:assert/strict";
-import { installMessengerMock, uninstallMessengerMock } from "./_mock-messenger.js";
+import {
+  installMessengerMock,
+  uninstallMessengerMock,
+  installDomParserMock,
+  uninstallDomParserMock,
+} from "./_mock-messenger.js";
 
 // The module installs a storage listener at import time; install the mock first.
 installMessengerMock();
+installDomParserMock();
 
 const {
   TEMPLATE_INCLUDE_REGEX,
@@ -16,9 +22,14 @@ const {
   applyPromptAnswers,
   buildVariableContext,
   applyTemplateRecipientFallback,
+  insertTemplateIntoTab,
+  joinPlainText,
 } = await import("../modules/template-insert.js");
 
-after(() => uninstallMessengerMock());
+after(() => {
+  uninstallMessengerMock();
+  uninstallDomParserMock();
+});
 
 // ---- Template include regex ----
 
@@ -539,5 +550,129 @@ describe("applyTemplateRecipientFallback", () => {
 
   it("no-op when template.to[0] is unparseable", () => {
     assert.deepStrictEqual(applyTemplateRecipientFallback(empty, ["not an email"]), empty);
+  });
+});
+
+// ---- Insert modes end-to-end (issue #221) ----
+
+describe("insertTemplateIntoTab insert modes", () => {
+  // Thunderbird rebuilds the compose document from this string: anything
+  // before <body> becomes head content and is invisible to the user.
+  const COMPOSE_DOC =
+    '<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"></head>' +
+    '<body><p><br></p><div class="moz-signature">-- <br>Alice</div></body></html>';
+
+  function setup(insertMode) {
+    messenger.compose._details = { 1: { identityId: null, isPlainText: false, body: COMPOSE_DOC } };
+    return {
+      id: "t1",
+      name: "Test",
+      body: "THIS IS A TEMPLATE BODY TEST",
+      insertMode,
+      attachments: [],
+    };
+  }
+
+  it("prepend puts the body inside <body>, above existing content", async () => {
+    await insertTemplateIntoTab(1, setup("prepend"));
+    const body = messenger.compose._details[1].body;
+    const tmplIdx = body.indexOf("THIS IS A TEMPLATE BODY TEST");
+    assert.ok(tmplIdx !== -1, "template body was inserted");
+    assert.ok(tmplIdx > body.indexOf("<body>"), "not stranded in the document head");
+    assert.ok(tmplIdx < body.indexOf("moz-signature"), "above the signature");
+    assert.ok(tmplIdx < body.indexOf("</body>"));
+  });
+
+  it("append puts the body inside <body>, below existing content", async () => {
+    await insertTemplateIntoTab(1, setup("append"));
+    const body = messenger.compose._details[1].body;
+    const tmplIdx = body.indexOf("THIS IS A TEMPLATE BODY TEST");
+    assert.ok(tmplIdx > body.indexOf("moz-signature"));
+    assert.ok(tmplIdx < body.indexOf("</body>"), "not after the closing tags");
+  });
+
+  it("replace overwrites the whole body", async () => {
+    await insertTemplateIntoTab(1, setup("replace"));
+    assert.strictEqual(messenger.compose._details[1].body, "THIS IS A TEMPLATE BODY TEST");
+  });
+
+  it("an unknown mode falls back to append inside <body>", async () => {
+    await insertTemplateIntoTab(1, setup("bogus-mode"));
+    const body = messenger.compose._details[1].body;
+    assert.ok(body.indexOf("THIS IS A TEMPLATE BODY TEST") < body.indexOf("</body>"));
+  });
+});
+
+// ---- Plain-text compose windows ----
+
+// Thunderbird silently discards `body` on a plain-text composer, so every
+// insert mode has to deliver the template as `plainTextBody`.
+describe("insertTemplateIntoTab in plain-text compose", () => {
+  function setup(insertMode, existingText) {
+    messenger.compose._details = {
+      1: {
+        identityId: null,
+        isPlainText: true,
+        // What TB reports for a plain-text composer: an HTML rendering in
+        // `body`, the actual editor text in `plainTextBody`.
+        body: "<html><body><pre>" + existingText + "</pre></body></html>",
+        plainTextBody: existingText,
+      },
+    };
+    return {
+      id: "t1",
+      name: "Test",
+      body: "<p>Hello there</p>",
+      insertMode,
+      attachments: [],
+    };
+  }
+
+  it("never sets body, which Thunderbird would drop", async () => {
+    await insertTemplateIntoTab(1, setup("prepend", "-- \nAlice"));
+    const written = messenger.compose._details[1];
+    assert.ok(!Object.hasOwn(written, "body") || !written.body.includes("Hello there"));
+    assert.ok(written.plainTextBody.includes("Hello there"), "template went to plainTextBody");
+  });
+
+  it("prepend puts the template above the existing text", async () => {
+    await insertTemplateIntoTab(1, setup("prepend", "-- \nAlice"));
+    assert.strictEqual(messenger.compose._details[1].plainTextBody, "Hello there\n-- \nAlice");
+  });
+
+  it("append puts the template below the existing text", async () => {
+    await insertTemplateIntoTab(1, setup("append", "-- \nAlice"));
+    assert.strictEqual(messenger.compose._details[1].plainTextBody, "-- \nAlice\nHello there");
+  });
+
+  it("replace overwrites the text", async () => {
+    await insertTemplateIntoTab(1, setup("replace", "-- \nAlice"));
+    assert.strictEqual(messenger.compose._details[1].plainTextBody, "Hello there");
+  });
+
+  it("strips the template's HTML markup", async () => {
+    await insertTemplateIntoTab(1, setup("replace", ""));
+    assert.ok(!messenger.compose._details[1].plainTextBody.includes("<p>"));
+  });
+
+  it("an unknown mode falls back to append", async () => {
+    await insertTemplateIntoTab(1, setup("bogus-mode", "existing"));
+    assert.strictEqual(messenger.compose._details[1].plainTextBody, "existing\nHello there");
+  });
+});
+
+describe("joinPlainText", () => {
+  it("inserts exactly one newline between the blocks", () => {
+    assert.strictEqual(joinPlainText("a", "b"), "a\nb");
+  });
+
+  it("does not add a second newline when one is already there", () => {
+    assert.strictEqual(joinPlainText("a\n", "b"), "a\nb");
+  });
+
+  it("returns the other side when one is empty", () => {
+    assert.strictEqual(joinPlainText("", "b"), "b");
+    assert.strictEqual(joinPlainText("a", ""), "a");
+    assert.strictEqual(joinPlainText("", ""), "");
   });
 });
