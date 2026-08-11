@@ -32,6 +32,9 @@ const root = resolve(here, "..");
 // Individual non-shipped files a reviewer needs to build and verify the XPI.
 const EXTRA_FILES = [
   "SOURCE_README.md",
+  // Ships with the archive so a reviewer who only has the two uploaded files
+  // still gets the permission rationale and the build/verify instructions.
+  "REVIEW_NOTE.txt",
   "README.md",
   "package.json",
   "package-lock.json",
