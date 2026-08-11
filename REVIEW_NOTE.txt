@@ -1,4 +1,4 @@
-TemplateWing 2.8.0: Review Notes
+TemplateWing 2.8.1: Review Notes
 =================================
 
 Minimum Thunderbird: 128.0
@@ -11,7 +11,7 @@ attachments, recipients, subject lines and dynamic variables. All data
 stays in messenger.storage.local. The add-on makes no network requests.
 
 The last version published on ATN is 2.5.x, so this submission bundles
-2.6, 2.7, 2.7.1 and 2.8.0.
+2.6, 2.7, 2.7.1, 2.8.0 and 2.8.1.
 
 
 Points that may need explanation
@@ -120,6 +120,20 @@ Changes since 2.5.x
   field has an accessible name, the selection count is a live region.
   No new permissions.
 
+2.8.1
+  Bugfix: templates set to "Insert at beginning" did not insert their
+  body at all. The body was concatenated in front of the document that
+  compose.getComposeDetails() returns, and Thunderbird 128/140 ESR
+  rebuild the compose document by reading the head from "<head" and the
+  body from "<body" onwards, so anything ahead of those markers was
+  discarded. It is now spliced inside the body element. Append, which
+  survived by landing at the other end, takes the same route.
+  Bugfix: on plain-text accounts no template body was inserted in any
+  mode. Thunderbird drops details.body on a plain-text composer and
+  expects plainTextBody; the add-on only ever set body. Plain-text
+  composers now receive the text as plainTextBody.
+  No new permissions, no new files, no API surface added.
+
 
 Reproducing the XPI
 -------------------
@@ -127,8 +141,8 @@ Requires Node.js 20+ and the zip command line utility.
 
   node scripts/build-xpi.mjs
 
-Output: templatewing-2.8.0.xpi (124 KB / 126,798 bytes)
-SHA-256: 8bb5cda21937c9cd570dddb03eccafaeed4786dc18e545023edefa4497eebdc2
+Output: templatewing-2.8.1.xpi (125 KB / 127,986 bytes)
+SHA-256: fdf9c45f2521cce07b24ca544bc604ecda54c22f998b39058019b067d33a5d99
 
 The build is byte reproducible, so this hash can be verified rather
 than trusted. Rebuilding from the source archive gives the identical
@@ -158,7 +172,7 @@ of which is bundled.
 
 Tests
 -----
-  npm test        246 unit tests (node:test), covering the store and
+  npm test        269 unit tests (node:test), covering the store and
                   its migrations, variable substitution, conditionals,
                   prompt tokens, nested templates with cycle detection,
                   import decisions, linter, usage stats, validation.
