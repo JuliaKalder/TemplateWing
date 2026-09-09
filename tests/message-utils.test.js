@@ -4,6 +4,8 @@ import {
   findPart,
   extractBody,
   parseRecipient,
+  recipientKey,
+  mergeRecipients,
   stripReplyForwardPrefix,
   quotePlaintext,
   quoteHtml,
@@ -190,5 +192,78 @@ describe("quoteHtml", () => {
   });
   it("returns empty string for empty input", () => {
     assert.strictEqual(quoteHtml(""), "");
+  });
+});
+
+// ---- recipientKey / mergeRecipients ----
+
+describe("recipientKey", () => {
+  it("keys a plain address by itself, lower-cased", () => {
+    assert.strictEqual(recipientKey("Jane@Example.com"), "jane@example.com");
+  });
+
+  it("keys a named address by the address alone", () => {
+    assert.strictEqual(recipientKey("Jane Doe <Jane@Example.com>"), "jane@example.com");
+  });
+
+  it("keys an address-book reference by type and id", () => {
+    assert.strictEqual(recipientKey({ id: "abc", type: "mailingList" }), "mailingList:abc");
+  });
+
+  it("falls back to the raw text for something unparseable", () => {
+    assert.strictEqual(recipientKey("Team Sales"), "team sales");
+  });
+
+  it("returns empty string for nothing", () => {
+    assert.strictEqual(recipientKey(""), "");
+    assert.strictEqual(recipientKey(null), "");
+    assert.strictEqual(recipientKey({}), "");
+  });
+});
+
+describe("mergeRecipients", () => {
+  it("keeps existing recipients ahead of the template's", () => {
+    const merged = mergeRecipients(["kat@example.com"], ["team@example.org"]);
+    assert.deepStrictEqual(merged, ["kat@example.com", "team@example.org"]);
+  });
+
+  it("does not drop the recipient the user picked by hand", () => {
+    // The regression this function exists for: assigning template.to used to
+    // delete whatever the user had already chosen.
+    const merged = mergeRecipients(["Katharina <kat@example.com>"], ["info@example.org"]);
+    assert.ok(merged.includes("Katharina <kat@example.com>"));
+  });
+
+  it("drops a duplicate address regardless of display name", () => {
+    const merged = mergeRecipients(["Kat <kat@example.com>"], ["kat@example.com"]);
+    assert.deepStrictEqual(merged, ["Kat <kat@example.com>"]);
+  });
+
+  it("de-duplicates case-insensitively", () => {
+    const merged = mergeRecipients(["KAT@example.com"], ["kat@Example.com"]);
+    assert.strictEqual(merged.length, 1);
+  });
+
+  it("skips empty entries", () => {
+    assert.deepStrictEqual(mergeRecipients(["", "  "], ["a@b.test"]), ["a@b.test"]);
+  });
+
+  it("keeps address-book references and plain addresses side by side", () => {
+    const ref = { id: "c1", type: "contact" };
+    assert.deepStrictEqual(mergeRecipients([ref], ["a@b.test"]), [ref, "a@b.test"]);
+  });
+
+  it("tolerates missing lists", () => {
+    assert.deepStrictEqual(mergeRecipients(undefined, ["a@b.test"]), ["a@b.test"]);
+    assert.deepStrictEqual(mergeRecipients(["a@b.test"], undefined), ["a@b.test"]);
+    assert.deepStrictEqual(mergeRecipients(null, null), []);
+  });
+
+  it("does not mutate its inputs", () => {
+    const existing = ["a@b.test"];
+    const incoming = ["c@d.test"];
+    mergeRecipients(existing, incoming);
+    assert.deepStrictEqual(existing, ["a@b.test"]);
+    assert.deepStrictEqual(incoming, ["c@d.test"]);
   });
 });

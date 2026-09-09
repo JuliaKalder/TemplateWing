@@ -71,6 +71,63 @@ export function parseRecipient(raw) {
 }
 
 /**
+ * Identity of a recipient entry for de-duplication.
+ *
+ * Thunderbird's ComposeRecipient is either a string ("Jane <jane@x>") or an
+ * address-book reference ({ id, type }). Two entries are the same recipient
+ * when they carry the same address, whatever display name is wrapped around
+ * it — so the address decides, and an entry we cannot parse falls back to its
+ * own normalised text rather than being silently dropped.
+ *
+ * @param {string|object} entry
+ * @returns {string} Comparison key, or "" for an entry that carries nothing.
+ */
+export function recipientKey(entry) {
+  if (entry == null) return "";
+  if (typeof entry === "object") {
+    // Address-book reference: id identifies the contact or mailing list.
+    if (entry.id) return `${entry.type || "contact"}:${entry.id}`;
+    return "";
+  }
+  const raw = String(entry).trim();
+  if (!raw) return "";
+  const parsed = parseRecipient(raw);
+  return parsed ? parsed.email.toLowerCase() : raw.toLowerCase();
+}
+
+/**
+ * Merge template recipients into the ones a compose window already has.
+ *
+ * Inserting a template adds to the message — body, attachments — so its
+ * recipients must add too. Overwriting them loses the person the user picked
+ * by hand, and picking a recipient first is the order in which the
+ * {RECIPIENT_*} variables resolve correctly, so it has to be the order that
+ * survives.
+ *
+ * `existing` keeps its position ahead of `incoming`: the first To: entry is
+ * what the recipient variables read, and that should stay the address the
+ * user chose. Duplicates are dropped by address, empty entries skipped.
+ *
+ * @param {Array<string|object>} existing - Recipients currently in the compose window.
+ * @param {Array<string|object>} incoming - Recipients the template brings.
+ * @returns {Array<string|object>} Merged list; a fresh array, inputs untouched.
+ */
+export function mergeRecipients(existing, incoming) {
+  const out = [];
+  const seen = new Set();
+  for (const list of [existing, incoming]) {
+    if (!Array.isArray(list)) continue;
+    for (const entry of list) {
+      const key = recipientKey(entry);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(entry);
+    }
+  }
+  return out;
+}
+
+/**
  * Strip the leading "Re:" / "Fwd:" / "Aw:" / "Wg:" / "TR:" prefix(es) from a subject.
  * Repeated prefixes are stripped (e.g. "Re: Re: Fwd: …" → "…").
  */
