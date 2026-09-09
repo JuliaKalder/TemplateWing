@@ -25,6 +25,9 @@ Save and reuse email templates — including file attachments — directly from 
 - **Categories** — Organise templates into categories and filter by them in both the popup and the options page
 - **Variables** — Use `{DATE}`, `{TIME}`, `{DATETIME}`, `{YEAR}`, `{WEEKDAY}`, `{SENDER_NAME}`, `{SENDER_EMAIL}`, `{ACCOUNT_NAME}`, `{ACCOUNT_EMAIL}`, `{RECIPIENT_NAME}`, `{RECIPIENT_FIRSTNAME}`, `{RECIPIENT_NICKNAME}`, `{RECIPIENT_EMAIL}`, `{REPLY_QUOTE}`, and `{LAST_MESSAGE_SUBJECT}` in subject or body; they are resolved on insert. Click a variable chip in the editor to insert it at the cursor
 - **Nickname from the address book** — `{RECIPIENT_NICKNAME}` fills in the Nickname field of the matching contact, so the contact card can stay formal while the greeting uses the name the person actually goes by. It needs the optional `addressBooks` permission, which TemplateWing asks for once from the options page — until then, and for contacts without a nickname, the variable resolves to nothing. Pair it with a conditional for a safe fallback: `{IF recipient.nickname!=""}Hi {RECIPIENT_NICKNAME},{ELSE}Dear {RECIPIENT_FIRSTNAME},{ENDIF}`
+- **Recipients are added, not overwritten** — A template that carries its own To/Cc/Bcc entries adds them to whoever is already in the compose window instead of replacing them, the same way its body and attachments add. The person you picked by hand stays, and stays first — which is also the entry the `{RECIPIENT_*}` variables resolve against
+- **Asks who the message is for** — Variables are resolved once, when the template is inserted. If a template greets the recipient and neither the window nor the template supplies an address, TemplateWing asks for one before writing the text, in the same dialog as `{PROMPT}`/`{CHOICE}`. Leaving it blank is a valid answer and keeps the fallback wording
+- **Resolve again** — Picked the recipient *after* inserting? The popup offers to run the last inserted template again against the recipients the window has now, replacing the message text. Two clicks, because it cannot be undone from there
 - **Conditional content** — `{IF lhs=="value"}…{ELSE}…{ENDIF}` blocks let templates branch on `recipient.domain`, `recipient.firstname`, `recipient.nickname`, `identity.email`, etc. Nesting is supported; unknown variables compare as the empty string
 - **Ask-on-insert prompts** — `{PROMPT:Label:default}` and `{CHOICE:Label:opt1|opt2|opt3}` open a small dialog at insert time and substitute the user's answer
 - **Favorites / pinning** — Click the ★ on any template to keep it pinned to the top of the popup, regardless of recent-use sort
@@ -116,7 +119,10 @@ background.html             — Background page (loads background.js)
 background.js               — Context menu, storage listeners
 modules/template-store.js   — CRUD operations over storage.local
 modules/template-insert.js  — Variable replacement, nested templates, insertion
+modules/address-book.js     — Nickname lookup (optional addressBooks permission)
+modules/message-utils.js    — Recipient parsing/merging, quoting, subject cleanup
 modules/validation.js       — Recipient/import validation helpers
+prompt-dialog/              — Ask-on-insert dialog ({PROMPT}, {CHOICE}, recipient)
 popup/popup.html|css|js     — Compose-action popup (template list & insert)
 options/options.html|css|js  — Options page (template editor)
 images/                     — Extension icons (SVG source + 16/32/64/128 PNG)

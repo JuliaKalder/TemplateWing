@@ -661,7 +661,7 @@
     <div class="build-facts">
       <span><b>Datei</b> templatewing-2.9.0.xpi</span>
       <span><b>Thunderbird</b> 128 ESR oder neuer</span>
-      <span><b>Neu</b> <code>{RECIPIENT_NICKNAME}</code></span>
+      <span><b>Neu</b> <code>{RECIPIENT_NICKNAME}</code>, Empfänger-Merge, Neu auflösen</span>
     </div>
   </header>
 
@@ -688,7 +688,7 @@
 
   <h2 class="section">Der Kernpfad</h2>
   <p class="section-note">
-    Sechs Schritte, etwa zehn Minuten. Wenn die durchlaufen, funktioniert das Feature. Wichtig:
+    Neun Schritte, etwa zwanzig Minuten. Wenn die durchlaufen, funktioniert das Feature. Wichtig:
     Schritt 6 kommt <em>vor</em> der Berechtigung — der Fallback lässt sich nachher nicht mehr
     sauber prüfen, ohne die Erlaubnis wieder zu entziehen.
   </p>
@@ -811,6 +811,74 @@
       do: "Neue Nachricht an den Testkontakt, Vorlage einfügen.",
       expect: "<code>Hi Kat,</code>",
       why: "Wenn das steht, tut das Feature, wofür es gebaut wurde.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "Empfänger überlebt das Einfügen",
+      do: "Vorlage <code>Spitzname-Test</code> bearbeiten und ihr eigene Empfänger geben, z. B. <code>info@example.org</code>. Dann: neue Nachricht, <strong>zuerst</strong> den Testkontakt ins An-Feld, <strong>danach</strong> die Vorlage einfügen.",
+      expect:
+        "Im An-Feld stehen <strong>beide</strong> — der Testkontakt zuerst, dann <code>info@example.org</code>. Im Text steht <code>Hi Kat,</code>.",
+      why: "Bis 2.8.1 hat die Vorlage das An-Feld überschrieben und den Kontakt gelöscht. Steht der Kontakt nicht mehr an erster Stelle oder ist er weg, ist das der wichtigste Fehler dieses Durchlaufs.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "Nachfrage, wenn niemand feststeht",
+      do: "Empfänger wieder aus der Vorlage entfernen (Vorlage bearbeiten, An-Feld der Vorlage leeren). Neue Nachricht öffnen, An-Feld leer lassen, Vorlage einfügen.",
+      expect:
+        "Ein kleines Fenster fragt „An wen geht diese Nachricht?“. Trägst du <code>kat.test@example.com</code> ein: der Text sagt <code>Hi Kat,</code> und die Adresse steht im An-Feld. Lässt du es leer: der ELSE-Zweig, ohne Fehler.",
+      why: "Variablen werden einmal beim Einfügen aufgelöst. Wer erst danach den Empfänger wählt, hätte sonst dauerhaft die falsche Anrede im Text.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "„Neu auflösen“ nach dem Empfängerwechsel",
+      do: "Nachricht mit leerem An-Feld öffnen, Vorlage einfügen, die Empfängerfrage leer bestätigen. Jetzt den Testkontakt ins An-Feld setzen, das TemplateWing-Symbol anklicken und unten „Neu auflösen“ zweimal drücken (der erste Klick fragt nach).",
+      expect: "Der Nachrichtentext wird ersetzt und lautet jetzt <code>Hi Kat,</code>.",
+      why: "Das ist der Ersatz für „alles löschen und Vorlage nochmal auswählen“.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Nachfrage-Dialog abbrechen",
+      do: "Nachricht mit leerem An-Feld, Vorlage einfügen, im Empfängerfenster auf Abbrechen (oder Esc).",
+      expect: "Nichts wird eingefügt, der Nachrichtentext bleibt unverändert, keine Fehlermeldung.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Tippfehler im Empfängerfeld",
+      do: "Im Empfängerfenster <code>kat.test@</code> eingeben und bestätigen.",
+      expect:
+        "Das Fenster bleibt offen und weist auf die ungültige Adresse hin. Nach Korrektur geht es normal weiter.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Doppelte Empfänger",
+      do: "Testkontakt ins An-Feld setzen, dann eine Vorlage einfügen, die <em>dieselbe</em> Adresse als Empfänger hat.",
+      expect: "Die Adresse steht genau einmal im An-Feld, nicht doppelt.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "„Neu auflösen“ ohne vorherige Einfügung",
+      do: "Frisches Nachrichtenfenster öffnen, ohne etwas einzufügen das TemplateWing-Symbol anklicken.",
+      expect: "Die Zeile „Neu auflösen“ ist nicht da.",
+      why: "Sie darf nur erscheinen, wenn es in diesem Fenster wirklich etwas neu aufzulösen gibt.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Standardvorlage fragt nicht von selbst",
+      do: "In den Optionen eine Standardvorlage für ein Konto setzen, die <code>{RECIPIENT_FIRSTNAME}</code> nutzt. Neue Nachricht öffnen.",
+      expect:
+        "Die Vorlage wird eingefügt, es öffnet sich <strong>kein</strong> Dialog. Der Text nutzt den ELSE-Zweig; „Neu auflösen“ korrigiert ihn, sobald ein Empfänger dasteht.",
+      why: "Ein Fenster, das beim Öffnen jeder neuen Mail ungefragt aufpoppt, wäre schlimmer als die formelle Anrede.",
     },
     {
       group: "edge",
@@ -1022,10 +1090,25 @@
 
   // ---- Aufbau ----
 
+  // Ids come from the title, not from the position: adding a step in the
+  // middle must not silently re-label the ticks someone already made.
+  function slug(title) {
+    return title
+      .toLowerCase()
+      .replace(/[äöüß]/g, (c) => ({ ä: "ae", ö: "oe", ü: "ue", ß: "ss" })[c])
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 48);
+  }
+
   let counter = 0;
+  const usedIds = new Set();
   for (const step of STEPS) {
-    step.id = `s${++counter}`;
-    step.index = counter;
+    let id = slug(step.title);
+    while (usedIds.has(id)) id += "-2";
+    usedIds.add(id);
+    step.id = id;
+    step.index = ++counter;
   }
 
   load();

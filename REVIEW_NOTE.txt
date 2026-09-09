@@ -39,6 +39,27 @@ Changes
 
   New file: modules/address-book.js (listed in scripts/xpi-files.mjs).
 
+  Behaviour change, no new permission: template recipients are now
+  merged into the compose window's To/Cc/Bcc instead of replacing
+  them. Assigning them deleted whatever address the user had already
+  picked, which also made the order in which the recipient variables
+  resolve correctly ("choose recipient, then insert") the order that
+  lost data. Existing entries keep their position; duplicates are
+  dropped by address.
+
+  Two follow-ups from the same root cause — variables are resolved
+  once, when the template is inserted:
+    * When a template greets the recipient and neither the window nor
+      the template supplies an address, the existing ask-on-insert
+      dialog also asks for one. Blank is accepted and keeps the
+      fallback wording. The auto-insert path deliberately does not
+      ask; a dialog opening by itself on every new compose window
+      would be worse than the fallback.
+    * The popup offers to run the last inserted template again against
+      the recipients the window has now, replacing the body. Tracked
+      in memory per compose tab, dropped when the tab closes; nothing
+      is stored.
+
 2.8.1
   Bugfix: templates set to "Insert at beginning" did not insert their
   body at all. The body was concatenated in front of the document that
@@ -60,8 +81,8 @@ Requires Node.js 20+ and the zip command line utility.
 
   node scripts/build-xpi.mjs
 
-Output: templatewing-2.9.0.xpi (131 KB / 133,633 bytes)
-SHA-256: 1fcaf9c7b57336f85e0d9cab4c160307e3b187cfd02f52391b87184cddfbc855
+Output: templatewing-2.9.0.xpi (138 KB / 141,165 bytes)
+SHA-256: 0a7bf3044a83dfa30191c6dd382a12b736e22bdbefd416cbb9038207407dd3a1
 
 The build is byte reproducible, so this hash can be verified rather
 than trusted. Rebuilding from the source archive gives the identical
