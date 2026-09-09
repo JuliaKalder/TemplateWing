@@ -66,3 +66,56 @@ test("pinned templates render first", async ({ page }) => {
   const firstName = await page.locator(".template-item .name").first().textContent();
   expect(firstName?.trim()).toBe("Apple");
 });
+
+// ---- "Resolve again" row (#229) ----
+
+/** Make the background answer getLastInsert, and record what the popup sends. */
+function lastInsertScript(name) {
+  return `
+    (() => {
+      function patch() {
+        if (!window.messenger || !window.messenger.runtime) {
+          setTimeout(patch, 5);
+          return;
+        }
+        window.__sent = [];
+        window.messenger.runtime.sendMessage = async (message) => {
+          window.__sent.push(message);
+          if (message && message.action === "templatewing:getLastInsert") {
+            return { templateId: "t1", name: ${JSON.stringify(name)} };
+          }
+          return undefined;
+        };
+      }
+      patch();
+    })();
+  `;
+}
+
+test("the resolve-again row stays hidden when nothing was inserted yet", async ({ page }) => {
+  await openPopup(page, [{ id: "t1", name: "Follow-up", pinned: false, identities: [] }]);
+  await expect(page.locator("#reinsert-row")).toBeHidden();
+});
+
+test("the resolve-again row names the template last inserted", async ({ page }) => {
+  await page.addInitScript({ content: lastInsertScript("Follow-up") });
+  await openPopup(page, [{ id: "t1", name: "Follow-up", pinned: false, identities: [] }]);
+  await expect(page.locator("#reinsert-row")).toBeVisible();
+  await expect(page.locator("#reinsert-label")).toContainText("Follow-up");
+});
+
+test("resolve again takes two clicks before it replaces the body", async ({ page }) => {
+  await page.addInitScript({ content: lastInsertScript("Follow-up") });
+  await openPopup(page, [{ id: "t1", name: "Follow-up", pinned: false, identities: [] }]);
+
+  const button = page.locator("#btn-reinsert");
+  await button.click();
+  // First click only arms it — nothing has been sent to the background yet.
+  await expect(button).toHaveClass(/confirming/);
+  let sent = await page.evaluate(() => window.__sent.map((m) => m.action));
+  expect(sent).not.toContain("templatewing:reinsertTemplate");
+
+  await button.click();
+  sent = await page.evaluate(() => window.__sent.map((m) => m.action));
+  expect(sent).toContain("templatewing:reinsertTemplate");
+});

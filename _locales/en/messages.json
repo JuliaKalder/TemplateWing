@@ -537,6 +537,44 @@
     "message": "Address book access allowed — {RECIPIENT_NICKNAME} works.",
     "description": "Status shown once the addressBooks permission is granted"
   },
+  "promptDialogRecipientLabel": {
+    "message": "Who is this message going to?",
+    "description": "Label of the recipient field in the prompt dialog"
+  },
+  "promptDialogRecipientPlaceholder": {
+    "message": "name@example.com",
+    "description": "Placeholder of the recipient field"
+  },
+  "promptDialogRecipientHint": {
+    "message": "This template greets the recipient. Leave blank to keep the fallback wording.",
+    "description": "Explains that leaving the recipient blank is allowed"
+  },
+  "promptDialogRecipientInvalid": {
+    "message": "That does not look like an email address.",
+    "description": "Validation error for the recipient field"
+  },
+  "popupLastInserted": {
+    "message": "Last inserted: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Follow-up"
+      }
+    },
+    "description": "Names the template last inserted into this compose window"
+  },
+  "popupReinsert": {
+    "message": "Resolve again",
+    "description": "Button that re-resolves the last inserted template"
+  },
+  "popupReinsertConfirm": {
+    "message": "Replace text?",
+    "description": "Second-click label confirming the body replacement"
+  },
+  "popupReinsertHint": {
+    "message": "Insert the same template again with the recipients this window has now. Replaces the message text.",
+    "description": "Tooltip of the re-resolve button"
+  },
   "promptDialogTitle": {
     "message": "Fill in template values",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

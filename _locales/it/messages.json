@@ -537,6 +537,44 @@
     "message": "Accesso alla rubrica consentito: {RECIPIENT_NICKNAME} funziona.",
     "description": "Status shown once the addressBooks permission is granted"
   },
+  "promptDialogRecipientLabel": {
+    "message": "A chi è diretto questo messaggio?",
+    "description": "Label of the recipient field in the prompt dialog"
+  },
+  "promptDialogRecipientPlaceholder": {
+    "message": "nome@esempio.it",
+    "description": "Placeholder of the recipient field"
+  },
+  "promptDialogRecipientHint": {
+    "message": "Questo modello si rivolge al destinatario. Lascia vuoto per mantenere la formulazione di ripiego.",
+    "description": "Explains that leaving the recipient blank is allowed"
+  },
+  "promptDialogRecipientInvalid": {
+    "message": "Non sembra un indirizzo email.",
+    "description": "Validation error for the recipient field"
+  },
+  "popupLastInserted": {
+    "message": "Ultimo inserimento: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Follow-up"
+      }
+    },
+    "description": "Names the template last inserted into this compose window"
+  },
+  "popupReinsert": {
+    "message": "Rielabora",
+    "description": "Button that re-resolves the last inserted template"
+  },
+  "popupReinsertConfirm": {
+    "message": "Sostituire il testo?",
+    "description": "Second-click label confirming the body replacement"
+  },
+  "popupReinsertHint": {
+    "message": "Inserisce di nuovo lo stesso modello con i destinatari attualmente presenti nella finestra. Sostituisce il testo del messaggio.",
+    "description": "Tooltip of the re-resolve button"
+  },
   "promptDialogTitle": {
     "message": "Compila i valori del modello",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"
