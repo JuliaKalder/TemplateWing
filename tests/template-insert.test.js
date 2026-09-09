@@ -26,6 +26,8 @@ const {
   joinPlainText,
   usesNicknameVariable,
   resolveNicknameVar,
+  usesRecipientVariables,
+  needsRecipientPrompt,
 } = await import("../modules/template-insert.js");
 const { saveTemplate } = await import("../modules/template-store.js");
 
@@ -879,5 +881,181 @@ describe("insertTemplateIntoTab — nickname end to end", () => {
       attachments: [],
     });
     assert.strictEqual(messenger.compose._details[1].body, "Hi Kat, how are you?");
+  });
+});
+
+// ---- Recipient handling on insert (#229) ----
+
+describe("usesRecipientVariables", () => {
+  it("detects any {RECIPIENT_*} token", () => {
+    assert.strictEqual(usesRecipientVariables("Hallo {RECIPIENT_FIRSTNAME}"), true);
+    assert.strictEqual(usesRecipientVariables("{RECIPIENT_EMAIL}"), true);
+    assert.strictEqual(usesRecipientVariables("{RECIPIENT_NICKNAME}"), true);
+  });
+
+  it("detects a recipient dot-path in a condition", () => {
+    assert.strictEqual(usesRecipientVariables('{IF recipient.domain=="x.test"}a{ENDIF}'), true);
+  });
+
+  it("ignores templates that do not address the recipient", () => {
+    assert.strictEqual(usesRecipientVariables("Hallo {SENDER_NAME}", "{DATE}"), false);
+  });
+});
+
+describe("needsRecipientPrompt", () => {
+  const greeting = { body: "Hallo {RECIPIENT_FIRSTNAME}," };
+
+  it("asks when the template greets and nothing supplies an address", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, []), true);
+  });
+
+  it("stays quiet when the window already has a recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, ["kat@example.com"]), false);
+  });
+
+  it("stays quiet when the template names its own recipients", () => {
+    // The template author picked those addresses; a dialog would second-guess them.
+    assert.strictEqual(needsRecipientPrompt({ ...greeting, to: ["team@x.test"] }, []), false);
+  });
+
+  it("stays quiet for a template that never mentions the recipient", () => {
+    assert.strictEqual(needsRecipientPrompt({ body: "Hallo {SENDER_NAME}" }, []), false);
+  });
+
+  it("treats blank recipient entries as no recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, ["", "   "]), true);
+  });
+
+  it("counts an address-book reference as a recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, [{ id: "c1", type: "contact" }]), false);
+  });
+
+  it("handles a missing template", () => {
+    assert.strictEqual(needsRecipientPrompt(null, []), false);
+  });
+});
+
+describe("insertTemplateIntoTab — recipients are merged, not replaced", () => {
+  function setup(existing) {
+    messenger.compose._details = {
+      1: {
+        identityId: null,
+        isPlainText: false,
+        body: "<html><head></head><body></body></html>",
+        ...existing,
+      },
+    };
+  }
+
+  it("keeps the recipient the user picked before inserting", async () => {
+    setup({ to: ["Katharina <kat@example.com>"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "Team",
+      body: "Text",
+      to: ["team@example.org"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "Katharina <kat@example.com>",
+      "team@example.org",
+    ]);
+  });
+
+  it("merges cc and bcc the same way", async () => {
+    setup({ cc: ["a@x.test"], bcc: ["b@x.test"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Text",
+      cc: ["c@x.test"],
+      bcc: ["b@x.test"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].cc, ["a@x.test", "c@x.test"]);
+    assert.deepStrictEqual(messenger.compose._details[1].bcc, ["b@x.test"]);
+  });
+
+  it("leaves the recipient fields untouched when the template brings none", async () => {
+    setup({ to: ["kat@example.com"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Text",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].to, ["kat@example.com"]);
+  });
+
+  it("resolves variables against the existing recipient, not the template's", async () => {
+    setup({ to: ["Katharina Meier <kat@example.com>"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Hallo {RECIPIENT_FIRSTNAME},",
+      to: ["team@example.org"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Katharina,");
+  });
+
+  it("uses the answered recipient when the window has none", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Hallo {RECIPIENT_FIRSTNAME},",
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "Bernd Beispiel <bernd@example.com>" }
+    );
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Bernd,");
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "Bernd Beispiel <bernd@example.com>",
+    ]);
+  });
+
+  it("puts the answered recipient ahead of the template's own", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Text",
+        to: ["team@example.org"],
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "bernd@example.com" }
+    );
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "bernd@example.com",
+      "team@example.org",
+    ]);
+  });
+
+  it("ignores a blank answer and falls back to the template recipient", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Hallo {RECIPIENT_FIRSTNAME},",
+        to: ["Team Sales <team@example.org>"],
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "   " }
+    );
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Team,");
   });
 });
