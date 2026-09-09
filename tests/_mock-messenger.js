@@ -76,6 +76,31 @@ export function createMessengerMock() {
       },
     },
     compose,
+    // Optional-permission surface + address book, for {RECIPIENT_NICKNAME}.
+    // `_granted` and `_contacts` are the knobs tests turn.
+    permissions: {
+      _granted: false,
+      async contains() {
+        return this._granted;
+      },
+      async request() {
+        this._granted = true;
+        return true;
+      },
+    },
+    contacts: {
+      _contacts: [],
+      async quickSearch(queryInfo) {
+        const needle = String(
+          (queryInfo && queryInfo.searchString) ?? queryInfo ?? ""
+        ).toLowerCase();
+        return this._contacts.filter((c) =>
+          JSON.stringify(c.properties ?? {})
+            .toLowerCase()
+            .includes(needle)
+        );
+      },
+    },
     i18n: {
       getMessage(key, substitutions) {
         if (!substitutions) return `[${key}]`;

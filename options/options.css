@@ -982,6 +982,35 @@ h1 {
   border-color: var(--color-primary);
 }
 
+/* {RECIPIENT_NICKNAME} needs the optional addressBooks permission; this row
+   asks for it inline, right under the chip that triggers the need. */
+.addressbook-permission {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.addressbook-permission-text {
+  color: var(--color-text-muted);
+}
+
+.btn-grant-addressbook {
+  font-size: 12px;
+  padding: 3px 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-primary);
+  border-radius: 3px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.btn-grant-addressbook:hover {
+  background: var(--color-bg-highlight);
+}
+
 /* Toolbar active state (bold/italic/underline) */
 .toolbar-btn.active {
   background: var(--color-primary);

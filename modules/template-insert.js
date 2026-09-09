@@ -1,4 +1,5 @@
 import { getTemplates, INSERT_MODES } from "./template-store.js";
+import { lookupNicknameByEmail } from "./address-book.js";
 import {
   parseRecipient,
   stripReplyForwardPrefix,
@@ -46,6 +47,7 @@ export const SUPPORTED_VARIABLES = Object.freeze([
   "ACCOUNT_EMAIL",
   "RECIPIENT_NAME",
   "RECIPIENT_FIRSTNAME",
+  "RECIPIENT_NICKNAME",
   "RECIPIENT_EMAIL",
   "REPLY_QUOTE",
   "LAST_MESSAGE_SUBJECT",
@@ -211,6 +213,7 @@ export function applyVariables(text, vars, isHtml = false) {
     accountEmail = "",
     recipientName = "",
     recipientFirstname = "",
+    recipientNickname = "",
     recipientEmail = "",
     replyQuote = "",
     lastMessageSubject = "",
@@ -234,6 +237,7 @@ export function applyVariables(text, vars, isHtml = false) {
     .replace(/\{ACCOUNT_EMAIL\}/gi, () => e(accountEmail))
     .replace(/\{RECIPIENT_NAME\}/gi, () => e(recipientName))
     .replace(/\{RECIPIENT_FIRSTNAME\}/gi, () => e(recipientFirstname))
+    .replace(/\{RECIPIENT_NICKNAME\}/gi, () => e(recipientNickname))
     .replace(/\{RECIPIENT_EMAIL\}/gi, () => e(recipientEmail))
     .replace(/\{REPLY_QUOTE\}/gi, () => quote(replyQuote))
     .replace(/\{LAST_MESSAGE_SUBJECT\}/gi, () => e(lastMessageSubject));
@@ -292,12 +296,18 @@ export async function resolveIdentityVars(tabId) {
  * so missing data degrades gracefully.
  *
  * @param {number} tabId
+ * The nickname is deliberately NOT resolved here: it needs an address-book
+ * lookup behind an optional permission, and it needs the final recipient —
+ * which {@link applyTemplateRecipientFallback} may still change. See
+ * {@link resolveNicknameVar}.
+ *
  * @param {boolean} isHtml - true when the active compose mode is HTML; controls REPLY_QUOTE wrapping.
- * @returns {Promise<{recipientName,recipientFirstname,recipientEmail,replyQuote,lastMessageSubject}>}
+ * @returns {Promise<{recipientName,recipientFirstname,recipientNickname,recipientEmail,replyQuote,lastMessageSubject}>}
  */
 export async function resolveRecipientVars(tabId, isHtml = false) {
   let recipientName = "";
   let recipientFirstname = "";
+  const recipientNickname = "";
   let recipientEmail = "";
   let replyQuote = "";
   let lastMessageSubject = "";
@@ -310,6 +320,7 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
     return {
       recipientName,
       recipientFirstname,
+      recipientNickname,
       recipientEmail,
       replyQuote,
       lastMessageSubject,
@@ -349,10 +360,51 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
   return {
     recipientName,
     recipientFirstname,
+    recipientNickname,
     recipientEmail,
     replyQuote,
     lastMessageSubject,
   };
+}
+
+/**
+ * Does `text` reference the recipient nickname — either as the {RECIPIENT_NICKNAME}
+ * token or as `recipient.nickname` inside an {IF} condition?
+ *
+ * Every other variable resolves from data the insert already holds. The
+ * nickname is the one that costs an address-book round trip, so templates
+ * that do not ask for it must not pay for it. Call with the *resolved* body
+ * so nested includes are covered.
+ *
+ * @param {...(string|undefined)} texts
+ * @returns {boolean}
+ */
+export function usesNicknameVariable(...texts) {
+  const re = /\{RECIPIENT_NICKNAME\}|recipient\.nickname/i;
+  return texts.some((text) => !!text && re.test(String(text)));
+}
+
+/**
+ * Add `recipientNickname` to an already-resolved recipient bundle.
+ *
+ * Runs after {@link applyTemplateRecipientFallback} so a compose window with
+ * no recipient yet looks up the address the template itself is about to
+ * write, rather than nothing. Never throws: an unavailable address book, a
+ * withheld permission and an unknown contact all yield "".
+ *
+ * @param {object} recipientVars - Output of {@link resolveRecipientVars}.
+ * @param {boolean} needed - False skips the lookup entirely (see {@link usesNicknameVariable}).
+ * @returns {Promise<object>} A copy carrying `recipientNickname`.
+ */
+export async function resolveNicknameVar(recipientVars, needed) {
+  if (!needed || !recipientVars || !recipientVars.recipientEmail) return recipientVars;
+  let recipientNickname = "";
+  try {
+    recipientNickname = await lookupNicknameByEmail(recipientVars.recipientEmail);
+  } catch (err) {
+    console.warn("TemplateWing: could not resolve recipient nickname", err);
+  }
+  return { ...recipientVars, recipientNickname };
 }
 
 // ---- Conditional variables ({IF} / {ELSE} / {ENDIF}) ----
@@ -531,8 +583,8 @@ export function applyPromptAnswers(text, tokens, answers, isHtml = false) {
  *
  * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
  * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL},
- * {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME}, {RECIPIENT_EMAIL},
- * {REPLY_QUOTE}, {LAST_MESSAGE_SUBJECT}.
+ * {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME}, {RECIPIENT_NICKNAME},
+ * {RECIPIENT_EMAIL}, {REPLY_QUOTE}, {LAST_MESSAGE_SUBJECT}.
  *
  * @param {string} text - Text containing placeholders
  * @param {object} vars - Pre-resolved identity vars: { senderName, senderEmail, accountName, accountEmail }.
@@ -753,6 +805,7 @@ export function buildVariableContext({ identityVars, recipientVars, date }) {
     recipient: {
       name: recipientVars.recipientName || "",
       firstname: recipientVars.recipientFirstname || "",
+      nickname: recipientVars.recipientNickname || "",
       email: recipientVars.recipientEmail || "",
       domain: (recipientVars.recipientEmail || "").split("@")[1] || "",
     },
@@ -823,10 +876,16 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
   // Resolve identity + recipient/reply context. Both run regardless of
   // whether the template references them — the cost is one storage read
   // and (for replies) one messages.getFull call, and the buildVariableContext
-  // helper still needs them for {IF} expressions.
+  // helper still needs them for {IF} expressions. The nickname is the one
+  // exception: it costs an address-book search, so it is fetched only when
+  // the template actually asks for it.
   const identityVars = await resolveIdentityVars(tabId);
   let recipientVars = await resolveRecipientVars(tabId, !isPlainText);
   recipientVars = applyTemplateRecipientFallback(recipientVars, template.to);
+  recipientVars = await resolveNicknameVar(
+    recipientVars,
+    usesNicknameVariable(resolvedBody, template.subject)
+  );
   const ctx = buildVariableContext({ identityVars, recipientVars });
 
   // Pipeline: nested → vars → control flow → prompts. The current order

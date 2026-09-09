@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Prénom du premier destinataire du champ « À »",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Surnom du premier destinataire À : issu du carnet d'adresses",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — Adresse e-mail du premier destinataire du champ « À »",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Libellé:opt1|opt2|opt3} — Demander de choisir une option",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} nécessite l'accès à vos carnets d'adresses.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Autoriser l'accès au carnet d'adresses",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Accès au carnet d'adresses autorisé — {RECIPIENT_NICKNAME} fonctionne.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Renseigner les valeurs du modèle",

@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Vorname des ersten An:-Empfängers",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Spitzname des ersten An:-Empfängers aus dem Adressbuch",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — E-Mail-Adresse des ersten An:-Empfängers",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Label:opt1|opt2|opt3} — Beim Einfügen aus mehreren Optionen wählen",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} benötigt Zugriff auf Ihre Adressbücher.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Adressbuch-Zugriff erlauben",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Adressbuch-Zugriff erlaubt — {RECIPIENT_NICKNAME} funktioniert.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Vorlagenwerte ausfüllen",

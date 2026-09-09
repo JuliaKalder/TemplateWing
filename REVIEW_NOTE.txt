@@ -1,4 +1,4 @@
-TemplateWing 2.8.1: Review Notes
+TemplateWing 2.9.0: Review Notes
 =================================
 
 Minimum Thunderbird: 128.0
@@ -8,6 +8,36 @@ Repository: https://github.com/JuliaKalder/TemplateWing
 
 Changes
 -------
+
+2.9.0
+  New feature: the {RECIPIENT_NICKNAME} template variable. It fills in
+  the Nickname field of the address-book contact that matches the first
+  To: recipient, so a template can greet someone by the name they
+  actually use while the contact card stays formal.
+
+  This is the only change that touches permissions, and it does so
+  deliberately as an OPTIONAL one:
+
+    "optional_permissions": ["addressBooks"]
+
+  Nothing is requested at install or update time. The add-on asks for
+  addressBooks only when the user presses "Allow address book access"
+  in the options page, next to the variable that needs it. Users who
+  never use this variable are never asked, and an existing installation
+  updates without a permission prompt.
+
+  What the add-on does with the permission: for a template that
+  actually contains {RECIPIENT_NICKNAME} (or a conditional on
+  recipient.nickname), it runs one contacts.quickSearch() for the
+  recipient's email address at insert time, verifies the returned
+  contact really carries that address, and reads NICKNAME out of its
+  vCard. Nothing is written, nothing is stored, nothing leaves the
+  machine. A withheld permission, an unknown contact or a contact
+  without a nickname all resolve to the empty string; template
+  insertion never fails over it. All of it lives in
+  modules/address-book.js.
+
+  New file: modules/address-book.js (listed in scripts/xpi-files.mjs).
 
 2.8.1
   Bugfix: templates set to "Insert at beginning" did not insert their
@@ -30,8 +60,8 @@ Requires Node.js 20+ and the zip command line utility.
 
   node scripts/build-xpi.mjs
 
-Output: templatewing-2.8.1.xpi (125 KB / 127,986 bytes)
-SHA-256: fdf9c45f2521cce07b24ca544bc604ecda54c22f998b39058019b067d33a5d99
+Output: templatewing-2.9.0.xpi (131 KB / 133,633 bytes)
+SHA-256: 1fcaf9c7b57336f85e0d9cab4c160307e3b187cfd02f52391b87184cddfbc855
 
 The build is byte reproducible, so this hash can be verified rather
 than trusted. Rebuilding from the source archive gives the identical

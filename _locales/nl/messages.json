@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Voornaam van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Bijnaam van de eerste Aan:-ontvanger uit het adresboek",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — E-mailadres van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Label:optie1|optie2|optie3} — Bij het invoegen een optie laten kiezen",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} heeft toegang tot uw adresboeken nodig.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Adresboektoegang toestaan",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Adresboektoegang toegestaan — {RECIPIENT_NICKNAME} werkt nu.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Sjabloonwaarden invullen",

@@ -106,6 +106,14 @@ export const messengerStubSource = `
     notifications: {
       async create() {},
     },
+    // The options page checks the optional addressBooks permission on load.
+    permissions: {
+      async contains() { return false; },
+      async request() { return false; },
+    },
+    contacts: {
+      async quickSearch() { return []; },
+    },
     messages: {
       async get() { return null; },
       async getFull() { return null; },

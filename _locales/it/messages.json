@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Nome del primo destinatario A:",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Soprannome del primo destinatario A: dalla rubrica",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — Indirizzo email del primo destinatario A:",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Etichetta:opz1|opz2|opz3} — Chiede di scegliere un’opzione",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} richiede l'accesso alle sue rubriche.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Consenti l'accesso alla rubrica",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Accesso alla rubrica consentito: {RECIPIENT_NICKNAME} funziona.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Compila i valori del modello",

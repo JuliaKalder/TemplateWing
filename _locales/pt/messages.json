@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Nome próprio do primeiro destinatário do campo Para",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Apelido do primeiro destinatário Para: no catálogo de endereços",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — Endereço de e-mail do primeiro destinatário do campo Para",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Etiqueta:op1|op2|op3} — Pedir para escolher uma opção",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} precisa de acesso aos seus catálogos de endereços.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Permitir acesso ao catálogo de endereços",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Acesso ao catálogo de endereços permitido — {RECIPIENT_NICKNAME} já funciona.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Preencher os valores do modelo",

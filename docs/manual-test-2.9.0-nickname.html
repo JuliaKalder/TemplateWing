@@ -1,0 +1,1195 @@
+<title>Spitzname-Testlauf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+/>
+
+<style>
+  :root {
+    --ground: #f4f6f8;
+    --surface: #ffffff;
+    --surface-sunk: #eceff3;
+    --line: #d5dae1;
+    --line-soft: #e4e8ed;
+    --text: #1b2027;
+    --text-dim: #5c6673;
+    --text-faint: #838d9a;
+    --accent: #b26a00;
+    --on-accent: #ffffff;
+    --accent-soft: #fdf1dd;
+    --accent-line: #eab766;
+    --pass: #1f7a52;
+    --pass-soft: #e4f2ea;
+    --fail: #b13a2f;
+    --fail-soft: #fbe8e5;
+    --skip: #6b7480;
+    --focus: #2f6fb5;
+    --shadow: 0 1px 2px rgba(27, 32, 39, 0.06), 0 8px 24px -16px rgba(27, 32, 39, 0.4);
+
+    --font-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #14181d;
+      --surface: #1b2027;
+      --surface-sunk: #232931;
+      --line: #333c46;
+      --line-soft: #2a323b;
+      --text: #e6eaef;
+      --text-dim: #a3adb9;
+      --text-faint: #7b8593;
+      --accent: #e8ac55;
+      --on-accent: #14181d;
+      --accent-soft: #33291a;
+      --accent-line: #7a5a25;
+      --pass: #5fc396;
+      --pass-soft: #1c2f27;
+      --fail: #ef8074;
+      --fail-soft: #33211f;
+      --skip: #8b95a1;
+      --focus: #7fb3ec;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.9);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #14181d;
+    --surface: #1b2027;
+    --surface-sunk: #232931;
+    --line: #333c46;
+    --line-soft: #2a323b;
+    --text: #e6eaef;
+    --text-dim: #a3adb9;
+    --text-faint: #7b8593;
+    --accent: #e8ac55;
+    --on-accent: #14181d;
+    --accent-soft: #33291a;
+    --accent-line: #7a5a25;
+    --pass: #5fc396;
+    --pass-soft: #1c2f27;
+    --fail: #ef8074;
+    --fail-soft: #33211f;
+    --skip: #8b95a1;
+    --focus: #7fb3ec;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.9);
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .wrap {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
+  }
+
+  /* ---- Kopf ---- */
+
+  header.masthead {
+    padding: 40px 0 20px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 62ch;
+    color: var(--text-dim);
+    font-size: 17px;
+  }
+
+  .build-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .build-facts b {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .build-facts code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    word-break: break-all;
+  }
+
+  /* ---- Klebende Fortschrittsleiste ---- */
+
+  .statusbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line-soft);
+    margin: 0 -20px;
+    padding: 10px 20px;
+  }
+
+  .statusbar-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .rail {
+    flex: 1 1 180px;
+    height: 6px;
+    background: var(--surface-sunk);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .rail span {
+    display: block;
+    height: 100%;
+    transition: width 0.25s ease;
+  }
+
+  .rail .rail-pass {
+    background: var(--pass);
+  }
+
+  .rail .rail-fail {
+    background: var(--fail);
+  }
+
+  .rail .rail-skip {
+    background: var(--skip);
+  }
+
+  .tally {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .tally b {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .modes {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-sunk);
+    border-radius: 6px;
+    padding: 3px;
+  }
+
+  .modes button {
+    font: inherit;
+    font-size: 13px;
+    border: 0;
+    background: transparent;
+    color: var(--text-dim);
+    padding: 4px 11px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .modes button[aria-pressed="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  /* ---- Abschnitte ---- */
+
+  h2.section {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 44px 0 4px;
+  }
+
+  .section-note {
+    margin: 0 0 18px;
+    color: var(--text-dim);
+    font-size: 14.5px;
+  }
+
+  /* ---- Die Ameisenbrücke: durchgehende Linie mit Knoten ---- */
+
+  ol.trail {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 34px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  ol.trail::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: var(--line);
+  }
+
+  li.step {
+    position: relative;
+  }
+
+  li.step[hidden] {
+    display: none;
+  }
+
+  .knot {
+    position: absolute;
+    left: -34px;
+    top: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    display: grid;
+    place-items: center;
+  }
+
+  li.step[data-state="pass"] .knot {
+    border-color: var(--pass);
+    background: var(--pass);
+    color: var(--surface);
+  }
+
+  li.step[data-state="fail"] .knot {
+    border-color: var(--fail);
+    background: var(--fail);
+    color: var(--surface);
+  }
+
+  li.step[data-state="skip"] .knot {
+    border-color: var(--skip);
+    color: var(--skip);
+  }
+
+  li.step.current .knot {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  li.step.current .card {
+    border-color: var(--accent-line);
+    box-shadow: var(--shadow);
+  }
+
+  li.step[data-state="pass"] .card,
+  li.step[data-state="skip"] .card {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    cursor: pointer;
+  }
+
+  .step-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    flex: 1 1 auto;
+    text-wrap: balance;
+  }
+
+  li.step[data-state="pass"] .step-title,
+  li.step[data-state="skip"] .step-title {
+    color: var(--text-dim);
+  }
+
+  .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .core-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  li.step.collapsed .body {
+    display: none;
+  }
+
+  .do,
+  .expect {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .do ul,
+  .expect ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .expect {
+    background: var(--surface-sunk);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 5px 5px 0;
+    padding: 9px 12px;
+  }
+
+  .why {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin: 0;
+  }
+
+  code,
+  .snippet {
+    font-family: var(--font-mono);
+    font-size: 13px;
+  }
+
+  code {
+    background: var(--surface-sunk);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .snippet {
+    display: block;
+    background: var(--surface-sunk);
+    border: 1px solid var(--line-soft);
+    border-radius: 5px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+  }
+
+  .expect code {
+    background: var(--surface);
+  }
+
+  /* ---- Urteilsknöpfe ---- */
+
+  .verdict {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .verdict button {
+    font: inherit;
+    font-size: 14px;
+    padding: 5px 13px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition:
+      background-color 0.12s,
+      border-color 0.12s,
+      color 0.12s;
+  }
+
+  .verdict button:hover {
+    border-color: var(--text-faint);
+    color: var(--text);
+  }
+
+  .verdict button[data-verdict="pass"][aria-pressed="true"] {
+    background: var(--pass-soft);
+    border-color: var(--pass);
+    color: var(--pass);
+    font-weight: 500;
+  }
+
+  .verdict button[data-verdict="fail"][aria-pressed="true"] {
+    background: var(--fail-soft);
+    border-color: var(--fail);
+    color: var(--fail);
+    font-weight: 500;
+  }
+
+  .verdict button[data-verdict="skip"][aria-pressed="true"] {
+    background: var(--surface-sunk);
+    border-color: var(--skip);
+    color: var(--skip);
+    font-weight: 500;
+  }
+
+  .keyhint {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-left: auto;
+  }
+
+  textarea {
+    font: inherit;
+    font-size: 14px;
+    width: 100%;
+    min-height: 62px;
+    resize: vertical;
+    background: var(--surface-sunk);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+
+  textarea::placeholder {
+    color: var(--text-faint);
+  }
+
+  /* ---- Report ---- */
+
+  .report {
+    margin-top: 44px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+
+  .report h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .report p.hint {
+    margin: 0 0 14px;
+    color: var(--text-dim);
+    font-size: 14.5px;
+  }
+
+  .report-out {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    min-height: 150px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .report-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    align-items: center;
+  }
+
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    border-color: var(--text-faint);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+    font-weight: 500;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.06);
+  }
+
+  .copied {
+    font-size: 13px;
+    color: var(--pass);
+  }
+
+  footer.foot {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  footer.foot a {
+    color: var(--text-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .keyhint {
+      display: none;
+    }
+    ol.trail {
+      padding-left: 28px;
+    }
+    .knot {
+      left: -28px;
+    }
+    ol.trail::before {
+      left: 8px;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">TemplateWing 2.9.0 · Manueller Testlauf</p>
+    <h1>Spitzname-Testlauf vor dem Release</h1>
+    <p class="standfirst">
+      Ein Schritt pro Karte: eine Handlung, ein erwartetes Ergebnis, ein Klick. Die aufgeklappte
+      Karte ist die aktuelle — alles darüber ist erledigt, alles darunter kommt später. Der
+      Fortschritt bleibt im Browser gespeichert, du kannst also mittendrin aufhören.
+    </p>
+    <div class="build-facts">
+      <span><b>Datei</b> templatewing-2.9.0.xpi</span>
+      <span><b>Thunderbird</b> 128 ESR oder neuer</span>
+      <span><b>Neu</b> <code>{RECIPIENT_NICKNAME}</code></span>
+    </div>
+  </header>
+
+  <div class="statusbar">
+    <div class="statusbar-inner">
+      <div class="rail" role="img" id="rail" aria-label="Fortschritt">
+        <span class="rail-pass" id="rail-pass" style="width: 0%"></span>
+        <span class="rail-fail" id="rail-fail" style="width: 0%"></span>
+        <span class="rail-skip" id="rail-skip" style="width: 0%"></span>
+      </div>
+      <div class="tally" id="tally">0 von 0 erledigt</div>
+      <div class="modes" role="group" aria-label="Umfang">
+        <button type="button" id="mode-core" aria-pressed="false">Kurzcheck</button>
+        <button type="button" id="mode-all" aria-pressed="true">Alles</button>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section">Bevor du anfängst</h2>
+  <p class="section-note">
+    Drei Minuten Vorbereitung, danach läuft der Rest ohne Unterbrechung durch.
+  </p>
+  <ol class="trail" id="trail-prep"></ol>
+
+  <h2 class="section">Der Kernpfad</h2>
+  <p class="section-note">
+    Sechs Schritte, etwa zehn Minuten. Wenn die durchlaufen, funktioniert das Feature. Wichtig:
+    Schritt 6 kommt <em>vor</em> der Berechtigung — der Fallback lässt sich nachher nicht mehr
+    sauber prüfen, ohne die Erlaubnis wieder zu entziehen.
+  </p>
+  <ol class="trail" id="trail-core"></ol>
+
+  <h2 class="section">Die Randfälle</h2>
+  <p class="section-note">
+    Hier bricht ein Feature normalerweise: leere Felder, fremde Kontakte, Plain-Text-Konten,
+    entzogene Berechtigungen. Jeder Schritt steht für sich — du kannst jederzeit aufhören und später
+    weitermachen.
+  </p>
+  <ol class="trail" id="trail-edge"></ol>
+
+  <section class="report">
+    <h2>Ergebnis</h2>
+    <p class="hint">
+      Baut sich beim Abhaken von selbst. Wenn etwas hakt: Text kopieren und in ein GitHub-Issue
+      kleben — die Notizen stehen schon drin.
+    </p>
+    <textarea class="report-out" id="report-out" readonly aria-label="Testbericht"></textarea>
+    <div class="report-actions">
+      <button type="button" class="btn btn-primary" id="btn-copy">Bericht kopieren</button>
+      <button type="button" class="btn" id="btn-reset">Alles zurücksetzen</button>
+      <span class="copied" id="copied" hidden>Kopiert.</span>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Gehört zu TemplateWing 2.9.0 ·
+    <a href="https://github.com/JuliaKalder/TemplateWing/issues/227">Issue #227</a> · Testkontakte
+    danach wieder löschen.
+  </footer>
+</div>
+
+<script>
+  // ---- Die Schritte. `core` markiert den Kurzcheck. ----
+
+  const STEPS = [
+    {
+      group: "prep",
+      min: 1,
+      title: "Thunderbird-Version prüfen",
+      do: "Menü ≡ → Hilfe → Über Thunderbird.",
+      expect: "Version 128 oder höher. Darunter installiert sich das Add-on gar nicht erst.",
+    },
+    {
+      group: "prep",
+      min: 2,
+      title: "Alte TemplateWing-Version merken",
+      do: "Add-ons und Themes (Strg+Umschalt+A) → TemplateWing → installierte Version notieren. Vorlagen bleiben beim Update erhalten, aber es ist gut zu wissen, wohin du zurück kannst.",
+      expect: "Du weißt, welche Version vorher lief.",
+      why: "Falls etwas schiefgeht, willst du nicht raten müssen, was du vorher hattest.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 2,
+      title: "XPI installieren — und dabei auf das Ausbleiben achten",
+      do: 'Add-ons und Themes → Zahnrad ⚙ → "Add-on aus Datei installieren…" → <code>templatewing-2.9.0.xpi</code> wählen.',
+      expect:
+        "Die Installation fragt <strong>nicht</strong> nach Zugriff auf Adressbücher. Nur die Berechtigungen, die vorher schon galten.",
+      why: "Genau das ist der Grund für die optionale Berechtigung: ein Update darf niemanden mit einem Dialog anhalten.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "Testkontakt mit Spitzname anlegen",
+      do: "Adressbuch (Strg+Umschalt+B) → Neuer Kontakt. Anzeigename <code>Katharina Meier-Lohse</code>, E-Mail <code>kat.test@example.com</code>, Feld <strong>Spitzname</strong> auf <code>Kat</code>.",
+      expect: "Der Kontakt steht im persönlichen Adressbuch, der Spitzname ist gespeichert.",
+      why: "Das ist der Kontakt, an dem sich alles Weitere entscheidet: formeller Name auf der Karte, informeller Spitzname darin.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "Testvorlage mit Fallback anlegen",
+      do: "TemplateWing-Optionen → Neue Vorlage → Name <code>Spitzname-Test</code>, als Nachrichtentext genau das hier einsetzen:",
+      snippet:
+        '{IF recipient.nickname!=""}Hi {RECIPIENT_NICKNAME},{ELSE}Sehr geehrte {RECIPIENT_FIRSTNAME},{ENDIF}',
+      expect:
+        "Die Vorlage speichert ohne Linter-Warnung. Der Chip <code>{RECIPIENT_NICKNAME}</code> ist in der Variablenleiste sichtbar.",
+      why: "Eine Warnung hier hieße, der Linter kennt die neue Variable nicht — dann stimmt die Variablenliste im Code nicht.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 1,
+      title: "Berechtigungszeile ansehen — noch nichts anklicken",
+      do: "Im Vorlagen-Editor unter die Variablen-Chips schauen.",
+      expect:
+        'Eine Zeile: „{RECIPIENT_NICKNAME} benötigt Zugriff auf Ihre Adressbücher." plus Knopf „Adressbuch-Zugriff erlauben".',
+      why: "Die Bitte steht dort, wo sie entsteht — direkt neben der Variable, die sie auslöst.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 2,
+      title: "Negativtest zuerst: einfügen OHNE Berechtigung",
+      do: "Neue Nachricht schreiben, als Empfänger den Testkontakt wählen, dann die Vorlage über den Symbolleisten-Knopf einfügen.",
+      expect:
+        "Im Text steht <code>Sehr geehrte Katharina,</code> — der ELSE-Zweig. Keine Fehlermeldung, kein leerer Text.",
+      why: "Ohne Berechtigung darf das Einfügen nicht scheitern, es fällt nur auf den formellen Namen zurück. Das ist der wichtigste Test des ganzen Durchlaufs.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 2,
+      title: "Berechtigung erteilen",
+      do: 'Zurück in die Optionen → „Adressbuch-Zugriff erlauben" klicken → Thunderbirds Dialog mit „Erlauben" bestätigen.',
+      expect:
+        'Der Knopf verschwindet, die Zeile sagt „Adressbuch-Zugriff erlaubt — {RECIPIENT_NICKNAME} funktioniert."',
+      why: "Wenn kein Dialog kommt: Berechtigung wurde eventuell schon früher erteilt. Dann in Add-ons → TemplateWing → Berechtigungen nachsehen.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 2,
+      title: "Jetzt der eigentliche Moment",
+      do: "Neue Nachricht an den Testkontakt, Vorlage einfügen.",
+      expect: "<code>Hi Kat,</code>",
+      why: "Wenn das steht, tut das Feature, wofür es gebaut wurde.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Kontakt ohne Spitzname",
+      do: "Zweiten Kontakt anlegen: <code>Bernd Ohnespitzname</code>, <code>bernd.test@example.com</code>, Spitzname-Feld leer lassen. Vorlage an ihn einfügen.",
+      expect: "<code>Sehr geehrte Bernd,</code> — der ELSE-Zweig, kein leerer Gruß.",
+      why: "Der häufigste Realfall: Kontakt existiert, Spitzname ist nie gepflegt worden.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Wildfremde Adresse",
+      do: "Neue Nachricht an <code>niemand@example.org</code> (nicht im Adressbuch), Vorlage einfügen.",
+      expect: "<code>Sehr geehrte niemand,</code> — Rückfall auf den lokalen Teil der Adresse.",
+      why: "Kein Kontakt, kein Spitzname, trotzdem keine kaputte Anrede.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Leeres An-Feld, Empfänger nur in der Vorlage",
+      do: "Vorlage <code>Spitzname-Test</code> bearbeiten, <code>kat.test@example.com</code> als Empfänger der Vorlage eintragen. Neue Nachricht öffnen, An-Feld leer lassen, Vorlage einfügen.",
+      expect:
+        "<code>Hi Kat,</code> — der Spitzname wird zur Adresse aufgelöst, die die Vorlage selbst mitbringt.",
+      why: "Sonst verhielte sich dieselbe Vorlage in einer frischen Nachricht anders als in einer Antwort.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Spitzname im Betreff",
+      do: "Vorlage bearbeiten, Betreff auf <code>Kurz zu Ihrem Anliegen, {RECIPIENT_NICKNAME}</code> setzen. An den Testkontakt einfügen.",
+      expect: "Betreffzeile: <code>Kurz zu Ihrem Anliegen, Kat</code>",
+      why: "Variablen gelten für Betreff und Text — beide laufen durch dieselbe Ersetzung.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Verschachtelte Vorlage",
+      do: "Vorlage <code>Gruß</code> anlegen mit Text <code>Hi {RECIPIENT_NICKNAME},</code>. Zweite Vorlage anlegen mit <code>{{template:Gruß}} wie besprochen …</code> und diese einfügen.",
+      expect: "<code>Hi Kat, wie besprochen …</code>",
+      why: "Der Spitzname wird nur nachgeschlagen, wenn die Vorlage ihn braucht — eingebettete Vorlagen müssen dabei mitzählen.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Plain-Text-Konto",
+      do: "Ein Konto auf Nur-Text stellen (Konten-Einstellungen → Verfassen & Adressieren → Haken bei HTML entfernen) oder beim Schreiben Umschalt gedrückt halten. Vorlage einfügen.",
+      expect: "<code>Hi Kat,</code> als reiner Text, keine HTML-Reste wie <code>&lt;p&gt;</code>.",
+      why: "Plain-Text lief bis 2.8.1 über einen eigenen Pfad — der ist erfahrungsgemäß der zerbrechlichere.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Spitzname mit spitzen Klammern",
+      do: "Beim Testkontakt den Spitznamen auf <code>&lt;b&gt;Kat&lt;/b&gt;</code> ändern, Vorlage einfügen.",
+      expect:
+        "Im Text steht wörtlich <code>Hi &lt;b&gt;Kat&lt;/b&gt;,</code> — <strong>nicht</strong> ein fettes „Kat“.",
+      why: "Adressbuchinhalt darf kein HTML in die Nachricht schmuggeln. Danach den Spitznamen wieder auf Kat zurücksetzen.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Zweitadresse des Kontakts",
+      do: "Beim Testkontakt eine zweite E-Mail-Adresse eintragen, z. B. <code>k.meier@example.net</code>. Neue Nachricht an <em>diese</em> Adresse, Vorlage einfügen.",
+      expect: "<code>Hi Kat,</code> — auch über die Zweitadresse gefunden.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Berechtigung wieder entziehen",
+      do: "Add-ons und Themes → TemplateWing → Reiter Berechtigungen → Adressbuch-Zugriff abschalten. Vorlage erneut einfügen.",
+      expect:
+        "Wieder <code>Sehr geehrte Katharina,</code>. In der Fehlerkonsole des Add-ons keine roten Meldungen. Die Berechtigungszeile in den Optionen bietet den Knopf wieder an.",
+      why: "Ein entzogenes Recht ist derselbe Zustand wie ein nie erteiltes — wenn hier ein Fehler auftaucht, fehlt irgendwo eine Absicherung.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Regression: eine Vorlage ohne die neue Variable",
+      do: "Irgendeine bestehende Vorlage mit Anhang und Empfängern einfügen — am besten eine, die du wirklich benutzt.",
+      expect: "Verhält sich exakt wie vorher: Text, Empfänger, Anhänge, gleiche Geschwindigkeit.",
+      why: "Vorlagen ohne Spitzname-Variable dürfen das Adressbuch überhaupt nicht anfassen.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Oberfläche auf Deutsch",
+      do: "Optionen durchsehen (Thunderbird auf Deutsch): Variablen-Chip, Tooltip des Chips, Berechtigungszeile, Knopfbeschriftung.",
+      expect:
+        "Alles deutsch, keine englischen Reste, keine rohen Schlüssel wie <code>optionsAddressBookAsk</code>.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Fehlerkonsole zum Schluss",
+      do: "Add-ons → Zahnrad ⚙ → Add-ons debuggen → bei TemplateWing auf „Untersuchen“, Konsole durchsehen.",
+      expect: "Keine roten Fehler aus TemplateWing über den ganzen Durchlauf.",
+      why: "Warnungen (gelb) aus Thunderbird selbst sind normal, rote Einträge aus dem Add-on nicht.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Aufräumen",
+      do: "Testkontakte löschen, Testvorlagen löschen, Spitzname zurücksetzen falls noch nicht geschehen, Konto wieder auf HTML stellen.",
+      expect: "Adressbuch und Vorlagenliste sehen aus wie vorher.",
+    },
+  ];
+
+  const STORAGE_KEY = "templatewing-nickname-testrun-2.9.0";
+  const state = { verdicts: {}, notes: {}, mode: "all" };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      Object.assign(state, {
+        verdicts: parsed.verdicts || {},
+        notes: parsed.notes || {},
+        mode: parsed.mode === "core" ? "core" : "all",
+      });
+    } catch {
+      /* Privates Fenster oder blockierte Site-Daten: dann eben ohne Gedächtnis. */
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* siehe oben */
+    }
+  }
+
+  function esc(s) {
+    return String(s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
+  }
+
+  /** Roher Text einer Karte für den Bericht — HTML raus, Entities auflösen. */
+  function plain(html) {
+    return String(html)
+      .replace(/<[^>]+>/g, "")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const VERDICT_LABEL = { pass: "passt", fail: "hakt", skip: "übersprungen" };
+
+  function buildStep(step, index) {
+    const li = document.createElement("li");
+    li.className = "step";
+    li.dataset.id = step.id;
+    if (step.core) li.dataset.core = "1";
+
+    const knot = document.createElement("div");
+    knot.className = "knot";
+    knot.textContent = index;
+    li.append(knot);
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-head">
+        <h3 class="step-title">${esc(step.title)}</h3>
+        ${step.core ? '<span class="core-tag">Kern</span>' : ""}
+        <span class="meta">${step.min} min</span>
+      </div>
+      <div class="body">
+        <p class="do"><span class="label">Tu das</span>${step.do}</p>
+        ${step.snippet ? `<code class="snippet">${esc(step.snippet)}</code>` : ""}
+        <p class="expect"><span class="label">Das muss passieren</span>${step.expect}</p>
+        ${step.why ? `<p class="why">${step.why}</p>` : ""}
+        <div class="verdict">
+          <button type="button" data-verdict="pass" aria-pressed="false">Passt</button>
+          <button type="button" data-verdict="fail" aria-pressed="false">Hakt</button>
+          <button type="button" data-verdict="skip" aria-pressed="false">Später</button>
+          <span class="keyhint">Tasten: P · H · L</span>
+        </div>
+        <textarea data-note placeholder="Was genau ist passiert? Landet so im Bericht." hidden></textarea>
+      </div>`;
+    li.append(card);
+
+    card.querySelector(".card-head").addEventListener("click", () => {
+      li.classList.toggle("collapsed");
+    });
+
+    for (const button of card.querySelectorAll(".verdict button")) {
+      button.addEventListener("click", () => {
+        const verdict = button.dataset.verdict;
+        state.verdicts[step.id] = state.verdicts[step.id] === verdict ? null : verdict;
+        save();
+        render();
+      });
+    }
+
+    const note = card.querySelector("[data-note]");
+    note.value = state.notes[step.id] || "";
+    note.addEventListener("input", () => {
+      state.notes[step.id] = note.value;
+      save();
+      renderReport();
+    });
+
+    return li;
+  }
+
+  // ---- Aufbau ----
+
+  let counter = 0;
+  for (const step of STEPS) {
+    step.id = `s${++counter}`;
+    step.index = counter;
+  }
+
+  load();
+
+  const trails = {
+    prep: document.getElementById("trail-prep"),
+    core: document.getElementById("trail-core"),
+    edge: document.getElementById("trail-edge"),
+  };
+  for (const step of STEPS) {
+    trails[step.group].append(buildStep(step, step.index));
+  }
+
+  const nodes = new Map([...document.querySelectorAll("li.step")].map((li) => [li.dataset.id, li]));
+
+  function visibleSteps() {
+    return STEPS.filter((s) => state.mode === "all" || s.core || s.group === "prep");
+  }
+
+  function render() {
+    const visible = visibleSteps();
+    const visibleIds = new Set(visible.map((s) => s.id));
+    const current = visible.find((s) => !state.verdicts[s.id]);
+
+    for (const step of STEPS) {
+      const li = nodes.get(step.id);
+      const verdict = state.verdicts[step.id];
+      li.hidden = !visibleIds.has(step.id);
+      li.dataset.state = verdict || "";
+      li.classList.toggle("current", !!current && current.id === step.id);
+      li.classList.toggle("collapsed", !!verdict);
+      const note = li.querySelector("[data-note]");
+      note.hidden = verdict !== "fail";
+      for (const button of li.querySelectorAll(".verdict button")) {
+        button.setAttribute("aria-pressed", String(button.dataset.verdict === verdict));
+      }
+    }
+
+    const total = visible.length;
+    const count = (v) => visible.filter((s) => state.verdicts[s.id] === v).length;
+    const pass = count("pass");
+    const fail = count("fail");
+    const skip = count("skip");
+    const pct = (n) => (total ? (n / total) * 100 : 0);
+    document.getElementById("rail-pass").style.width = pct(pass) + "%";
+    document.getElementById("rail-fail").style.width = pct(fail) + "%";
+    document.getElementById("rail-skip").style.width = pct(skip) + "%";
+    document.getElementById("tally").innerHTML =
+      `<b>${pass + fail + skip}</b> von <b>${total}</b> erledigt` +
+      (fail ? ` · <b>${fail}</b> hakt` : "");
+
+    document
+      .getElementById("mode-core")
+      .setAttribute("aria-pressed", String(state.mode === "core"));
+    document.getElementById("mode-all").setAttribute("aria-pressed", String(state.mode === "all"));
+
+    renderReport();
+  }
+
+  function renderReport() {
+    const visible = visibleSteps();
+    const lines = [
+      `TemplateWing 2.9.0 — {RECIPIENT_NICKNAME}, manueller Testlauf`,
+      `Datum: ${new Date().toLocaleDateString("de-DE")}`,
+      `Umfang: ${state.mode === "core" ? "Kurzcheck" : "alle Schritte"}`,
+      "",
+    ];
+
+    const failed = visible.filter((s) => state.verdicts[s.id] === "fail");
+    const open = visible.filter((s) => !state.verdicts[s.id]);
+    const skipped = visible.filter((s) => state.verdicts[s.id] === "skip");
+    const passed = visible.filter((s) => state.verdicts[s.id] === "pass");
+
+    lines.push(
+      `Ergebnis: ${passed.length} passt · ${failed.length} hakt · ${skipped.length} später · ${open.length} offen`,
+      ""
+    );
+
+    if (failed.length) {
+      lines.push("HAKT", "----");
+      for (const step of failed) {
+        lines.push(`${step.index}. ${step.title}`);
+        lines.push(`   erwartet: ${plain(step.expect)}`);
+        const note = (state.notes[step.id] || "").trim();
+        lines.push(`   beobachtet: ${note || "— keine Notiz —"}`);
+        lines.push("");
+      }
+    }
+
+    if (skipped.length) {
+      lines.push("SPÄTER", "------");
+      for (const step of skipped) lines.push(`${step.index}. ${step.title}`);
+      lines.push("");
+    }
+
+    if (open.length) {
+      lines.push("NOCH OFFEN", "----------");
+      for (const step of open) lines.push(`${step.index}. ${step.title}`);
+      lines.push("");
+    }
+
+    if (!failed.length && !open.length && !skipped.length && passed.length) {
+      lines.push("Alles durchgelaufen. Release-tauglich, soweit dieser Durchlauf reicht.");
+    }
+
+    document.getElementById("report-out").value = lines.join("\n");
+  }
+
+  // ---- Bedienung ----
+
+  document.getElementById("mode-core").addEventListener("click", () => {
+    state.mode = "core";
+    save();
+    render();
+  });
+  document.getElementById("mode-all").addEventListener("click", () => {
+    state.mode = "all";
+    save();
+    render();
+  });
+
+  document.getElementById("btn-copy").addEventListener("click", async () => {
+    const out = document.getElementById("report-out");
+    const flag = document.getElementById("copied");
+    try {
+      await navigator.clipboard.writeText(out.value);
+    } catch {
+      // Zwischenablage gesperrt: markieren, damit Strg+C reicht.
+      out.removeAttribute("readonly");
+      out.select();
+      out.setAttribute("readonly", "");
+    }
+    flag.hidden = false;
+    setTimeout(() => {
+      flag.hidden = true;
+    }, 2000);
+  });
+
+  document.getElementById("btn-reset").addEventListener("click", () => {
+    if (!confirm("Alle Häkchen und Notizen dieses Durchlaufs verwerfen?")) return;
+    state.verdicts = {};
+    state.notes = {};
+    for (const li of nodes.values()) li.querySelector("[data-note]").value = "";
+    save();
+    render();
+  });
+
+  // Tastenkürzel für den aktuellen Schritt: P passt, H hakt, L später.
+  document.addEventListener("keydown", (event) => {
+    if (event.target.matches("textarea, input") || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    const key = event.key.toLowerCase();
+    const verdict = key === "p" ? "pass" : key === "h" ? "fail" : key === "l" ? "skip" : null;
+    if (!verdict) return;
+    const current = visibleSteps().find((s) => !state.verdicts[s.id]);
+    if (!current) return;
+    event.preventDefault();
+    state.verdicts[current.id] = verdict;
+    save();
+    render();
+    const next = visibleSteps().find((s) => !state.verdicts[s.id]);
+    if (next) nodes.get(next.id).scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+
+  render();
+</script>

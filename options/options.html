@@ -356,6 +356,14 @@
               <button
                 type="button"
                 class="variable-chip"
+                data-var="{RECIPIENT_NICKNAME}"
+                data-i18n-title="optionsVariableRecipientNickname"
+              >
+                {RECIPIENT_NICKNAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
                 data-var="{RECIPIENT_EMAIL}"
                 data-i18n-title="optionsVariableRecipientEmail"
               >
@@ -401,6 +409,19 @@
               >
                 {CHOICE:…}
               </button>
+            </div>
+            <div id="addressbook-permission" class="addressbook-permission" hidden>
+              <span
+                id="addressbook-permission-text"
+                class="addressbook-permission-text"
+                data-i18n="optionsAddressBookAsk"
+              ></span>
+              <button
+                type="button"
+                id="btn-grant-addressbook"
+                class="btn-grant-addressbook"
+                data-i18n="optionsAddressBookGrant"
+              ></button>
             </div>
           </div>
 

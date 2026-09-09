@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Nombre de pila del primer destinatario del campo Para",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Apodo del primer destinatario Para: en la libreta de direcciones",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — Dirección de correo del primer destinatario del campo Para",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,18 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Etiqueta:opc1|opc2|opc3} — Pedir que se elija una opción",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} necesita acceso a sus libretas de direcciones.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Permitir acceso a la libreta de direcciones",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Acceso a la libreta de direcciones permitido: {RECIPIENT_NICKNAME} ya funciona.",
+    "description": "Status shown once the addressBooks permission is granted"
   },
   "promptDialogTitle": {
     "message": "Completar los valores de la plantilla",
