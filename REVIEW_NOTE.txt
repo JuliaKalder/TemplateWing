@@ -39,6 +39,26 @@ Changes
 
   New file: modules/address-book.js (listed in scripts/xpi-files.mjs).
 
+  Recipient names: a recipient with no display name used to be
+  greeted by the local part of its address ("julia.kalder"). The
+  name now comes from the matching address-book contact where the
+  permission allows it, and is otherwise derived from the address
+  itself ("Julia Kalder" / "Julia"). A display name supplied with
+  the recipient is never overwritten. This widens the contact
+  lookup described above from {RECIPIENT_NICKNAME} to any
+  recipient variable, but only when the address arrived without a
+  display name, and still only with the permission granted.
+
+  A cancelled ask-on-insert dialog no longer writes an error to the
+  console. It was never shown to the user, but it made a clean run
+  look broken to anyone reading the error console.
+
+  Localisation: the rich-text toolbar of the template editor
+  (bold/italic/lists/paragraph format/HTML view) and the recipient
+  field placeholders were hardcoded English in every locale. They
+  now go through i18n like the rest of the UI; 16 keys added to all
+  seven locales.
+
   Behaviour change, no new permission: template recipients are now
   merged into the compose window's To/Cc/Bcc instead of replacing
   them. Assigning them deleted whatever address the user had already
@@ -81,8 +101,8 @@ Requires Node.js 20+ and the zip command line utility.
 
   node scripts/build-xpi.mjs
 
-Output: templatewing-2.9.0.xpi (138 KB / 141,165 bytes)
-SHA-256: 0a7bf3044a83dfa30191c6dd382a12b736e22bdbefd416cbb9038207407dd3a1
+Output: templatewing-2.9.0.xpi (142 KB / 145,420 bytes)
+SHA-256: 5c951e06a9040fe01d77bea21dc79b3d4b036e4953095c6858ee724d9cb3e02e
 
 The build is byte reproducible, so this hash can be verified rather
 than trusted. Rebuilding from the source archive gives the identical

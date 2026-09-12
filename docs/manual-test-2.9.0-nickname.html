@@ -688,9 +688,9 @@
 
   <h2 class="section">Der Kernpfad</h2>
   <p class="section-note">
-    Neun Schritte, etwa zwanzig Minuten. Wenn die durchlaufen, funktioniert das Feature. Wichtig:
-    Schritt 6 kommt <em>vor</em> der Berechtigung — der Fallback lässt sich nachher nicht mehr
-    sauber prüfen, ohne die Erlaubnis wieder zu entziehen.
+    Zehn Schritte, etwa fünfundzwanzig Minuten. Wenn die durchlaufen, funktioniert das Feature.
+    Wichtig: Schritt 6 kommt <em>vor</em> der Berechtigung — der Fallback lässt sich nachher nicht
+    mehr sauber prüfen, ohne die Erlaubnis wieder zu entziehen.
   </p>
   <ol class="trail" id="trail-core"></ol>
 
@@ -845,8 +845,10 @@
       group: "edge",
       min: 2,
       title: "Nachfrage-Dialog abbrechen",
-      do: "Nachricht mit leerem An-Feld, Vorlage einfügen, im Empfängerfenster auf Abbrechen (oder Esc).",
-      expect: "Nichts wird eingefügt, der Nachrichtentext bleibt unverändert, keine Fehlermeldung.",
+      do: "Nachricht mit leerem An-Feld, Vorlage einfügen, im Empfängerfenster auf Abbrechen (oder Esc). Danach die Fehlerkonsole des Add-ons ansehen.",
+      expect:
+        "Nichts wird eingefügt, der Nachrichtentext bleibt unverändert, keine Fehlermeldung — und <strong>kein roter Eintrag</strong> in der Konsole.",
+      why: "Ein abgebrochener Dialog ist eine Entscheidung, kein Fehler. In 2.9.0 stand hier noch „insert failed … Prompt cancelled“.",
     },
     {
       group: "edge",
@@ -877,8 +879,41 @@
       title: "Standardvorlage fragt nicht von selbst",
       do: "In den Optionen eine Standardvorlage für ein Konto setzen, die <code>{RECIPIENT_FIRSTNAME}</code> nutzt. Neue Nachricht öffnen.",
       expect:
-        "Die Vorlage wird eingefügt, es öffnet sich <strong>kein</strong> Dialog. Der Text nutzt den ELSE-Zweig; „Neu auflösen“ korrigiert ihn, sobald ein Empfänger dasteht.",
-      why: "Ein Fenster, das beim Öffnen jeder neuen Mail ungefragt aufpoppt, wäre schlimmer als die formelle Anrede.",
+        "Die Vorlage wird eingefügt und es öffnet sich <strong>kein</strong> Dialog. Das ist der ganze Prüfpunkt. Welcher Zweig im Text steht, hängt davon ab, ob das Fenster schon einen Empfänger hat: leeres An-Feld → ELSE-Zweig, vorbelegtes An-Feld → normale Anrede.",
+      why: "Ein Fenster, das beim Öffnen jeder neuen Mail ungefragt aufpoppt, wäre schlimmer als die formelle Anrede. Steht ein Empfänger schon da, ist eine aufgelöste Anrede kein Fehler, sondern der bessere Fall.",
+    },
+    {
+      group: "core",
+      core: true,
+      min: 3,
+      title: "Anrede bei nackter Adresse",
+      do: "Nachricht an den Testkontakt, aber die Adresse <strong>von Hand tippen</strong> statt aus dem Adressbuch zu wählen (kein Anzeigename im An-Feld). Vorlage mit <code>{RECIPIENT_FIRSTNAME}</code> einfügen.",
+      expect:
+        "Der Vorname aus dem Kontakt, z. B. <code>Julia</code> — <strong>nicht</strong> <code>julia.kalder</code>.",
+      why: "Ohne Anzeigename gab es früher den lokalen Teil der Adresse als Anrede. Jetzt wird zuerst der Kontakt gefragt; ohne Adressbuch-Zugriff wird aus <code>julia.kalder</code> immerhin <code>Julia</code> abgeleitet.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Unbekannte nackte Adresse",
+      do: "Nachricht an <code>max.mustermann@example.org</code> (nicht im Adressbuch), Vorlage mit <code>{RECIPIENT_FIRSTNAME}</code> einfügen.",
+      expect: "<code>Max</code> — aus der Adresse abgeleitet, mit großem Anfangsbuchstaben.",
+    },
+    {
+      group: "edge",
+      min: 2,
+      title: "Sammeladresse bleibt harmlos",
+      do: "Nachricht an <code>info@example.org</code>, dieselbe Vorlage einfügen.",
+      expect: "<code>Info</code>. Keine erfundene Person, kein leerer Gruß, keine Fehlermeldung.",
+    },
+    {
+      group: "edge",
+      min: 3,
+      title: "Symbolleiste des Editors auf Deutsch",
+      do: "Optionen → Vorlage bearbeiten → mit der Maus über die Knöpfe der Formatierungsleiste fahren, Absatzformat-Auswahl aufklappen.",
+      expect:
+        "Deutsche Tooltips (Fett, Kursiv, Unterstrichen, Aufzählung, Absatzformat …) und deutsche Einträge in der Auswahl (Normal, Überschrift 2/3, Zitat). Auch die Platzhalter in den Empfängerfeldern sind deutsch.",
+      why: "Diese Leiste war bis 2.8.1 in jeder Sprache englisch.",
     },
     {
       group: "edge",
