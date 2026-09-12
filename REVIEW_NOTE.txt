@@ -57,7 +57,10 @@ Changes
   (bold/italic/lists/paragraph format/HTML view) and the recipient
   field placeholders were hardcoded English in every locale. They
   now go through i18n like the rest of the UI; 16 keys added to all
-  seven locales.
+  seven locales. The 2.9.0 strings were also re-read against each
+  locale's existing wording: the Dutch, Spanish and Italian ones
+  addressed the user formally where the rest of those locales use
+  the informal form, and two French strings were reworded.
 
   Behaviour change, no new permission: template recipients are now
   merged into the compose window's To/Cc/Bcc instead of replacing
@@ -101,8 +104,8 @@ Requires Node.js 20+ and the zip command line utility.
 
   node scripts/build-xpi.mjs
 
-Output: templatewing-2.9.0.xpi (142 KB / 145,420 bytes)
-SHA-256: 5c951e06a9040fe01d77bea21dc79b3d4b036e4953095c6858ee724d9cb3e02e
+Output: templatewing-2.9.0.xpi (142 KB / 145,407 bytes)
+SHA-256: dd5bda953290bd2181d0a44b313d0da16d938c077196a54e79e1ff314b16716e
 
 The build is byte reproducible, so this hash can be verified rather
 than trusted. Rebuilding from the source archive gives the identical

@@ -526,7 +526,7 @@
     "description": "Describes CHOICE variable"
   },
   "optionsAddressBookAsk": {
-    "message": "{RECIPIENT_NICKNAME} heeft toegang tot uw adresboeken nodig.",
+    "message": "{RECIPIENT_NICKNAME} heeft toegang tot je adresboeken nodig.",
     "description": "Prompt shown when the optional addressBooks permission is missing"
   },
   "optionsAddressBookGrant": {

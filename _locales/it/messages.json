@@ -526,7 +526,7 @@
     "description": "Describes CHOICE variable"
   },
   "optionsAddressBookAsk": {
-    "message": "{RECIPIENT_NICKNAME} richiede l'accesso alle sue rubriche.",
+    "message": "{RECIPIENT_NICKNAME} richiede l'accesso alle tue rubriche.",
     "description": "Prompt shown when the optional addressBooks permission is missing"
   },
   "optionsAddressBookGrant": {
@@ -564,7 +564,7 @@
     "description": "Names the template last inserted into this compose window"
   },
   "popupReinsert": {
-    "message": "Rielabora",
+    "message": "Reinserisci",
     "description": "Button that re-resolves the last inserted template"
   },
   "popupReinsertConfirm": {

@@ -554,7 +554,7 @@
     "description": "Validation error for the recipient field"
   },
   "popupLastInserted": {
-    "message": "Dernier insert : $NAME$",
+    "message": "Dernière insertion : $NAME$",
     "placeholders": {
       "name": {
         "content": "$1",
@@ -564,7 +564,7 @@
     "description": "Names the template last inserted into this compose window"
   },
   "popupReinsert": {
-    "message": "Réévaluer",
+    "message": "Réinsérer",
     "description": "Button that re-resolves the last inserted template"
   },
   "popupReinsertConfirm": {

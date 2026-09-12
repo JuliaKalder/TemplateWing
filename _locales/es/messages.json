@@ -526,7 +526,7 @@
     "description": "Describes CHOICE variable"
   },
   "optionsAddressBookAsk": {
-    "message": "{RECIPIENT_NICKNAME} necesita acceso a sus libretas de direcciones.",
+    "message": "{RECIPIENT_NICKNAME} necesita acceso a tus libretas de direcciones.",
     "description": "Prompt shown when the optional addressBooks permission is missing"
   },
   "optionsAddressBookGrant": {
@@ -546,7 +546,7 @@
     "description": "Placeholder of the recipient field"
   },
   "promptDialogRecipientHint": {
-    "message": "Esta plantilla saluda al destinatario. Déjelo vacío para mantener la redacción alternativa.",
+    "message": "Esta plantilla saluda al destinatario. Déjalo vacío para mantener la redacción alternativa.",
     "description": "Explains that leaving the recipient blank is allowed"
   },
   "promptDialogRecipientInvalid": {
