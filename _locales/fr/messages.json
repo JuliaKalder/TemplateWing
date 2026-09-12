@@ -575,6 +575,70 @@
     "message": "Insérer à nouveau le même modèle avec les destinataires actuels de cette fenêtre. Remplace le texte du message.",
     "description": "Tooltip of the re-resolve button"
   },
+  "optionsPlaceholderRecipients": {
+    "message": "destinataire@exemple.fr, Nom <email@exemple.fr>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "destinataire@exemple.fr",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Gras",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Italique",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Souligné",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Liste à puces",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Liste",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Liste numérotée",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Liste",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Format de paragraphe",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Titre 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Titre 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Citation",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Coller en texte brut",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "Afficher ou masquer la source HTML",
+    "description": "Tooltip of the HTML source view button"
+  },
   "promptDialogTitle": {
     "message": "Renseigner les valeurs du modèle",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

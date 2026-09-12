@@ -575,6 +575,70 @@
     "message": "Insert the same template again with the recipients this window has now. Replaces the message text.",
     "description": "Tooltip of the re-resolve button"
   },
+  "optionsPlaceholderRecipients": {
+    "message": "recipient@example.com, Name <email@example.com>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "recipient@example.com",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Bold",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Italic",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Underline",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Bullet list",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• List",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Numbered list",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. List",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Paragraph format",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Heading 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Heading 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Quote",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Paste as plain text",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "Toggle HTML source view",
+    "description": "Tooltip of the HTML source view button"
+  },
   "promptDialogTitle": {
     "message": "Fill in template values",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

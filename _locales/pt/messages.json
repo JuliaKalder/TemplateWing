@@ -575,6 +575,70 @@
     "message": "Insere o mesmo modelo novamente com os destinatários que a janela tem agora. Substitui o texto da mensagem.",
     "description": "Tooltip of the re-resolve button"
   },
+  "optionsPlaceholderRecipients": {
+    "message": "destinatario@exemplo.pt, Nome <email@exemplo.pt>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "destinatario@exemplo.pt",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Negrito",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Itálico",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Sublinhado",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Lista com marcadores",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Lista",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Lista numerada",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Lista",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Formato de parágrafo",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Título 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Título 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Citação",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Colar como texto simples",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "Mostrar ou ocultar o código HTML",
+    "description": "Tooltip of the HTML source view button"
+  },
   "promptDialogTitle": {
     "message": "Preencher os valores do modelo",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

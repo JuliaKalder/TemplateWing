@@ -575,6 +575,70 @@
     "message": "Inserta la misma plantilla otra vez con los destinatarios que tiene ahora esta ventana. Reemplaza el texto del mensaje.",
     "description": "Tooltip of the re-resolve button"
   },
+  "optionsPlaceholderRecipients": {
+    "message": "destinatario@ejemplo.es, Nombre <email@ejemplo.es>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "destinatario@ejemplo.es",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Negrita",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Cursiva",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Subrayado",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Lista con viñetas",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Lista",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Lista numerada",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Lista",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Formato de párrafo",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Encabezado 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Encabezado 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Cita",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Pegar como texto sin formato",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "Mostrar u ocultar el código HTML",
+    "description": "Tooltip of the HTML source view button"
+  },
   "promptDialogTitle": {
     "message": "Completar los valores de la plantilla",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

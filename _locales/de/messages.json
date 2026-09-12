@@ -575,6 +575,70 @@
     "message": "Dieselbe Vorlage erneut einfügen, mit den Empfängern, die jetzt im Fenster stehen. Ersetzt den Nachrichtentext.",
     "description": "Tooltip of the re-resolve button"
   },
+  "optionsPlaceholderRecipients": {
+    "message": "empfaenger@beispiel.de, Name <email@beispiel.de>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "empfaenger@beispiel.de",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Fett",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Kursiv",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Unterstrichen",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Aufzählung",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Liste",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Nummerierte Liste",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Liste",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Absatzformat",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Überschrift 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Überschrift 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Zitat",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Als reinen Text einfügen",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "HTML-Quelltext ein-/ausblenden",
+    "description": "Tooltip of the HTML source view button"
+  },
   "promptDialogTitle": {
     "message": "Vorlagenwerte ausfüllen",
     "description": "Title of the dialog that collects PROMPT/CHOICE answers"

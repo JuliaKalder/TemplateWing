@@ -272,3 +272,28 @@ test("the nickname chip inserts its token into the editor body", async ({ page }
   await page.click('.variable-chip[data-var="{RECIPIENT_NICKNAME}"]');
   await expect(page.locator("#editor-body")).toContainText("{RECIPIENT_NICKNAME}");
 });
+
+// ---- Editor toolbar localisation ----
+
+test("every editor toolbar control takes its label from i18n", async ({ page }) => {
+  await openOptions(page);
+  await page.click("#btn-add");
+  // The stub returns the key itself, so a control that still carries hardcoded
+  // English text fails here instead of shipping untranslated.
+  await expect(page.locator('.toolbar-btn[data-cmd="bold"]')).toHaveAttribute(
+    "title",
+    "optionsToolbarBold"
+  );
+  await expect(page.locator("#format-block")).toHaveAttribute("title", "optionsToolbarFormat");
+  await expect(page.locator("#btn-html-toggle")).toHaveAttribute(
+    "title",
+    "optionsToolbarHtmlSource"
+  );
+  await expect(page.locator('#format-block option[value="h2"]')).toHaveText(
+    "optionsToolbarFormatHeading2"
+  );
+  await expect(page.locator("#editor-to")).toHaveAttribute(
+    "placeholder",
+    "optionsPlaceholderRecipients"
+  );
+});
