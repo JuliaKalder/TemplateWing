@@ -65,6 +65,25 @@ function splitValueList(value) {
   return parts;
 }
 
+/** Split a vCard value into its structured components on unescaped ";". */
+function splitStructured(value) {
+  const parts = [];
+  let cur = "";
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === "\\") {
+      cur += ch + (value[++i] ?? "");
+    } else if (ch === ";") {
+      parts.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  parts.push(cur);
+  return parts;
+}
+
 /**
  * Iterate the content lines of a vCard as { name, value } pairs, with the
  * group prefix ("item1.EMAIL") and parameters (";TYPE=work") stripped from
@@ -165,6 +184,46 @@ export function nicknameFromContact(contact) {
 }
 
 /**
+ * Display name and given name of a vCard: FN for the full name, the second
+ * component of N ("family;given;…") for the given name.
+ *
+ * @param {string} vcard
+ * @returns {{name: string, firstname: string}}
+ */
+export function namesFromVCard(vcard) {
+  let name = "";
+  let firstname = "";
+  if (!vcard) return { name, firstname };
+  for (const { name: prop, value } of vCardLines(vcard)) {
+    if (prop === "FN" && !name) {
+      name = unescapeValue(splitValueList(value)[0] || "").trim();
+    } else if (prop === "N" && !firstname) {
+      // family;given;additional;prefixes;suffixes — components are separated
+      // by semicolons, which splitValueList does not touch.
+      const given = splitStructured(value)[1] || "";
+      firstname = unescapeValue(splitValueList(given)[0] || "").trim();
+    }
+  }
+  return { name, firstname };
+}
+
+/**
+ * Name fields of a ContactNode, legacy properties first, then the vCard,
+ * and the display name's first word as the last resort for a given name.
+ *
+ * @param {object} contact - A messenger.contacts ContactNode.
+ * @returns {{name: string, firstname: string}}
+ */
+export function namesFromContact(contact) {
+  const props = (contact && contact.properties) || {};
+  const fromCard = namesFromVCard(props.vCard);
+  const name = String(props.DisplayName ?? "").trim() || fromCard.name;
+  const firstname =
+    String(props.FirstName ?? "").trim() || fromCard.firstname || name.split(/\s+/)[0] || "";
+  return { name, firstname };
+}
+
+/**
  * Has the user granted the optional `addressBooks` permission?
  * Returns false rather than throwing when the permissions API is absent.
  */
@@ -199,33 +258,39 @@ async function quickSearchContacts(email) {
 }
 
 /**
- * Nickname of the address-book contact for `email`.
+ * The address-book contact for `email`, reduced to the fields a template can
+ * use: nickname, display name, given name.
  *
- * Resolves to "" for every "we don't know": no address, permission not
- * granted, API missing, no contact, contact without a nickname. Callers do
- * not need to distinguish those cases — the template decides what an empty
- * nickname means via {IF recipient.nickname!=""}.
+ * Resolves to null for every "we don't know": no address, permission not
+ * granted, API missing, no matching contact. Individual fields are "" when
+ * the card does not carry them. Callers do not need to distinguish those
+ * cases — a template decides what an empty nickname means via
+ * {IF recipient.nickname!=""}.
  *
  * When several address books hold the same address, the first match wins;
  * quickSearch returns them in address-book order, personal book first.
  *
  * @param {string} email
- * @returns {Promise<string>}
+ * @returns {Promise<{nickname: string, name: string, firstname: string}|null>}
  */
-export async function lookupNicknameByEmail(email) {
+export async function lookupContactByEmail(email) {
   const needle = String(email ?? "")
     .trim()
     .toLowerCase();
-  if (!needle) return "";
-  if (!globalThis.messenger?.contacts?.quickSearch) return "";
-  if (!(await hasAddressBookPermission())) return "";
+  if (!needle) return null;
+  if (!globalThis.messenger?.contacts?.quickSearch) return null;
+  if (!(await hasAddressBookPermission())) return null;
 
   const contacts = await quickSearchContacts(needle);
-  if (!Array.isArray(contacts)) return "";
+  if (!Array.isArray(contacts)) return null;
   for (const contact of contacts) {
     if (!contactHasEmail(contact, needle)) continue;
-    const nickname = nicknameFromContact(contact);
-    if (nickname) return nickname;
+    const names = namesFromContact(contact);
+    return {
+      nickname: nicknameFromContact(contact),
+      name: names.name,
+      firstname: names.firstname,
+    };
   }
-  return "";
+  return null;
 }

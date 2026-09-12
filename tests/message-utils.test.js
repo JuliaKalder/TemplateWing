@@ -4,6 +4,7 @@ import {
   findPart,
   extractBody,
   parseRecipient,
+  nameFromLocalPart,
   recipientKey,
   mergeRecipients,
   stripReplyForwardPrefix,
@@ -115,8 +116,9 @@ describe("parseRecipient", () => {
   it("parses bare 'user@example.com'", () => {
     const p = parseRecipient("jane@example.com");
     assert.strictEqual(p.email, "jane@example.com");
-    assert.strictEqual(p.name, "jane");
-    assert.strictEqual(p.firstname, "jane");
+    // Capitalised: this name goes into a greeting, and "jane" reads as a bug.
+    assert.strictEqual(p.name, "Jane");
+    assert.strictEqual(p.firstname, "Jane");
     assert.strictEqual(p.domain, "example.com");
   });
 
@@ -133,10 +135,10 @@ describe("parseRecipient", () => {
     assert.strictEqual(p.firstname, "Doe,");
   });
 
-  it("falls back to local-part as name when no display name", () => {
+  it("reads a name out of the local part when no display name is present", () => {
     const p = parseRecipient("first.last@x.com");
-    assert.strictEqual(p.name, "first.last");
-    assert.strictEqual(p.firstname, "first.last");
+    assert.strictEqual(p.name, "First Last");
+    assert.strictEqual(p.firstname, "First");
   });
 
   it("returns null for empty/invalid input", () => {
@@ -265,5 +267,50 @@ describe("mergeRecipients", () => {
     mergeRecipients(existing, incoming);
     assert.deepStrictEqual(existing, ["a@b.test"]);
     assert.deepStrictEqual(incoming, ["c@d.test"]);
+  });
+});
+
+// ---- nameFromLocalPart ----
+
+describe("nameFromLocalPart", () => {
+  it("turns a first.last address into a readable name", () => {
+    assert.strictEqual(nameFromLocalPart("julia.kalder@ikmail.com"), "Julia Kalder");
+  });
+
+  it("handles underscores, hyphens and plus tags as word boundaries", () => {
+    assert.strictEqual(nameFromLocalPart("julia_kalder@x.test"), "Julia Kalder");
+    assert.strictEqual(nameFromLocalPart("no-reply@x.test"), "No Reply");
+  });
+
+  it("capitalises non-ASCII letters correctly", () => {
+    assert.strictEqual(nameFromLocalPart("über.müller@x.de"), "Über Müller");
+  });
+
+  it("drops initials and tokens carrying digits", () => {
+    assert.strictEqual(nameFromLocalPart("k.meier@x.test"), "Meier");
+    assert.strictEqual(nameFromLocalPart("julia.kalder2@x.test"), "Julia");
+  });
+
+  it("falls back to the raw local part when no token qualifies", () => {
+    assert.strictEqual(nameFromLocalPart("user42@x.test"), "user42");
+    assert.strictEqual(nameFromLocalPart("a.b@x.test"), "a.b");
+  });
+
+  it("returns empty string for nothing", () => {
+    assert.strictEqual(nameFromLocalPart(""), "");
+    assert.strictEqual(nameFromLocalPart(null), "");
+  });
+});
+
+describe("parseRecipient — hasDisplayName", () => {
+  it("is true when the recipient carried a display name", () => {
+    assert.strictEqual(parseRecipient("Julia Kalder <j@x.test>").hasDisplayName, true);
+  });
+
+  it("is false for a bare address, and the name is derived", () => {
+    const parsed = parseRecipient("julia.kalder@ikmail.com");
+    assert.strictEqual(parsed.hasDisplayName, false);
+    assert.strictEqual(parsed.name, "Julia Kalder");
+    assert.strictEqual(parsed.firstname, "Julia");
   });
 });

@@ -35,10 +35,13 @@ export function extractBody(part) {
  *   - "user@example.com"
  *   - "Jane Doe <jane@example.com>"
  *   - "\"Doe, Jane\" <jane@example.com>"
- * Falls back to local-part as the name when no display name is present.
+ * Falls back to a name read out of the local part when no display name is
+ * present — see {@link nameFromLocalPart}. `hasDisplayName` tells callers
+ * which of the two happened, because a guessed name is worth replacing with
+ * the real one from the address book and a typed one never is.
  *
  * @param {string} raw
- * @returns {{ name: string, firstname: string, email: string, domain: string }|null}
+ * @returns {{ name: string, firstname: string, email: string, domain: string, hasDisplayName: boolean }|null}
  */
 export function parseRecipient(raw) {
   if (raw == null) return null;
@@ -61,13 +64,38 @@ export function parseRecipient(raw) {
     else return null;
   }
 
-  if (!name) {
-    // Local-part fallback: "first.last@..." → "first.last".
-    name = email.split("@")[0] || "";
-  }
+  const hasDisplayName = !!name;
+  if (!name) name = nameFromLocalPart(email);
   const firstname = name.split(/\s+/)[0] || "";
   const domain = email.includes("@") ? email.split("@")[1] : "";
-  return { name, firstname, email, domain };
+  return { name, firstname, email, domain, hasDisplayName };
+}
+
+/**
+ * Read a human-looking name out of an address with no display name:
+ * "julia.kalder@example.com" → "Julia Kalder".
+ *
+ * A greeting is the one place this matters. Addressing someone as
+ * "julia.kalder" is visibly broken in a way that "Julia" is not, and the
+ * separators in a local part carry exactly the word boundaries needed.
+ *
+ * Deliberately conservative: tokens that are not plainly a word — anything
+ * carrying a digit, single letters, the role words a shared mailbox uses —
+ * are dropped rather than capitalised into something that looks like a
+ * person. When nothing survives, the raw local part is returned unchanged,
+ * which is what this function replaced.
+ *
+ * @param {string} email
+ * @returns {string}
+ */
+export function nameFromLocalPart(email) {
+  const local = String(email ?? "").split("@")[0] || "";
+  if (!local) return "";
+  const words = local
+    .split(/[._\-+]+/)
+    .filter((part) => part.length > 1 && /^[\p{L}]+$/u.test(part))
+    .map((part) => part[0].toLocaleUpperCase() + part.slice(1));
+  return words.length > 0 ? words.join(" ") : local;
 }
 
 /**

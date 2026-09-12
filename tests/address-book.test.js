@@ -9,9 +9,17 @@ const {
   emailsFromVCard,
   contactHasEmail,
   nicknameFromContact,
+  namesFromVCard,
+  namesFromContact,
   hasAddressBookPermission,
-  lookupNicknameByEmail,
+  lookupContactByEmail,
 } = await import("../modules/address-book.js");
+
+/** The nickname alone, which is what most of these cases are about. */
+async function lookupNicknameByEmail(email) {
+  const contact = await lookupContactByEmail(email);
+  return contact ? contact.nickname : "";
+}
 
 after(() => {
   uninstallMessengerMock();
@@ -112,6 +120,84 @@ describe("nicknameFromContact", () => {
   it("returns empty string for a contact with no properties", () => {
     assert.strictEqual(nicknameFromContact({}), "");
     assert.strictEqual(nicknameFromContact(null), "");
+  });
+});
+
+describe("namesFromVCard", () => {
+  it("reads FN as the display name and the given name out of N", () => {
+    const card = vcard("FN:Julia Kalder", "N:Kalder;Julia;;;");
+    assert.deepStrictEqual(namesFromVCard(card), { name: "Julia Kalder", firstname: "Julia" });
+  });
+
+  it("survives an N with fewer components", () => {
+    assert.strictEqual(namesFromVCard(vcard("N:Kalder")).firstname, "");
+  });
+
+  it("keeps an escaped semicolon inside a component", () => {
+    const card = vcard("N:Meier\\;Lohse;Katharina;;;");
+    assert.strictEqual(namesFromVCard(card).firstname, "Katharina");
+  });
+
+  it("returns empty fields for a card without names", () => {
+    assert.deepStrictEqual(namesFromVCard(vcard("EMAIL:a@b.test")), { name: "", firstname: "" });
+  });
+});
+
+describe("namesFromContact", () => {
+  it("prefers the legacy properties", () => {
+    const contact = {
+      properties: { DisplayName: "Julia Kalder", FirstName: "Julia", vCard: vcard("FN:Other") },
+    };
+    assert.deepStrictEqual(namesFromContact(contact), {
+      name: "Julia Kalder",
+      firstname: "Julia",
+    });
+  });
+
+  it("falls back to the vCard", () => {
+    const contact = { properties: { vCard: vcard("FN:Julia Kalder", "N:Kalder;Julia;;;") } };
+    assert.deepStrictEqual(namesFromContact(contact), {
+      name: "Julia Kalder",
+      firstname: "Julia",
+    });
+  });
+
+  it("derives a given name from the display name as a last resort", () => {
+    const contact = { properties: { DisplayName: "Julia Kalder" } };
+    assert.strictEqual(namesFromContact(contact).firstname, "Julia");
+  });
+});
+
+describe("lookupContactByEmail — name fields", () => {
+  it("returns the contact's real name for a bare address", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      {
+        properties: {
+          PrimaryEmail: "julia.kalder@ikmail.com",
+          DisplayName: "Julia Kalder",
+          FirstName: "Julia",
+          NickName: "Juli",
+        },
+      },
+    ];
+    const contact = await lookupContactByEmail("julia.kalder@ikmail.com");
+    assert.deepStrictEqual(contact, {
+      nickname: "Juli",
+      name: "Julia Kalder",
+      firstname: "Julia",
+    });
+  });
+
+  it("returns null when no contact matches", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [];
+    assert.strictEqual(await lookupContactByEmail("nobody@example.com"), null);
+  });
+
+  it("returns null without the permission", async () => {
+    messenger.permissions._granted = false;
+    assert.strictEqual(await lookupContactByEmail("julia.kalder@ikmail.com"), null);
   });
 });
 

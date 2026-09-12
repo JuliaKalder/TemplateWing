@@ -1,5 +1,5 @@
 import { getTemplates, INSERT_MODES } from "./template-store.js";
-import { lookupNicknameByEmail } from "./address-book.js";
+import { lookupContactByEmail } from "./address-book.js";
 import {
   mergeRecipients,
   parseRecipient,
@@ -27,6 +27,7 @@ export function applyTemplateRecipientFallback(recipientVars, templateTo) {
     recipientName: parsed.name,
     recipientFirstname: parsed.firstname,
     recipientEmail: parsed.email,
+    recipientHasDisplayName: parsed.hasDisplayName,
   };
 }
 
@@ -301,7 +302,7 @@ export async function resolveIdentityVars(tabId) {
  * The nickname is deliberately NOT resolved here: it needs an address-book
  * lookup behind an optional permission, and it needs the final recipient —
  * which {@link applyTemplateRecipientFallback} may still change. See
- * {@link resolveNicknameVar}.
+ * {@link resolveContactVars}.
  *
  * @param {boolean} isHtml - true when the active compose mode is HTML; controls REPLY_QUOTE wrapping.
  * @returns {Promise<{recipientName,recipientFirstname,recipientNickname,recipientEmail,replyQuote,lastMessageSubject}>}
@@ -311,6 +312,9 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
   let recipientFirstname = "";
   const recipientNickname = "";
   let recipientEmail = "";
+  // False means the name above was read out of the address, not typed by
+  // anyone — the address book may know better. See resolveContactVars.
+  let recipientHasDisplayName = false;
   let replyQuote = "";
   let lastMessageSubject = "";
 
@@ -324,6 +328,7 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
       recipientFirstname,
       recipientNickname,
       recipientEmail,
+      recipientHasDisplayName,
       replyQuote,
       lastMessageSubject,
     };
@@ -336,6 +341,7 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
       recipientName = parsed.name;
       recipientFirstname = parsed.firstname;
       recipientEmail = parsed.email;
+      recipientHasDisplayName = parsed.hasDisplayName;
     }
   }
 
@@ -364,6 +370,7 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
     recipientFirstname,
     recipientNickname,
     recipientEmail,
+    recipientHasDisplayName,
     replyQuote,
     lastMessageSubject,
   };
@@ -424,26 +431,47 @@ export function usesNicknameVariable(...texts) {
 }
 
 /**
- * Add `recipientNickname` to an already-resolved recipient bundle.
+ * Fill in what only the address book knows: the nickname, and — when the
+ * compose window supplied a bare address — the contact's real name.
  *
- * Runs after {@link applyTemplateRecipientFallback} so a compose window with
- * no recipient yet looks up the address the template itself is about to
- * write, rather than nothing. Never throws: an unavailable address book, a
- * withheld permission and an unknown contact all yield "".
+ * Runs after {@link applyTemplateRecipientFallback} so a window with no
+ * recipient yet looks up the address the template itself is about to write.
+ * Never throws: an unavailable address book, a withheld permission and an
+ * unknown contact all leave the bundle as it was.
+ *
+ * A display name that came with the recipient is never overwritten — the
+ * user, or Thunderbird, put it there on purpose. Only a name this code
+ * derived from the address itself (`recipientHasDisplayName === false`, see
+ * `nameFromLocalPart`) gives way to the contact card, which is the
+ * difference between greeting someone as "julia.kalder" and as "Julia".
  *
  * @param {object} recipientVars - Output of {@link resolveRecipientVars}.
- * @param {boolean} needed - False skips the lookup entirely (see {@link usesNicknameVariable}).
- * @returns {Promise<object>} A copy carrying `recipientNickname`.
+ * @param {object} [opts]
+ * @param {boolean} [opts.nickname] - Template references {RECIPIENT_NICKNAME}.
+ * @param {boolean} [opts.names] - Template references a recipient variable and
+ *   the window supplied no display name to go with the address.
+ * @returns {Promise<object>} A copy, or the original when nothing was looked up.
  */
-export async function resolveNicknameVar(recipientVars, needed) {
-  if (!needed || !recipientVars || !recipientVars.recipientEmail) return recipientVars;
-  let recipientNickname = "";
+export async function resolveContactVars(recipientVars, opts = {}) {
+  const wantNickname = !!opts.nickname;
+  const wantNames = !!opts.names;
+  if (!recipientVars || !recipientVars.recipientEmail) return recipientVars;
+  if (!wantNickname && !wantNames) return recipientVars;
+
+  let contact = null;
   try {
-    recipientNickname = await lookupNicknameByEmail(recipientVars.recipientEmail);
+    contact = await lookupContactByEmail(recipientVars.recipientEmail);
   } catch (err) {
-    console.warn("TemplateWing: could not resolve recipient nickname", err);
+    console.warn("TemplateWing: could not read the address book", err);
   }
-  return { ...recipientVars, recipientNickname };
+
+  const out = { ...recipientVars };
+  if (wantNickname) out.recipientNickname = (contact && contact.nickname) || "";
+  if (wantNames && contact && !recipientVars.recipientHasDisplayName) {
+    if (contact.name) out.recipientName = contact.name;
+    if (contact.firstname) out.recipientFirstname = contact.firstname;
+  }
+  return out;
 }
 
 // ---- Conditional variables ({IF} / {ELSE} / {ENDIF}) ----
@@ -938,10 +966,14 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
     recipientVars,
     recipientOverride ? [recipientOverride] : template.to
   );
-  recipientVars = await resolveNicknameVar(
-    recipientVars,
-    usesNicknameVariable(resolvedBody, template.subject)
-  );
+  recipientVars = await resolveContactVars(recipientVars, {
+    nickname: usesNicknameVariable(resolvedBody, template.subject),
+    // A bare address in the To: field means the name in hand was read out of
+    // that address. The contact card, if there is one, knows the real one.
+    names:
+      usesRecipientVariables(resolvedBody, template.subject) &&
+      !recipientVars.recipientHasDisplayName,
+  });
   const ctx = buildVariableContext({ identityVars, recipientVars });
 
   // Pipeline: nested → vars → control flow → prompts. The current order
