@@ -18,6 +18,23 @@ import { findPart, extractBody } from "./modules/message-utils.js";
 import { getIdentityIdForTab } from "./modules/compose-utils.js";
 import { collectPromptAnswers } from "./modules/prompt-collector.js";
 
+/**
+ * Report an insert that did not happen.
+ *
+ * A cancelled prompt is a decision, not a failure: it produces neither a
+ * notification nor a red console entry. Logging it made a clean run look
+ * broken in the error console, which is exactly where someone checks after
+ * a test round.
+ *
+ * @param {string} context - Where it happened, for the log line.
+ * @param {Error} err
+ */
+async function reportInsertFailure(context, err) {
+  if (err && err.code === "PROMPT_CANCELLED") return;
+  console.error(`TemplateWing: ${context}`, err);
+  await notifyInsertFailure(err);
+}
+
 async function notifyInsertFailure(err) {
   // User-cancelled prompts are an explicit choice, not a failure — stay silent.
   if (err && err.code === "PROMPT_CANCELLED") return;
@@ -232,8 +249,7 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
     rememberInsert(tab.id, templateId);
     await trackUsage(templateId);
   } catch (err) {
-    console.error("TemplateWing: insert failed from context menu", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from context menu", err);
   }
 });
 
@@ -269,8 +285,7 @@ messenger.commands.onCommand.addListener(async (commandName) => {
     rememberInsert(tabs[0].id, template.id);
     await trackUsage(template.id);
   } catch (err) {
-    console.error("TemplateWing: insert failed from keyboard shortcut", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from keyboard shortcut", err);
   }
 });
 
@@ -318,8 +333,7 @@ async function handleInsertTemplateFromPopup(message, sender) {
     rememberInsert(message.tabId, message.templateId);
     await trackUsage(message.templateId);
   } catch (err) {
-    console.error("TemplateWing: insert failed from popup delegation", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from popup delegation", err);
   }
 }
 
@@ -370,8 +384,7 @@ async function handleReinsertFromPopup(message, sender) {
       { promptAnswers, recipient }
     );
   } catch (err) {
-    console.error("TemplateWing: re-insert failed", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("re-insert failed", err);
   }
 }
 

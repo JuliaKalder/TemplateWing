@@ -200,6 +200,9 @@ async function insertTemplate(id) {
   try {
     await insertTemplateIntoTab(tabs[0].id, template);
   } catch (err) {
+    // A cancelled {PROMPT}/{CHOICE} dialog is a decision, not a failure —
+    // neither a red console entry nor a notification.
+    if (err && err.code === "PROMPT_CANCELLED") return;
     console.error("TemplateWing: insert failed", err);
     try {
       const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
@@ -209,9 +212,6 @@ async function insertTemplate(id) {
           "notificationAttachmentFailed",
           err.failedNames.join(", ")
         );
-      } else if (err && err.code === "PROMPT_CANCELLED") {
-        // User cancelled a {PROMPT}/{CHOICE} dialog — silent abort.
-        return;
       } else {
         message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
       }
