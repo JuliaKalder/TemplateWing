@@ -98,7 +98,16 @@ This creates `templatewing-<version>.xpi` in the parent directory and prints the
 
 The build is byte-reproducible: the same commit yields the same SHA-256 on any machine, in any timezone, under any umask, so a published hash can be verified rather than trusted. Files are staged and stamped with a fixed timestamp and mode, `zip -X` drops the timestamp/uid extra fields, `TZ` is pinned to UTC, and `.gitattributes` pins line endings to LF. Set `SOURCE_DATE_EPOCH` to build against a different fixed date. CI verifies all of this on every push and fails if `REVIEW_NOTE.txt` quotes a stale hash.
 
-Tags pushed to GitHub are built and released automatically by `.github/workflows/release.yml`, which attaches both the XPI and the source archive.
+Tags pushed to GitHub are built and released automatically by `.github/workflows/release.yml`, which attaches both the XPI and the source archive. Use an **annotated** tag and write the release notes into its message — the workflow lifts that message into the release description, so the notes exist at the moment the release is cut rather than being added afterwards:
+
+```bash
+git tag -a v2.9.0 -m "TemplateWing 2.9.0
+
+What changed, in the words a user would read."
+git push origin v2.9.0
+```
+
+The subject line is dropped (the release already carries the version) and the body becomes the description. A lightweight tag falls back to a link to the commit history.
 
 ### Build the source archive
 

@@ -47,6 +47,32 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      # A release whose description says "see the commit history" is a release
+      # nobody reads, and writing the notes afterwards is a step that gets
+      # skipped. The annotated tag already carries them — they are written at
+      # the moment the release is cut — so lift that message into the body.
+      # A lightweight tag carries the commit message instead, which is not
+      # release notes, so those fall back to the plain build summary.
+      - name: Read the release notes from the tag annotation
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          # checkout fetches the ref, not necessarily the tag object it points at.
+          git fetch origin "refs/tags/${TAG}:refs/tags/${TAG}" --force 2>/dev/null || true
+          NOTES=""
+          if [ "$(git for-each-ref "refs/tags/${TAG}" --format='%(objecttype)')" = "tag" ]; then
+            NOTES="$(git for-each-ref "refs/tags/${TAG}" --format='%(contents:body)')"
+          fi
+          if [ -z "${NOTES//[[:space:]]/}" ]; then
+            NOTES="See [CHANGELOG / commit history](https://github.com/${GITHUB_REPOSITORY}/commits/${TAG}) for what changed."
+            echo "No annotated-tag message found — falling back to the commit-history link."
+          fi
+          {
+            echo "notes<<TEMPLATEWING_NOTES_EOF"
+            echo "$NOTES"
+            echo "TEMPLATEWING_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build XPI
         id: build
         run: node scripts/build-xpi.mjs --out-dir "$RUNNER_TEMP"
@@ -66,12 +92,14 @@ jobs:
           body: |
             **TemplateWing ${{ github.ref_name }}**
 
+            ${{ steps.notes.outputs.notes }}
+
+            ---
+
             Built automatically from tag `${{ github.ref_name }}` by `.github/workflows/release.yml`.
 
             - File: `templatewing-${{ steps.build.outputs.xpi_version }}.xpi`
             - Size: `${{ steps.build.outputs.xpi_size }}` bytes
             - SHA-256: `${{ steps.build.outputs.xpi_sha256 }}`
 
-            `templatewing-${{ steps.build.outputs.xpi_version }}-source.zip` contains everything needed to rebuild the XPI (see `SOURCE_README.md`).
-
-            See [CHANGELOG / commit history](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for what changed.
+            `templatewing-${{ steps.build.outputs.xpi_version }}-source.zip` contains everything needed to rebuild the XPI (see `SOURCE_README.md`). The build is byte reproducible: rebuilding from that archive gives the identical hash.
