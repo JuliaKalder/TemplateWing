@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Voornaam van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Bijnaam van de eerste Aan:-ontvanger uit het adresboek",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — E-mailadres van de eerste Aan-ontvanger",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,120 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Label:optie1|optie2|optie3} — Bij het invoegen een optie laten kiezen",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} heeft toegang tot je adresboeken nodig.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Adresboektoegang toestaan",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Adresboektoegang toegestaan — {RECIPIENT_NICKNAME} werkt nu.",
+    "description": "Status shown once the addressBooks permission is granted"
+  },
+  "promptDialogRecipientLabel": {
+    "message": "Naar wie gaat dit bericht?",
+    "description": "Label of the recipient field in the prompt dialog"
+  },
+  "promptDialogRecipientPlaceholder": {
+    "message": "naam@voorbeeld.nl",
+    "description": "Placeholder of the recipient field"
+  },
+  "promptDialogRecipientHint": {
+    "message": "Dit sjabloon spreekt de ontvanger aan. Laat leeg om de terugvalformulering te behouden.",
+    "description": "Explains that leaving the recipient blank is allowed"
+  },
+  "promptDialogRecipientInvalid": {
+    "message": "Dat lijkt niet op een e-mailadres.",
+    "description": "Validation error for the recipient field"
+  },
+  "popupLastInserted": {
+    "message": "Laatst ingevoegd: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Follow-up"
+      }
+    },
+    "description": "Names the template last inserted into this compose window"
+  },
+  "popupReinsert": {
+    "message": "Opnieuw invullen",
+    "description": "Button that re-resolves the last inserted template"
+  },
+  "popupReinsertConfirm": {
+    "message": "Tekst vervangen?",
+    "description": "Second-click label confirming the body replacement"
+  },
+  "popupReinsertHint": {
+    "message": "Voegt hetzelfde sjabloon opnieuw in met de ontvangers die dit venster nu heeft. Vervangt de berichttekst.",
+    "description": "Tooltip of the re-resolve button"
+  },
+  "optionsPlaceholderRecipients": {
+    "message": "ontvanger@voorbeeld.nl, Naam <email@voorbeeld.nl>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "ontvanger@voorbeeld.nl",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Vet",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Cursief",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Onderstrepen",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Opsommingslijst",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Lijst",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Genummerde lijst",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Lijst",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Alinea-opmaak",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normaal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Kop 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Kop 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Citaat",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Plakken als platte tekst",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "HTML-bron tonen of verbergen",
+    "description": "Tooltip of the HTML source view button"
   },
   "promptDialogTitle": {
     "message": "Sjabloonwaarden invullen",

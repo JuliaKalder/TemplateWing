@@ -18,23 +18,32 @@ function makeRequestId() {
 
 /**
  * @param {Array} tokens - From extractPromptTokens().
- * @returns {Promise<Object<string,string>>} - Map of literal token text → user answer.
+ * @param {object} [opts]
+ * @param {boolean} [opts.askRecipient] - Also ask who the message is going to.
+ *   Used when the template greets the recipient but the window has none yet
+ *   (see needsRecipientPrompt) — the answer cannot be recovered afterwards,
+ *   so it has to be collected before the text is written.
+ * @returns {Promise<{answers: Object<string,string>, recipient: string}>} - Token
+ *   answers keyed by literal token text, plus the recipient (empty when not
+ *   asked, or when the user left it blank to keep the fallback wording).
  * @throws {Error} - With code "PROMPT_CANCELLED" if the user dismisses the dialog.
  */
-export async function collectPromptAnswers(tokens) {
-  if (!tokens || tokens.length === 0) return {};
+export async function collectPromptAnswers(tokens, opts = {}) {
+  const askRecipient = !!opts.askRecipient;
+  const list = tokens || [];
+  if (list.length === 0 && !askRecipient) return { answers: {}, recipient: "" };
 
   const requestId = makeRequestId();
   const storageKey = REQUEST_STORAGE_PREFIX + requestId;
 
   await messenger.storage.local.set({
-    [storageKey]: { tokens },
+    [storageKey]: { tokens: list, askRecipient },
   });
 
   // Roughly size the popup window to fit the tokens — one row per token
   // plus header and action buttons. Cap at 600px so very long lists scroll
   // rather than ballooning across the screen.
-  const height = Math.min(600, 160 + tokens.length * 80);
+  const height = Math.min(600, 160 + (list.length + (askRecipient ? 1 : 0)) * 80);
   const win = await messenger.windows.create({
     url: messenger.runtime.getURL(`prompt-dialog/dialog.html?id=${encodeURIComponent(requestId)}`),
     type: "popup",
@@ -54,7 +63,10 @@ export async function collectPromptAnswers(tokens) {
       if (message.action === "templatewing:promptResult") {
         settled = true;
         cleanup();
-        resolve(message.answers || {});
+        resolve({
+          answers: message.answers || {},
+          recipient: typeof message.recipient === "string" ? message.recipient : "",
+        });
       } else if (message.action === "templatewing:promptCancel") {
         settled = true;
         cleanup();

@@ -35,10 +35,13 @@ export function extractBody(part) {
  *   - "user@example.com"
  *   - "Jane Doe <jane@example.com>"
  *   - "\"Doe, Jane\" <jane@example.com>"
- * Falls back to local-part as the name when no display name is present.
+ * Falls back to a name read out of the local part when no display name is
+ * present — see {@link nameFromLocalPart}. `hasDisplayName` tells callers
+ * which of the two happened, because a guessed name is worth replacing with
+ * the real one from the address book and a typed one never is.
  *
  * @param {string} raw
- * @returns {{ name: string, firstname: string, email: string, domain: string }|null}
+ * @returns {{ name: string, firstname: string, email: string, domain: string, hasDisplayName: boolean }|null}
  */
 export function parseRecipient(raw) {
   if (raw == null) return null;
@@ -61,13 +64,95 @@ export function parseRecipient(raw) {
     else return null;
   }
 
-  if (!name) {
-    // Local-part fallback: "first.last@..." → "first.last".
-    name = email.split("@")[0] || "";
-  }
+  const hasDisplayName = !!name;
+  if (!name) name = nameFromLocalPart(email);
   const firstname = name.split(/\s+/)[0] || "";
   const domain = email.includes("@") ? email.split("@")[1] : "";
-  return { name, firstname, email, domain };
+  return { name, firstname, email, domain, hasDisplayName };
+}
+
+/**
+ * Read a human-looking name out of an address with no display name:
+ * "julia.kalder@example.com" → "Julia Kalder".
+ *
+ * A greeting is the one place this matters. Addressing someone as
+ * "julia.kalder" is visibly broken in a way that "Julia" is not, and the
+ * separators in a local part carry exactly the word boundaries needed.
+ *
+ * Deliberately conservative: tokens that are not plainly a word — anything
+ * carrying a digit, single letters, the role words a shared mailbox uses —
+ * are dropped rather than capitalised into something that looks like a
+ * person. When nothing survives, the raw local part is returned unchanged,
+ * which is what this function replaced.
+ *
+ * @param {string} email
+ * @returns {string}
+ */
+export function nameFromLocalPart(email) {
+  const local = String(email ?? "").split("@")[0] || "";
+  if (!local) return "";
+  const words = local
+    .split(/[._\-+]+/)
+    .filter((part) => part.length > 1 && /^[\p{L}]+$/u.test(part))
+    .map((part) => part[0].toLocaleUpperCase() + part.slice(1));
+  return words.length > 0 ? words.join(" ") : local;
+}
+
+/**
+ * Identity of a recipient entry for de-duplication.
+ *
+ * Thunderbird's ComposeRecipient is either a string ("Jane <jane@x>") or an
+ * address-book reference ({ id, type }). Two entries are the same recipient
+ * when they carry the same address, whatever display name is wrapped around
+ * it — so the address decides, and an entry we cannot parse falls back to its
+ * own normalised text rather than being silently dropped.
+ *
+ * @param {string|object} entry
+ * @returns {string} Comparison key, or "" for an entry that carries nothing.
+ */
+export function recipientKey(entry) {
+  if (entry == null) return "";
+  if (typeof entry === "object") {
+    // Address-book reference: id identifies the contact or mailing list.
+    if (entry.id) return `${entry.type || "contact"}:${entry.id}`;
+    return "";
+  }
+  const raw = String(entry).trim();
+  if (!raw) return "";
+  const parsed = parseRecipient(raw);
+  return parsed ? parsed.email.toLowerCase() : raw.toLowerCase();
+}
+
+/**
+ * Merge template recipients into the ones a compose window already has.
+ *
+ * Inserting a template adds to the message — body, attachments — so its
+ * recipients must add too. Overwriting them loses the person the user picked
+ * by hand, and picking a recipient first is the order in which the
+ * {RECIPIENT_*} variables resolve correctly, so it has to be the order that
+ * survives.
+ *
+ * `existing` keeps its position ahead of `incoming`: the first To: entry is
+ * what the recipient variables read, and that should stay the address the
+ * user chose. Duplicates are dropped by address, empty entries skipped.
+ *
+ * @param {Array<string|object>} existing - Recipients currently in the compose window.
+ * @param {Array<string|object>} incoming - Recipients the template brings.
+ * @returns {Array<string|object>} Merged list; a fresh array, inputs untouched.
+ */
+export function mergeRecipients(existing, incoming) {
+  const out = [];
+  const seen = new Set();
+  for (const list of [existing, incoming]) {
+    if (!Array.isArray(list)) continue;
+    for (const entry of list) {
+      const key = recipientKey(entry);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(entry);
+    }
+  }
+  return out;
 }
 
 /**

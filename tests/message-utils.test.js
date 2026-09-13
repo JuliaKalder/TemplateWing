@@ -4,6 +4,9 @@ import {
   findPart,
   extractBody,
   parseRecipient,
+  nameFromLocalPart,
+  recipientKey,
+  mergeRecipients,
   stripReplyForwardPrefix,
   quotePlaintext,
   quoteHtml,
@@ -113,8 +116,9 @@ describe("parseRecipient", () => {
   it("parses bare 'user@example.com'", () => {
     const p = parseRecipient("jane@example.com");
     assert.strictEqual(p.email, "jane@example.com");
-    assert.strictEqual(p.name, "jane");
-    assert.strictEqual(p.firstname, "jane");
+    // Capitalised: this name goes into a greeting, and "jane" reads as a bug.
+    assert.strictEqual(p.name, "Jane");
+    assert.strictEqual(p.firstname, "Jane");
     assert.strictEqual(p.domain, "example.com");
   });
 
@@ -131,10 +135,10 @@ describe("parseRecipient", () => {
     assert.strictEqual(p.firstname, "Doe,");
   });
 
-  it("falls back to local-part as name when no display name", () => {
+  it("reads a name out of the local part when no display name is present", () => {
     const p = parseRecipient("first.last@x.com");
-    assert.strictEqual(p.name, "first.last");
-    assert.strictEqual(p.firstname, "first.last");
+    assert.strictEqual(p.name, "First Last");
+    assert.strictEqual(p.firstname, "First");
   });
 
   it("returns null for empty/invalid input", () => {
@@ -190,5 +194,123 @@ describe("quoteHtml", () => {
   });
   it("returns empty string for empty input", () => {
     assert.strictEqual(quoteHtml(""), "");
+  });
+});
+
+// ---- recipientKey / mergeRecipients ----
+
+describe("recipientKey", () => {
+  it("keys a plain address by itself, lower-cased", () => {
+    assert.strictEqual(recipientKey("Jane@Example.com"), "jane@example.com");
+  });
+
+  it("keys a named address by the address alone", () => {
+    assert.strictEqual(recipientKey("Jane Doe <Jane@Example.com>"), "jane@example.com");
+  });
+
+  it("keys an address-book reference by type and id", () => {
+    assert.strictEqual(recipientKey({ id: "abc", type: "mailingList" }), "mailingList:abc");
+  });
+
+  it("falls back to the raw text for something unparseable", () => {
+    assert.strictEqual(recipientKey("Team Sales"), "team sales");
+  });
+
+  it("returns empty string for nothing", () => {
+    assert.strictEqual(recipientKey(""), "");
+    assert.strictEqual(recipientKey(null), "");
+    assert.strictEqual(recipientKey({}), "");
+  });
+});
+
+describe("mergeRecipients", () => {
+  it("keeps existing recipients ahead of the template's", () => {
+    const merged = mergeRecipients(["kat@example.com"], ["team@example.org"]);
+    assert.deepStrictEqual(merged, ["kat@example.com", "team@example.org"]);
+  });
+
+  it("does not drop the recipient the user picked by hand", () => {
+    // The regression this function exists for: assigning template.to used to
+    // delete whatever the user had already chosen.
+    const merged = mergeRecipients(["Katharina <kat@example.com>"], ["info@example.org"]);
+    assert.ok(merged.includes("Katharina <kat@example.com>"));
+  });
+
+  it("drops a duplicate address regardless of display name", () => {
+    const merged = mergeRecipients(["Kat <kat@example.com>"], ["kat@example.com"]);
+    assert.deepStrictEqual(merged, ["Kat <kat@example.com>"]);
+  });
+
+  it("de-duplicates case-insensitively", () => {
+    const merged = mergeRecipients(["KAT@example.com"], ["kat@Example.com"]);
+    assert.strictEqual(merged.length, 1);
+  });
+
+  it("skips empty entries", () => {
+    assert.deepStrictEqual(mergeRecipients(["", "  "], ["a@b.test"]), ["a@b.test"]);
+  });
+
+  it("keeps address-book references and plain addresses side by side", () => {
+    const ref = { id: "c1", type: "contact" };
+    assert.deepStrictEqual(mergeRecipients([ref], ["a@b.test"]), [ref, "a@b.test"]);
+  });
+
+  it("tolerates missing lists", () => {
+    assert.deepStrictEqual(mergeRecipients(undefined, ["a@b.test"]), ["a@b.test"]);
+    assert.deepStrictEqual(mergeRecipients(["a@b.test"], undefined), ["a@b.test"]);
+    assert.deepStrictEqual(mergeRecipients(null, null), []);
+  });
+
+  it("does not mutate its inputs", () => {
+    const existing = ["a@b.test"];
+    const incoming = ["c@d.test"];
+    mergeRecipients(existing, incoming);
+    assert.deepStrictEqual(existing, ["a@b.test"]);
+    assert.deepStrictEqual(incoming, ["c@d.test"]);
+  });
+});
+
+// ---- nameFromLocalPart ----
+
+describe("nameFromLocalPart", () => {
+  it("turns a first.last address into a readable name", () => {
+    assert.strictEqual(nameFromLocalPart("julia.kalder@ikmail.com"), "Julia Kalder");
+  });
+
+  it("handles underscores, hyphens and plus tags as word boundaries", () => {
+    assert.strictEqual(nameFromLocalPart("julia_kalder@x.test"), "Julia Kalder");
+    assert.strictEqual(nameFromLocalPart("no-reply@x.test"), "No Reply");
+  });
+
+  it("capitalises non-ASCII letters correctly", () => {
+    assert.strictEqual(nameFromLocalPart("über.müller@x.de"), "Über Müller");
+  });
+
+  it("drops initials and tokens carrying digits", () => {
+    assert.strictEqual(nameFromLocalPart("k.meier@x.test"), "Meier");
+    assert.strictEqual(nameFromLocalPart("julia.kalder2@x.test"), "Julia");
+  });
+
+  it("falls back to the raw local part when no token qualifies", () => {
+    assert.strictEqual(nameFromLocalPart("user42@x.test"), "user42");
+    assert.strictEqual(nameFromLocalPart("a.b@x.test"), "a.b");
+  });
+
+  it("returns empty string for nothing", () => {
+    assert.strictEqual(nameFromLocalPart(""), "");
+    assert.strictEqual(nameFromLocalPart(null), "");
+  });
+});
+
+describe("parseRecipient — hasDisplayName", () => {
+  it("is true when the recipient carried a display name", () => {
+    assert.strictEqual(parseRecipient("Julia Kalder <j@x.test>").hasDisplayName, true);
+  });
+
+  it("is false for a bare address, and the name is derived", () => {
+    const parsed = parseRecipient("julia.kalder@ikmail.com");
+    assert.strictEqual(parsed.hasDisplayName, false);
+    assert.strictEqual(parsed.name, "Julia Kalder");
+    assert.strictEqual(parsed.firstname, "Julia");
   });
 });

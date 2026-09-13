@@ -1,6 +1,9 @@
 import { getTemplates, INSERT_MODES } from "./template-store.js";
+import { lookupContactByEmail } from "./address-book.js";
 import {
+  mergeRecipients,
   parseRecipient,
+  recipientKey,
   stripReplyForwardPrefix,
   quotePlaintext,
   quoteHtml,
@@ -24,6 +27,7 @@ export function applyTemplateRecipientFallback(recipientVars, templateTo) {
     recipientName: parsed.name,
     recipientFirstname: parsed.firstname,
     recipientEmail: parsed.email,
+    recipientHasDisplayName: parsed.hasDisplayName,
   };
 }
 
@@ -46,6 +50,7 @@ export const SUPPORTED_VARIABLES = Object.freeze([
   "ACCOUNT_EMAIL",
   "RECIPIENT_NAME",
   "RECIPIENT_FIRSTNAME",
+  "RECIPIENT_NICKNAME",
   "RECIPIENT_EMAIL",
   "REPLY_QUOTE",
   "LAST_MESSAGE_SUBJECT",
@@ -211,6 +216,7 @@ export function applyVariables(text, vars, isHtml = false) {
     accountEmail = "",
     recipientName = "",
     recipientFirstname = "",
+    recipientNickname = "",
     recipientEmail = "",
     replyQuote = "",
     lastMessageSubject = "",
@@ -234,6 +240,7 @@ export function applyVariables(text, vars, isHtml = false) {
     .replace(/\{ACCOUNT_EMAIL\}/gi, () => e(accountEmail))
     .replace(/\{RECIPIENT_NAME\}/gi, () => e(recipientName))
     .replace(/\{RECIPIENT_FIRSTNAME\}/gi, () => e(recipientFirstname))
+    .replace(/\{RECIPIENT_NICKNAME\}/gi, () => e(recipientNickname))
     .replace(/\{RECIPIENT_EMAIL\}/gi, () => e(recipientEmail))
     .replace(/\{REPLY_QUOTE\}/gi, () => quote(replyQuote))
     .replace(/\{LAST_MESSAGE_SUBJECT\}/gi, () => e(lastMessageSubject));
@@ -292,13 +299,22 @@ export async function resolveIdentityVars(tabId) {
  * so missing data degrades gracefully.
  *
  * @param {number} tabId
+ * The nickname is deliberately NOT resolved here: it needs an address-book
+ * lookup behind an optional permission, and it needs the final recipient —
+ * which {@link applyTemplateRecipientFallback} may still change. See
+ * {@link resolveContactVars}.
+ *
  * @param {boolean} isHtml - true when the active compose mode is HTML; controls REPLY_QUOTE wrapping.
- * @returns {Promise<{recipientName,recipientFirstname,recipientEmail,replyQuote,lastMessageSubject}>}
+ * @returns {Promise<{recipientName,recipientFirstname,recipientNickname,recipientEmail,replyQuote,lastMessageSubject}>}
  */
 export async function resolveRecipientVars(tabId, isHtml = false) {
   let recipientName = "";
   let recipientFirstname = "";
+  const recipientNickname = "";
   let recipientEmail = "";
+  // False means the name above was read out of the address, not typed by
+  // anyone — the address book may know better. See resolveContactVars.
+  let recipientHasDisplayName = false;
   let replyQuote = "";
   let lastMessageSubject = "";
 
@@ -310,7 +326,9 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
     return {
       recipientName,
       recipientFirstname,
+      recipientNickname,
       recipientEmail,
+      recipientHasDisplayName,
       replyQuote,
       lastMessageSubject,
     };
@@ -323,6 +341,7 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
       recipientName = parsed.name;
       recipientFirstname = parsed.firstname;
       recipientEmail = parsed.email;
+      recipientHasDisplayName = parsed.hasDisplayName;
     }
   }
 
@@ -349,10 +368,110 @@ export async function resolveRecipientVars(tabId, isHtml = false) {
   return {
     recipientName,
     recipientFirstname,
+    recipientNickname,
     recipientEmail,
+    recipientHasDisplayName,
     replyQuote,
     lastMessageSubject,
   };
+}
+
+/**
+ * Does any of `texts` reference a recipient variable — a {RECIPIENT_*} token
+ * or a `recipient.*` dot-path in an {IF} condition?
+ *
+ * @param {...(string|undefined)} texts
+ * @returns {boolean}
+ */
+export function usesRecipientVariables(...texts) {
+  const re = /\{RECIPIENT_[A-Z_]+\}|recipient\.[a-z]/i;
+  return texts.some((text) => !!text && re.test(String(text)));
+}
+
+/**
+ * Should the caller ask the user who this message is going to before inserting?
+ *
+ * Variables are resolved once, at insert time. A template that greets the
+ * recipient but is inserted into a window that has no recipient yet — the
+ * usual shape of a new message, and always the shape of the default-template
+ * auto-insert — silently produces the fallback branch, and no later change to
+ * the To: field can correct prose that is already in the editor. Asking first
+ * is the only order that gets it right without leaving markers in the body.
+ *
+ * Deliberately false when the template names its own recipients: those are the
+ * addresses its author chose, and second-guessing them with a dialog on every
+ * insert would be worse than the occasional formal greeting.
+ *
+ * @param {object} template - Needs `body`, `subject` and `to`.
+ * @param {Array<string|object>} composeTo - Current To: entries of the window.
+ * @returns {boolean}
+ */
+export function needsRecipientPrompt(template, composeTo) {
+  if (!template) return false;
+  if (!usesRecipientVariables(template.body, template.subject)) return false;
+  const hasAddress = (list) => Array.isArray(list) && list.some((entry) => !!recipientKey(entry));
+  return !hasAddress(composeTo) && !hasAddress(template.to);
+}
+
+/**
+ * Does `text` reference the recipient nickname — either as the {RECIPIENT_NICKNAME}
+ * token or as `recipient.nickname` inside an {IF} condition?
+ *
+ * Every other variable resolves from data the insert already holds. The
+ * nickname is the one that costs an address-book round trip, so templates
+ * that do not ask for it must not pay for it. Call with the *resolved* body
+ * so nested includes are covered.
+ *
+ * @param {...(string|undefined)} texts
+ * @returns {boolean}
+ */
+export function usesNicknameVariable(...texts) {
+  const re = /\{RECIPIENT_NICKNAME\}|recipient\.nickname/i;
+  return texts.some((text) => !!text && re.test(String(text)));
+}
+
+/**
+ * Fill in what only the address book knows: the nickname, and — when the
+ * compose window supplied a bare address — the contact's real name.
+ *
+ * Runs after {@link applyTemplateRecipientFallback} so a window with no
+ * recipient yet looks up the address the template itself is about to write.
+ * Never throws: an unavailable address book, a withheld permission and an
+ * unknown contact all leave the bundle as it was.
+ *
+ * A display name that came with the recipient is never overwritten — the
+ * user, or Thunderbird, put it there on purpose. Only a name this code
+ * derived from the address itself (`recipientHasDisplayName === false`, see
+ * `nameFromLocalPart`) gives way to the contact card, which is the
+ * difference between greeting someone as "julia.kalder" and as "Julia".
+ *
+ * @param {object} recipientVars - Output of {@link resolveRecipientVars}.
+ * @param {object} [opts]
+ * @param {boolean} [opts.nickname] - Template references {RECIPIENT_NICKNAME}.
+ * @param {boolean} [opts.names] - Template references a recipient variable and
+ *   the window supplied no display name to go with the address.
+ * @returns {Promise<object>} A copy, or the original when nothing was looked up.
+ */
+export async function resolveContactVars(recipientVars, opts = {}) {
+  const wantNickname = !!opts.nickname;
+  const wantNames = !!opts.names;
+  if (!recipientVars || !recipientVars.recipientEmail) return recipientVars;
+  if (!wantNickname && !wantNames) return recipientVars;
+
+  let contact = null;
+  try {
+    contact = await lookupContactByEmail(recipientVars.recipientEmail);
+  } catch (err) {
+    console.warn("TemplateWing: could not read the address book", err);
+  }
+
+  const out = { ...recipientVars };
+  if (wantNickname) out.recipientNickname = (contact && contact.nickname) || "";
+  if (wantNames && contact && !recipientVars.recipientHasDisplayName) {
+    if (contact.name) out.recipientName = contact.name;
+    if (contact.firstname) out.recipientFirstname = contact.firstname;
+  }
+  return out;
 }
 
 // ---- Conditional variables ({IF} / {ELSE} / {ENDIF}) ----
@@ -531,8 +650,8 @@ export function applyPromptAnswers(text, tokens, answers, isHtml = false) {
  *
  * Supported tokens: {DATE}, {TIME}, {DATETIME}, {YEAR}, {WEEKDAY},
  * {SENDER_NAME}, {SENDER_EMAIL}, {ACCOUNT_NAME}, {ACCOUNT_EMAIL},
- * {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME}, {RECIPIENT_EMAIL},
- * {REPLY_QUOTE}, {LAST_MESSAGE_SUBJECT}.
+ * {RECIPIENT_NAME}, {RECIPIENT_FIRSTNAME}, {RECIPIENT_NICKNAME},
+ * {RECIPIENT_EMAIL}, {REPLY_QUOTE}, {LAST_MESSAGE_SUBJECT}.
  *
  * @param {string} text - Text containing placeholders
  * @param {object} vars - Pre-resolved identity vars: { senderName, senderEmail, accountName, accountEmail }.
@@ -753,6 +872,7 @@ export function buildVariableContext({ identityVars, recipientVars, date }) {
     recipient: {
       name: recipientVars.recipientName || "",
       firstname: recipientVars.recipientFirstname || "",
+      nickname: recipientVars.recipientNickname || "",
       email: recipientVars.recipientEmail || "",
       domain: (recipientVars.recipientEmail || "").split("@")[1] || "",
     },
@@ -772,6 +892,9 @@ export function buildVariableContext({ identityVars, recipientVars, date }) {
  *   When omitted, prompt tokens fall back to their declared defaults. Callers
  *   that have UI access should call {@link extractPromptTokens} first, ask
  *   the user, and pass the answers in.
+ * @param {string} [opts.recipient] - Address the user supplied when the template
+ *   needed one and the window had none (see {@link needsRecipientPrompt}). Leads
+ *   the To: field and resolves the {RECIPIENT_*} variables.
  */
 export async function insertTemplateIntoTab(tabId, template, opts = {}) {
   const promptAnswers = opts.promptAnswers || {};
@@ -782,13 +905,24 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
   // template filtering and later insert-mode operations.
   let currentIdentityId = null;
   let isPlainText = false;
+  // The recipients already in the window. Templates add to these rather than
+  // replacing them — see mergeRecipients.
+  const existingRecipients = { to: [], cc: [], bcc: [] };
   try {
     const composeDetails = await messenger.compose.getComposeDetails(tabId);
     currentIdentityId = composeDetails.identityId || null;
     isPlainText = !!composeDetails.isPlainText;
+    for (const field of ["to", "cc", "bcc"]) {
+      if (Array.isArray(composeDetails[field])) existingRecipients[field] = composeDetails[field];
+    }
   } catch (err) {
     console.warn("TemplateWing: could not fetch compose details for identity filtering", err);
   }
+
+  // Answer to the "who is this going to?" question the caller may have asked
+  // (see needsRecipientPrompt). It stands in for a To: entry the window does
+  // not have yet, both for the variables and for the field itself.
+  const recipientOverride = typeof opts.recipient === "string" ? opts.recipient.trim() : "";
 
   let resolvedBody = template.body;
   if (template.body && new RegExp(TEMPLATE_INCLUDE_REGEX.source, "i").test(template.body)) {
@@ -823,10 +957,23 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
   // Resolve identity + recipient/reply context. Both run regardless of
   // whether the template references them — the cost is one storage read
   // and (for replies) one messages.getFull call, and the buildVariableContext
-  // helper still needs them for {IF} expressions.
+  // helper still needs them for {IF} expressions. The nickname is the one
+  // exception: it costs an address-book search, so it is fetched only when
+  // the template actually asks for it.
   const identityVars = await resolveIdentityVars(tabId);
   let recipientVars = await resolveRecipientVars(tabId, !isPlainText);
-  recipientVars = applyTemplateRecipientFallback(recipientVars, template.to);
+  recipientVars = applyTemplateRecipientFallback(
+    recipientVars,
+    recipientOverride ? [recipientOverride] : template.to
+  );
+  recipientVars = await resolveContactVars(recipientVars, {
+    nickname: usesNicknameVariable(resolvedBody, template.subject),
+    // A bare address in the To: field means the name in hand was read out of
+    // that address. The contact card, if there is one, knows the real one.
+    names:
+      usesRecipientVariables(resolvedBody, template.subject) &&
+      !recipientVars.recipientHasDisplayName,
+  });
   const ctx = buildVariableContext({ identityVars, recipientVars });
 
   // Pipeline: nested → vars → control flow → prompts. The current order
@@ -898,14 +1045,20 @@ export async function insertTemplateIntoTab(tabId, template, opts = {}) {
     details.subject = pipeline(template.subject, false);
   }
 
-  if (template.to && template.to.length > 0) {
-    details.to = template.to;
+  // Recipients are merged, not assigned: a template that carries its own
+  // addresses must not delete the person the user picked by hand before
+  // reaching for the template. The answer to the recipient prompt, when there
+  // was one, leads the To: field so it is also what the variables resolved
+  // against.
+  const incomingTo = [...(recipientOverride ? [recipientOverride] : []), ...(template.to || [])];
+  if (incomingTo.length > 0) {
+    details.to = mergeRecipients(existingRecipients.to, incomingTo);
   }
   if (template.cc && template.cc.length > 0) {
-    details.cc = template.cc;
+    details.cc = mergeRecipients(existingRecipients.cc, template.cc);
   }
   if (template.bcc && template.bcc.length > 0) {
-    details.bcc = template.bcc;
+    details.bcc = mergeRecipients(existingRecipients.bcc, template.bcc);
   }
 
   await messenger.compose.setComposeDetails(tabId, details);

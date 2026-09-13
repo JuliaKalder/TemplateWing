@@ -15,6 +15,7 @@ export const XPI_FILES = [
   "background.html",
   "background.js",
   "LICENSE",
+  "modules/address-book.js",
   "modules/template-store.js",
   "modules/template-insert.js",
   "modules/template-lint.js",

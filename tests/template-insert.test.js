@@ -1,4 +1,4 @@
-import { describe, it, after } from "node:test";
+import { describe, it, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   installMessengerMock,
@@ -24,7 +24,12 @@ const {
   applyTemplateRecipientFallback,
   insertTemplateIntoTab,
   joinPlainText,
+  usesNicknameVariable,
+  resolveContactVars,
+  usesRecipientVariables,
+  needsRecipientPrompt,
 } = await import("../modules/template-insert.js");
+const { saveTemplate } = await import("../modules/template-store.js");
 
 after(() => {
   uninstallMessengerMock();
@@ -674,5 +679,490 @@ describe("joinPlainText", () => {
     assert.strictEqual(joinPlainText("", "b"), "b");
     assert.strictEqual(joinPlainText("a", ""), "a");
     assert.strictEqual(joinPlainText("", ""), "");
+  });
+});
+
+// ---- Recipient nickname (#227) ----
+
+describe("applyVariables — {RECIPIENT_NICKNAME}", () => {
+  it("substitutes the nickname", () => {
+    assert.strictEqual(
+      applyVariables("Hi {RECIPIENT_NICKNAME},", { recipientNickname: "Kat" }),
+      "Hi Kat,"
+    );
+  });
+
+  it("resolves to empty string when there is no nickname", () => {
+    assert.strictEqual(applyVariables("Hi {RECIPIENT_NICKNAME},", {}), "Hi ,");
+  });
+
+  it("does not collide with {RECIPIENT_NAME}", () => {
+    const out = applyVariables("{RECIPIENT_NAME} / {RECIPIENT_NICKNAME}", {
+      recipientName: "Katharina Meier",
+      recipientNickname: "Kat",
+    });
+    assert.strictEqual(out, "Katharina Meier / Kat");
+  });
+
+  it("HTML-encodes the nickname in HTML mode", () => {
+    assert.strictEqual(
+      applyVariables("Hi {RECIPIENT_NICKNAME}", { recipientNickname: '<b>"K"</b>' }, true),
+      "Hi &lt;b&gt;&quot;K&quot;&lt;/b&gt;"
+    );
+  });
+
+  it("is case-insensitive like the other tokens", () => {
+    assert.strictEqual(applyVariables("{recipient_nickname}", { recipientNickname: "Kat" }), "Kat");
+  });
+});
+
+describe("usesNicknameVariable", () => {
+  it("detects the token", () => {
+    assert.strictEqual(usesNicknameVariable("Hi {RECIPIENT_NICKNAME},"), true);
+  });
+
+  it("detects a conditional on recipient.nickname", () => {
+    assert.strictEqual(usesNicknameVariable('{IF recipient.nickname!=""}Hi{ENDIF}'), true);
+  });
+
+  it("scans every argument, skipping empty ones", () => {
+    assert.strictEqual(usesNicknameVariable(undefined, "", "{RECIPIENT_NICKNAME}"), true);
+  });
+
+  it("returns false for a template that does not ask for it", () => {
+    assert.strictEqual(usesNicknameVariable("Hi {RECIPIENT_FIRSTNAME},", "Subject"), false);
+  });
+});
+
+describe("resolveContactVars", () => {
+  const base = {
+    recipientName: "Kat",
+    recipientFirstname: "Kat",
+    recipientEmail: "kat@x.test",
+    recipientHasDisplayName: true,
+  };
+
+  it("looks the nickname up when the template needs it", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      { properties: { PrimaryEmail: "kat@x.test", NickName: "Kat" } },
+    ];
+    const out = await resolveContactVars(base, { nickname: true });
+    assert.strictEqual(out.recipientNickname, "Kat");
+  });
+
+  it("skips the lookup entirely when nothing is needed", async () => {
+    const saved = messenger.contacts.quickSearch;
+    messenger.contacts.quickSearch = async () => {
+      throw new Error("must not be called");
+    };
+    const out = await resolveContactVars(base, {});
+    assert.strictEqual(out.recipientNickname, undefined);
+    messenger.contacts.quickSearch = saved;
+  });
+
+  it("skips the lookup when there is no recipient address", async () => {
+    const saved = messenger.contacts.quickSearch;
+    messenger.contacts.quickSearch = async () => {
+      throw new Error("must not be called");
+    };
+    const out = await resolveContactVars({ recipientEmail: "" }, { nickname: true });
+    assert.strictEqual(out.recipientNickname, undefined);
+    messenger.contacts.quickSearch = saved;
+  });
+
+  it("yields an empty nickname instead of throwing when the lookup fails", async () => {
+    const saved = messenger.contacts.quickSearch;
+    messenger.contacts.quickSearch = async () => {
+      throw new Error("address book on fire");
+    };
+    const out = await resolveContactVars(base, { nickname: true });
+    assert.strictEqual(out.recipientNickname, "");
+    messenger.contacts.quickSearch = saved;
+  });
+
+  it("replaces a name that was read out of the address", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      {
+        properties: {
+          PrimaryEmail: "julia.kalder@ikmail.com",
+          DisplayName: "Julia Kalder",
+          FirstName: "Julia",
+        },
+      },
+    ];
+    const guessed = {
+      recipientName: "Julia Kalder",
+      recipientFirstname: "Julia",
+      recipientEmail: "julia.kalder@ikmail.com",
+      recipientHasDisplayName: false,
+    };
+    const out = await resolveContactVars(guessed, { names: true });
+    assert.strictEqual(out.recipientFirstname, "Julia");
+    assert.strictEqual(out.recipientName, "Julia Kalder");
+  });
+
+  it("never overwrites a display name that came with the recipient", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      { properties: { PrimaryEmail: "kat@x.test", DisplayName: "Card Name", FirstName: "Card" } },
+    ];
+    const out = await resolveContactVars(base, { names: true });
+    assert.strictEqual(out.recipientName, "Kat");
+    assert.strictEqual(out.recipientFirstname, "Kat");
+  });
+});
+
+describe("buildVariableContext — recipient.nickname", () => {
+  it("exposes the nickname for {IF} conditions", () => {
+    const ctx = buildVariableContext({
+      identityVars: {},
+      recipientVars: { recipientEmail: "kat@x.test", recipientNickname: "Kat" },
+    });
+    assert.strictEqual(ctx.recipient.nickname, "Kat");
+  });
+
+  it("defaults to empty string, so the ELSE branch wins", () => {
+    const ctx = buildVariableContext({ identityVars: {}, recipientVars: {} });
+    assert.strictEqual(ctx.recipient.nickname, "");
+    const out = resolveControlFlow(
+      '{IF recipient.nickname!=""}Hi nick{ELSE}Dear formal{ENDIF}',
+      ctx
+    );
+    assert.strictEqual(out, "Dear formal");
+  });
+
+  it("takes the IF branch once a nickname is present", () => {
+    const ctx = buildVariableContext({
+      identityVars: {},
+      recipientVars: { recipientNickname: "Kat" },
+    });
+    const out = resolveControlFlow(
+      '{IF recipient.nickname!=""}Hi nick{ELSE}Dear formal{ENDIF}',
+      ctx
+    );
+    assert.strictEqual(out, "Hi nick");
+  });
+});
+
+describe("insertTemplateIntoTab — nickname end to end", () => {
+  beforeEach(() => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      {
+        properties: {
+          PrimaryEmail: "kat@example.com",
+          vCard: "BEGIN:VCARD\r\nEMAIL:kat@example.com\r\nNICKNAME:Kat\r\nEND:VCARD",
+        },
+      },
+    ];
+    messenger.compose._details = {
+      1: {
+        identityId: null,
+        isPlainText: false,
+        body: "<html><head></head><body></body></html>",
+        to: ["Katharina Meier-Lohse <kat@example.com>"],
+      },
+    };
+  });
+
+  it("inserts the address-book nickname of the first To: recipient", async () => {
+    await insertTemplateIntoTab(1, {
+      id: "t-nick",
+      name: "Nick",
+      body: "Hi {RECIPIENT_NICKNAME},",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hi Kat,");
+  });
+
+  it("falls back to the template recipient on a compose window with no To:", async () => {
+    messenger.compose._details[1].to = [];
+    await insertTemplateIntoTab(1, {
+      id: "t-nick",
+      name: "Nick",
+      body: "Hi {RECIPIENT_NICKNAME},",
+      to: ["kat@example.com"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hi Kat,");
+  });
+
+  it("leaves the nickname blank when the permission is missing", async () => {
+    messenger.permissions._granted = false;
+    await insertTemplateIntoTab(1, {
+      id: "t-nick",
+      name: "Nick",
+      body: '{IF recipient.nickname!=""}Hi {RECIPIENT_NICKNAME}{ELSE}Dear {RECIPIENT_FIRSTNAME}{ENDIF}',
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Dear Katharina");
+  });
+
+  it("resolves the nickname inside a nested template", async () => {
+    await saveTemplate({
+      id: "t-inner",
+      name: "Greeting",
+      body: "Hi {RECIPIENT_NICKNAME},",
+      attachments: [],
+    });
+    await insertTemplateIntoTab(1, {
+      id: "t-outer",
+      name: "Outer",
+      body: "{{template:Greeting}} how are you?",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hi Kat, how are you?");
+  });
+});
+
+// ---- Recipient handling on insert (#229) ----
+
+describe("usesRecipientVariables", () => {
+  it("detects any {RECIPIENT_*} token", () => {
+    assert.strictEqual(usesRecipientVariables("Hallo {RECIPIENT_FIRSTNAME}"), true);
+    assert.strictEqual(usesRecipientVariables("{RECIPIENT_EMAIL}"), true);
+    assert.strictEqual(usesRecipientVariables("{RECIPIENT_NICKNAME}"), true);
+  });
+
+  it("detects a recipient dot-path in a condition", () => {
+    assert.strictEqual(usesRecipientVariables('{IF recipient.domain=="x.test"}a{ENDIF}'), true);
+  });
+
+  it("ignores templates that do not address the recipient", () => {
+    assert.strictEqual(usesRecipientVariables("Hallo {SENDER_NAME}", "{DATE}"), false);
+  });
+});
+
+describe("needsRecipientPrompt", () => {
+  const greeting = { body: "Hallo {RECIPIENT_FIRSTNAME}," };
+
+  it("asks when the template greets and nothing supplies an address", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, []), true);
+  });
+
+  it("stays quiet when the window already has a recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, ["kat@example.com"]), false);
+  });
+
+  it("stays quiet when the template names its own recipients", () => {
+    // The template author picked those addresses; a dialog would second-guess them.
+    assert.strictEqual(needsRecipientPrompt({ ...greeting, to: ["team@x.test"] }, []), false);
+  });
+
+  it("stays quiet for a template that never mentions the recipient", () => {
+    assert.strictEqual(needsRecipientPrompt({ body: "Hallo {SENDER_NAME}" }, []), false);
+  });
+
+  it("treats blank recipient entries as no recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, ["", "   "]), true);
+  });
+
+  it("counts an address-book reference as a recipient", () => {
+    assert.strictEqual(needsRecipientPrompt(greeting, [{ id: "c1", type: "contact" }]), false);
+  });
+
+  it("handles a missing template", () => {
+    assert.strictEqual(needsRecipientPrompt(null, []), false);
+  });
+});
+
+describe("insertTemplateIntoTab — recipients are merged, not replaced", () => {
+  function setup(existing) {
+    messenger.compose._details = {
+      1: {
+        identityId: null,
+        isPlainText: false,
+        body: "<html><head></head><body></body></html>",
+        ...existing,
+      },
+    };
+  }
+
+  it("keeps the recipient the user picked before inserting", async () => {
+    setup({ to: ["Katharina <kat@example.com>"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "Team",
+      body: "Text",
+      to: ["team@example.org"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "Katharina <kat@example.com>",
+      "team@example.org",
+    ]);
+  });
+
+  it("merges cc and bcc the same way", async () => {
+    setup({ cc: ["a@x.test"], bcc: ["b@x.test"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Text",
+      cc: ["c@x.test"],
+      bcc: ["b@x.test"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].cc, ["a@x.test", "c@x.test"]);
+    assert.deepStrictEqual(messenger.compose._details[1].bcc, ["b@x.test"]);
+  });
+
+  it("leaves the recipient fields untouched when the template brings none", async () => {
+    setup({ to: ["kat@example.com"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Text",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.deepStrictEqual(messenger.compose._details[1].to, ["kat@example.com"]);
+  });
+
+  it("resolves variables against the existing recipient, not the template's", async () => {
+    setup({ to: ["Katharina Meier <kat@example.com>"] });
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Hallo {RECIPIENT_FIRSTNAME},",
+      to: ["team@example.org"],
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Katharina,");
+  });
+
+  it("uses the answered recipient when the window has none", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Hallo {RECIPIENT_FIRSTNAME},",
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "Bernd Beispiel <bernd@example.com>" }
+    );
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Bernd,");
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "Bernd Beispiel <bernd@example.com>",
+    ]);
+  });
+
+  it("puts the answered recipient ahead of the template's own", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Text",
+        to: ["team@example.org"],
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "bernd@example.com" }
+    );
+    assert.deepStrictEqual(messenger.compose._details[1].to, [
+      "bernd@example.com",
+      "team@example.org",
+    ]);
+  });
+
+  it("ignores a blank answer and falls back to the template recipient", async () => {
+    setup({ to: [] });
+    await insertTemplateIntoTab(
+      1,
+      {
+        id: "t1",
+        name: "T",
+        body: "Hallo {RECIPIENT_FIRSTNAME},",
+        to: ["Team Sales <team@example.org>"],
+        insertMode: "replace",
+        attachments: [],
+      },
+      { recipient: "   " }
+    );
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Team,");
+  });
+});
+
+// ---- Names read out of a bare address, and corrected from the card ----
+
+describe("insertTemplateIntoTab — bare address in To:", () => {
+  function setup() {
+    messenger.compose._details = {
+      1: {
+        identityId: null,
+        isPlainText: false,
+        body: "<html><head></head><body></body></html>",
+        to: ["julia.kalder@ikmail.com"],
+      },
+    };
+  }
+
+  it("greets with a name read out of the address when no contact is known", async () => {
+    // The bug from the 2.9.0 test run: this used to insert "julia.kalder".
+    messenger.permissions._granted = false;
+    setup();
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Hallo {RECIPIENT_FIRSTNAME},",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Julia,");
+  });
+
+  it("prefers the contact card's given name over the guess", async () => {
+    messenger.permissions._granted = true;
+    messenger.contacts._contacts = [
+      {
+        properties: {
+          PrimaryEmail: "julia.kalder@ikmail.com",
+          DisplayName: "Julia Kalder",
+          FirstName: "Juliane",
+          NickName: "Juli",
+        },
+      },
+    ];
+    setup();
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Hallo {RECIPIENT_FIRSTNAME} ({RECIPIENT_NICKNAME}),",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo Juliane (Juli),");
+  });
+
+  it("does not touch the address book for a template without recipient variables", async () => {
+    messenger.permissions._granted = true;
+    const saved = messenger.contacts.quickSearch;
+    messenger.contacts.quickSearch = async () => {
+      throw new Error("must not be called");
+    };
+    setup();
+    await insertTemplateIntoTab(1, {
+      id: "t1",
+      name: "T",
+      body: "Hallo zusammen,",
+      insertMode: "replace",
+      attachments: [],
+    });
+    assert.strictEqual(messenger.compose._details[1].body, "Hallo zusammen,");
+    messenger.contacts.quickSearch = saved;
   });
 });

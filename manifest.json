@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "author": "Julia Kalder <mail@julia-kalder.de>",
   "homepage_url": "https://github.com/JuliaKalder/TemplateWing",
   "default_locale": "en",
@@ -48,6 +48,8 @@
     "accountsRead",
     "notifications"
   ],
+
+  "optional_permissions": ["addressBooks"],
 
   "commands": {
     "insert-template-1": {

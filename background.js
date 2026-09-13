@@ -7,11 +7,33 @@ import {
   getSortedTemplates,
   groupTemplatesByCategory,
   getDefaults,
+  INSERT_MODES,
 } from "./modules/template-store.js";
-import { insertTemplateIntoTab, extractPromptTokens } from "./modules/template-insert.js";
+import {
+  insertTemplateIntoTab,
+  extractPromptTokens,
+  needsRecipientPrompt,
+} from "./modules/template-insert.js";
 import { findPart, extractBody } from "./modules/message-utils.js";
 import { getIdentityIdForTab } from "./modules/compose-utils.js";
 import { collectPromptAnswers } from "./modules/prompt-collector.js";
+
+/**
+ * Report an insert that did not happen.
+ *
+ * A cancelled prompt is a decision, not a failure: it produces neither a
+ * notification nor a red console entry. Logging it made a clean run look
+ * broken in the error console, which is exactly where someone checks after
+ * a test round.
+ *
+ * @param {string} context - Where it happened, for the log line.
+ * @param {Error} err
+ */
+async function reportInsertFailure(context, err) {
+  if (err && err.code === "PROMPT_CANCELLED") return;
+  console.error(`TemplateWing: ${context}`, err);
+  await notifyInsertFailure(err);
+}
 
 async function notifyInsertFailure(err) {
   // User-cancelled prompts are an explicit choice, not a failure — stay silent.
@@ -39,16 +61,60 @@ async function notifyInsertFailure(err) {
 }
 
 /**
- * If the template body or subject contains {PROMPT}/{CHOICE} tokens, open
- * the prompt dialog and collect answers. Returns the answers map (possibly
- * empty). Re-throws PROMPT_CANCELLED so callers can abort the insert.
+ * Collect everything that has to be known before the template is written:
+ * {PROMPT}/{CHOICE} answers, and — when the template greets a recipient the
+ * window does not have — who the message is going to.
+ *
+ * Returns { promptAnswers, recipient }; both empty when nothing needed asking,
+ * in which case no dialog is opened at all. Re-throws PROMPT_CANCELLED so
+ * callers can abort the insert.
+ *
+ * @param {object} template
+ * @param {object} [opts]
+ * @param {Array} [opts.composeTo] - Current To: entries; omit to skip the
+ *   recipient question (the auto-insert path does, see maybeApplyDefaultTemplate).
  */
-async function collectAnswersForTemplate(template) {
+async function collectAnswersForTemplate(template, opts = {}) {
   const combined = `${template.body || ""}\n${template.subject || ""}`;
   const tokens = extractPromptTokens(combined);
-  if (tokens.length === 0) return {};
-  return await collectPromptAnswers(tokens);
+  const askRecipient = Array.isArray(opts.composeTo)
+    ? needsRecipientPrompt(template, opts.composeTo)
+    : false;
+  if (tokens.length === 0 && !askRecipient) return { promptAnswers: {}, recipient: "" };
+  const result = await collectPromptAnswers(tokens, { askRecipient });
+  return { promptAnswers: result.answers, recipient: result.recipient };
 }
+
+// ---- Last insert per compose tab (for "resolve again") ----
+
+/**
+ * What was last inserted into each compose tab, so the popup can offer to
+ * resolve it again. Variables are a snapshot taken at insert time; when the
+ * recipient changes afterwards the text is stale and the only honest repair
+ * is to run the same template again. In memory only — it describes a window
+ * that dies with the session anyway.
+ * @type {Map<number, {templateId: string}>}
+ */
+const lastInsertByTab = new Map();
+
+/** Current To: entries of a compose tab; [] when the tab cannot be read. */
+async function getComposeRecipients(tabId) {
+  try {
+    const details = await messenger.compose.getComposeDetails(tabId);
+    return Array.isArray(details && details.to) ? details.to : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function rememberInsert(tabId, templateId) {
+  if (typeof tabId !== "number" || !templateId) return;
+  lastInsertByTab.set(tabId, { templateId });
+}
+
+messenger.tabs.onRemoved.addListener((tabId) => {
+  lastInsertByTab.delete(tabId);
+});
 
 function getCategoryMenuId(category, index) {
   // category is always a non-empty string here (from Object.keys(categorized))
@@ -177,12 +243,13 @@ messenger.menus.onClicked.addListener(async (info, tab) => {
   }
 
   try {
-    const promptAnswers = await collectAnswersForTemplate(template);
-    await insertTemplateIntoTab(tab.id, template, { promptAnswers });
+    const composeTo = await getComposeRecipients(tab.id);
+    const { promptAnswers, recipient } = await collectAnswersForTemplate(template, { composeTo });
+    await insertTemplateIntoTab(tab.id, template, { promptAnswers, recipient });
+    rememberInsert(tab.id, templateId);
     await trackUsage(templateId);
   } catch (err) {
-    console.error("TemplateWing: insert failed from context menu", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from context menu", err);
   }
 });
 
@@ -212,21 +279,26 @@ messenger.commands.onCommand.addListener(async (commandName) => {
   const template = templates[index];
 
   try {
-    const promptAnswers = await collectAnswersForTemplate(template);
-    await insertTemplateIntoTab(tabs[0].id, template, { promptAnswers });
+    const composeTo = await getComposeRecipients(tabs[0].id);
+    const { promptAnswers, recipient } = await collectAnswersForTemplate(template, { composeTo });
+    await insertTemplateIntoTab(tabs[0].id, template, { promptAnswers, recipient });
+    rememberInsert(tabs[0].id, template.id);
     await trackUsage(template.id);
   } catch (err) {
-    console.error("TemplateWing: insert failed from keyboard shortcut", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from keyboard shortcut", err);
   }
 });
 
 // Popup delegates cursor-mode insertion here so it can close first and
 // return focus to the compose window before the insert runs.
+/** True when a runtime message really came from our own popup page. */
+function isFromPopup(sender) {
+  return !!sender && sender.url === messenger.runtime.getURL("popup/popup.html");
+}
+
 async function handleInsertTemplateFromPopup(message, sender) {
   // Only accept this message from the popup page.
-  const expectedUrl = messenger.runtime.getURL("popup/popup.html");
-  if (!sender || sender.url !== expectedUrl) {
+  if (!isFromPopup(sender)) {
     console.warn(
       "TemplateWing: rejecting templatewing:insertTemplate from untrusted sender",
       sender && sender.url
@@ -254,13 +326,79 @@ async function handleInsertTemplateFromPopup(message, sender) {
       return;
     }
 
-    const promptAnswers = await collectAnswersForTemplate(template);
-    await insertTemplateIntoTab(message.tabId, template, { promptAnswers });
+    const { promptAnswers, recipient } = await collectAnswersForTemplate(template, {
+      composeTo: Array.isArray(tabDetails.to) ? tabDetails.to : [],
+    });
+    await insertTemplateIntoTab(message.tabId, template, { promptAnswers, recipient });
+    rememberInsert(message.tabId, message.templateId);
     await trackUsage(message.templateId);
   } catch (err) {
-    console.error("TemplateWing: insert failed from popup delegation", err);
-    await notifyInsertFailure(err);
+    await reportInsertFailure("insert failed from popup delegation", err);
   }
+}
+
+/**
+ * Re-run the template last inserted into this tab, replacing the body.
+ *
+ * The repair for a snapshot taken too early: variables are resolved again
+ * against the recipients the window has *now*. Replace rather than append,
+ * because the stale copy is what the user wants gone — that is exactly the
+ * delete-everything-and-insert-again dance this removes. Usage is not counted
+ * again; this is the same insert, corrected.
+ */
+async function handleReinsertFromPopup(message, sender) {
+  if (!isFromPopup(sender)) {
+    console.warn(
+      "TemplateWing: rejecting templatewing:reinsertTemplate from untrusted sender",
+      sender && sender.url
+    );
+    return;
+  }
+  const POPUP_TEARDOWN_DELAY_MS = 150;
+  await new Promise((resolve) => setTimeout(resolve, POPUP_TEARDOWN_DELAY_MS));
+  try {
+    if (typeof message.tabId !== "number") return;
+    const record = lastInsertByTab.get(message.tabId);
+    if (!record) return;
+
+    const template = await getTemplate(record.templateId);
+    if (!template) {
+      // Template deleted since it was inserted — nothing to resolve again.
+      lastInsertByTab.delete(message.tabId);
+      return;
+    }
+
+    const tabDetails = await messenger.compose.getComposeDetails(message.tabId);
+    if (!tabDetails) return;
+    if (!isTemplateAllowedForIdentity(template, tabDetails.identityId || null)) {
+      console.warn("TemplateWing: templatewing:reinsertTemplate — identity not allowed");
+      return;
+    }
+
+    const { promptAnswers, recipient } = await collectAnswersForTemplate(template, {
+      composeTo: Array.isArray(tabDetails.to) ? tabDetails.to : [],
+    });
+    await insertTemplateIntoTab(
+      message.tabId,
+      { ...template, insertMode: INSERT_MODES.REPLACE },
+      { promptAnswers, recipient }
+    );
+  } catch (err) {
+    await reportInsertFailure("re-insert failed", err);
+  }
+}
+
+/** What the popup needs to offer "resolve again": the template's name. */
+async function handleGetLastInsert(message, sender) {
+  if (!isFromPopup(sender) || typeof message.tabId !== "number") return null;
+  const record = lastInsertByTab.get(message.tabId);
+  if (!record) return null;
+  const template = await getTemplate(record.templateId);
+  if (!template) {
+    lastInsertByTab.delete(message.tabId);
+    return null;
+  }
+  return { templateId: template.id, name: template.name || "" };
 }
 
 // Synchronous listener per Thunderbird MV3 messaging guide:
@@ -278,6 +416,21 @@ messenger.runtime.onMessage.addListener((message, sender) => {
 
   if (message.action === "templatewing:insertTemplate") {
     return handleInsertTemplateFromPopup(message, sender);
+  }
+
+  // The popup inserts simple templates itself (no dialog, no focus juggling),
+  // so it reports those back here rather than the background observing them.
+  if (message.action === "templatewing:recordInsert") {
+    if (isFromPopup(sender)) rememberInsert(message.tabId, message.templateId);
+    return;
+  }
+
+  if (message.action === "templatewing:getLastInsert") {
+    return handleGetLastInsert(message, sender);
+  }
+
+  if (message.action === "templatewing:reinsertTemplate") {
+    return handleReinsertFromPopup(message, sender);
   }
 });
 
@@ -397,8 +550,13 @@ async function maybeApplyDefaultTemplate(tabId) {
   if (!template) return;
 
   try {
-    const promptAnswers = await collectAnswersForTemplate(template);
+    // No composeTo: the recipient question is deliberately not asked here. A
+    // dialog that opens by itself the moment a compose window appears is worse
+    // than the fallback wording — the popup's "resolve again" covers this case
+    // once the user has typed a recipient.
+    const { promptAnswers } = await collectAnswersForTemplate(template);
     await insertTemplateIntoTab(tabId, template, { promptAnswers });
+    rememberInsert(tabId, template.id);
     await trackUsage(template.id);
   } catch (err) {
     if (err && err.code === "PROMPT_CANCELLED") return;

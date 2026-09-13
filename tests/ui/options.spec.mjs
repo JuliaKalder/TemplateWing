@@ -229,3 +229,71 @@ test("opening the editor and cancelling returns to the list", async ({ page }) =
   await page.click("#btn-cancel");
   await expect(page.locator("#view-list")).toBeVisible();
 });
+
+// ---- {RECIPIENT_NICKNAME} address-book permission (#227) ----
+
+test("the address-book row asks for the permission while it is missing", async ({ page }) => {
+  await openOptions(page);
+  await page.click("#btn-add");
+  const row = page.locator("#addressbook-permission");
+  await expect(row).toBeVisible();
+  // The stub reports the permission as not granted, so the ask + button show.
+  await expect(page.locator("#addressbook-permission-text")).toHaveText("optionsAddressBookAsk");
+  await expect(page.locator("#btn-grant-addressbook")).toBeVisible();
+});
+
+test("the address-book row confirms once the permission is granted", async ({ page }) => {
+  await page.addInitScript({
+    content: `
+      (() => {
+        function patch() {
+          if (window.messenger && window.messenger.permissions) {
+            window.messenger.permissions.contains = async () => true;
+          } else {
+            setTimeout(patch, 5);
+          }
+        }
+        patch();
+      })();
+    `,
+  });
+  await openOptions(page);
+  await page.click("#btn-add");
+  await expect(page.locator("#addressbook-permission-text")).toHaveText(
+    "optionsAddressBookGranted"
+  );
+  await expect(page.locator("#btn-grant-addressbook")).toBeHidden();
+});
+
+test("the nickname chip inserts its token into the editor body", async ({ page }) => {
+  await openOptions(page);
+  await page.click("#btn-add");
+  await page.click("#editor-body");
+  await page.click('.variable-chip[data-var="{RECIPIENT_NICKNAME}"]');
+  await expect(page.locator("#editor-body")).toContainText("{RECIPIENT_NICKNAME}");
+});
+
+// ---- Editor toolbar localisation ----
+
+test("every editor toolbar control takes its label from i18n", async ({ page }) => {
+  await openOptions(page);
+  await page.click("#btn-add");
+  // The stub returns the key itself, so a control that still carries hardcoded
+  // English text fails here instead of shipping untranslated.
+  await expect(page.locator('.toolbar-btn[data-cmd="bold"]')).toHaveAttribute(
+    "title",
+    "optionsToolbarBold"
+  );
+  await expect(page.locator("#format-block")).toHaveAttribute("title", "optionsToolbarFormat");
+  await expect(page.locator("#btn-html-toggle")).toHaveAttribute(
+    "title",
+    "optionsToolbarHtmlSource"
+  );
+  await expect(page.locator('#format-block option[value="h2"]')).toHaveText(
+    "optionsToolbarFormatHeading2"
+  );
+  await expect(page.locator("#editor-to")).toHaveAttribute(
+    "placeholder",
+    "optionsPlaceholderRecipients"
+  );
+});

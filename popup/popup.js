@@ -7,7 +7,11 @@ import {
   setPinned,
   INSERT_MODES,
 } from "../modules/template-store.js";
-import { insertTemplateIntoTab, extractPromptTokens } from "../modules/template-insert.js";
+import {
+  insertTemplateIntoTab,
+  extractPromptTokens,
+  needsRecipientPrompt,
+} from "../modules/template-insert.js";
 import { setFilterOptions } from "../modules/ui-helpers.js";
 import { getIdentityIdForTab } from "../modules/compose-utils.js";
 
@@ -172,7 +176,18 @@ async function insertTemplate(id) {
   // the background opens them in a long-lived popup window instead.
   const hasPrompts =
     extractPromptTokens(`${template.body || ""}\n${template.subject || ""}`).length > 0;
-  if (template.insertMode === INSERT_MODES.CURSOR || hasPrompts) {
+  // The recipient question runs in the same dialog as the prompts, so a
+  // template that needs it delegates for the same reason: the dialog has to
+  // outlive this popup.
+  let composeTo = [];
+  try {
+    const details = await messenger.compose.getComposeDetails(tabs[0].id);
+    if (Array.isArray(details && details.to)) composeTo = details.to;
+  } catch (_) {
+    /* Not readable — treat as "no recipient" and let the background decide. */
+  }
+  const asksRecipient = needsRecipientPrompt(template, composeTo);
+  if (template.insertMode === INSERT_MODES.CURSOR || hasPrompts || asksRecipient) {
     messenger.runtime.sendMessage({
       action: "templatewing:insertTemplate",
       tabId: tabs[0].id,
@@ -185,6 +200,9 @@ async function insertTemplate(id) {
   try {
     await insertTemplateIntoTab(tabs[0].id, template);
   } catch (err) {
+    // A cancelled {PROMPT}/{CHOICE} dialog is a decision, not a failure —
+    // neither a red console entry nor a notification.
+    if (err && err.code === "PROMPT_CANCELLED") return;
     console.error("TemplateWing: insert failed", err);
     try {
       const title = messenger.i18n.getMessage("notificationInsertFailedTitle");
@@ -194,9 +212,6 @@ async function insertTemplate(id) {
           "notificationAttachmentFailed",
           err.failedNames.join(", ")
         );
-      } else if (err && err.code === "PROMPT_CANCELLED") {
-        // User cancelled a {PROMPT}/{CHOICE} dialog — silent abort.
-        return;
       } else {
         message = messenger.i18n.getMessage("notificationInsertFailedGeneric");
       }
@@ -212,6 +227,11 @@ async function insertTemplate(id) {
     return;
   }
   await trackUsage(id);
+  messenger.runtime.sendMessage({
+    action: "templatewing:recordInsert",
+    tabId: tabs[0].id,
+    templateId: id,
+  });
   window.close();
 }
 
@@ -307,9 +327,65 @@ document.getElementById("btn-manage").addEventListener("click", async () => {
   window.close();
 });
 
+// ---- "Resolve again" for the template last inserted into this window ----
+
+/**
+ * Variables are resolved once, when the template is inserted. Pick a recipient
+ * afterwards and the greeting in the editor is stale — no event can rewrite
+ * prose that is already there. This offers the honest repair: run the same
+ * template again against the recipients the window has now.
+ */
+async function setupReinsertRow() {
+  const row = document.getElementById("reinsert-row");
+  const label = document.getElementById("reinsert-label");
+  const button = document.getElementById("btn-reinsert");
+  if (!row || !label || !button) return;
+
+  const tabs = await messenger.tabs.query({ active: true, currentWindow: true });
+  if (tabs.length === 0) return;
+  const tabId = tabs[0].id;
+
+  let last = null;
+  try {
+    last = await messenger.runtime.sendMessage({
+      action: "templatewing:getLastInsert",
+      tabId,
+    });
+  } catch (_) {
+    /* No background answer — leave the row hidden. */
+  }
+  if (!last || !last.templateId) return;
+
+  label.textContent = messenger.i18n.getMessage("popupLastInserted", last.name);
+  row.hidden = false;
+
+  // Two-step: replacing the message body cannot be undone from the popup, so
+  // the first click only arms the button. It disarms itself after a moment so
+  // a stray click never lands on a primed control.
+  let armed = false;
+  let disarmTimer = null;
+  button.addEventListener("click", () => {
+    if (!armed) {
+      armed = true;
+      button.classList.add("confirming");
+      button.textContent = messenger.i18n.getMessage("popupReinsertConfirm");
+      disarmTimer = setTimeout(() => {
+        armed = false;
+        button.classList.remove("confirming");
+        button.textContent = messenger.i18n.getMessage("popupReinsert");
+      }, 4000);
+      return;
+    }
+    clearTimeout(disarmTimer);
+    messenger.runtime.sendMessage({ action: "templatewing:reinsertTemplate", tabId });
+    window.close();
+  });
+}
+
 localize();
 await renderTemplateList();
 await populateCategoryFilter();
+await setupReinsertRow();
 
 // Restore last query from this browser session only — explicitly NOT
 // persisted across restarts (sessionStorage, not localStorage).

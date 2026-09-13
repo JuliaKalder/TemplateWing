@@ -27,6 +27,7 @@ import {
   parseRecipients,
 } from "../modules/validation.js";
 import { filterTemplateList, setFilterOptions } from "../modules/ui-helpers.js";
+import { ADDRESS_BOOK_PERMISSION, hasAddressBookPermission } from "../modules/address-book.js";
 import { lintTemplate, aggregateSeverity, SEVERITY } from "../modules/template-lint.js";
 import {
   buildUsageRows,
@@ -1543,8 +1544,40 @@ for (const chip of document.querySelectorAll(".variable-chip[data-var]")) {
   });
 }
 
+// ---- Address-book permission for {RECIPIENT_NICKNAME} ----
+
+/**
+ * Reflect the current state of the optional `addressBooks` permission in the
+ * row under the variable chips: an ask plus a button while it is missing, a
+ * plain confirmation once it is granted.
+ */
+async function refreshAddressBookPermission() {
+  const row = document.getElementById("addressbook-permission");
+  const text = document.getElementById("addressbook-permission-text");
+  const button = document.getElementById("btn-grant-addressbook");
+  if (!row || !text || !button) return;
+  const granted = await hasAddressBookPermission();
+  text.textContent = messenger.i18n.getMessage(
+    granted ? "optionsAddressBookGranted" : "optionsAddressBookAsk"
+  );
+  button.hidden = granted;
+  row.hidden = false;
+}
+
+document.getElementById("btn-grant-addressbook")?.addEventListener("click", async () => {
+  // permissions.request() must be the first thing the gesture does — awaiting
+  // anything before it costs the user-gesture token and the prompt is refused.
+  try {
+    await messenger.permissions.request(ADDRESS_BOOK_PERMISSION);
+  } catch (err) {
+    console.warn("TemplateWing: address book permission request failed", err);
+  }
+  await refreshAddressBookPermission();
+});
+
 localize();
 hideImportDialog();
+await refreshAddressBookPermission();
 await renderTemplateList();
 await populateCategoryFilter();
 await populateSelectionCategoryList();

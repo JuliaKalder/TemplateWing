@@ -1,4 +1,5 @@
 import { REQUEST_STORAGE_PREFIX } from "../modules/prompt-collector.js";
+import { isValidRecipient } from "../modules/validation.js";
 
 function localize() {
   for (const el of document.querySelectorAll("[data-i18n]")) {
@@ -23,6 +24,43 @@ async function loadRequest() {
 
   const form = document.getElementById("prompt-form");
   form.replaceChildren();
+
+  // The recipient question leads, because it decides how the rest of the
+  // template reads. Blank is a valid answer: it keeps the fallback wording.
+  if (req.askRecipient) {
+    const field = document.createElement("div");
+    field.className = "prompt-field";
+
+    const label = document.createElement("label");
+    label.textContent = messenger.i18n.getMessage("promptDialogRecipientLabel");
+    label.htmlFor = "field-recipient";
+    field.appendChild(label);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "field-recipient";
+    input.dataset.recipient = "1";
+    input.placeholder = messenger.i18n.getMessage("promptDialogRecipientPlaceholder");
+    field.appendChild(input);
+
+    const hint = document.createElement("p");
+    hint.className = "field-hint";
+    hint.textContent = messenger.i18n.getMessage("promptDialogRecipientHint");
+    field.appendChild(hint);
+
+    const error = document.createElement("p");
+    error.className = "field-error";
+    error.id = "recipient-error";
+    error.textContent = messenger.i18n.getMessage("promptDialogRecipientInvalid");
+    error.hidden = true;
+    field.appendChild(error);
+
+    input.addEventListener("input", () => {
+      error.hidden = true;
+    });
+
+    form.appendChild(field);
+  }
 
   for (const tok of req.tokens) {
     const field = document.createElement("div");
@@ -67,12 +105,38 @@ function collectAnswers() {
   return answers;
 }
 
+function recipientInput() {
+  return document.querySelector("#prompt-form [data-recipient]");
+}
+
+/**
+ * True when the recipient field is either empty (deliberately: keep the
+ * fallback wording) or holds something that parses as an address. A typo is
+ * worth catching here — it would otherwise end up in the To: field and in the
+ * greeting.
+ */
+function recipientIsUsable() {
+  const input = recipientInput();
+  if (!input) return true;
+  const value = input.value.trim();
+  if (!value) return true;
+  if (isValidRecipient(value)) return true;
+  const error = document.getElementById("recipient-error");
+  if (error) error.hidden = false;
+  input.focus();
+  input.select();
+  return false;
+}
+
 function sendResultAndClose() {
+  if (!recipientIsUsable()) return;
   answered = true;
+  const input = recipientInput();
   messenger.runtime.sendMessage({
     action: "templatewing:promptResult",
     requestId,
     answers: collectAnswers(),
+    recipient: input ? input.value.trim() : "",
   });
   window.close();
 }

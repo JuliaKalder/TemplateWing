@@ -166,19 +166,15 @@
           <input type="text" id="editor-subject" />
 
           <label data-i18n="optionsLabelTo"></label>
-          <input
-            type="text"
-            id="editor-to"
-            placeholder="recipient@example.com, Name <email@example.com>"
-          />
+          <input type="text" id="editor-to" data-i18n-placeholder="optionsPlaceholderRecipients" />
           <div id="editor-to-error" class="inline-error" hidden></div>
 
           <label data-i18n="optionsLabelCc"></label>
-          <input type="text" id="editor-cc" placeholder="recipient@example.com" />
+          <input type="text" id="editor-cc" data-i18n-placeholder="optionsPlaceholderRecipient" />
           <div id="editor-cc-error" class="inline-error" hidden></div>
 
           <label data-i18n="optionsLabelBcc"></label>
-          <input type="text" id="editor-bcc" placeholder="recipient@example.com" />
+          <input type="text" id="editor-bcc" data-i18n-placeholder="optionsPlaceholderRecipient" />
           <div id="editor-bcc-error" class="inline-error" hidden></div>
 
           <div class="recipient-help" data-i18n="optionsRecipientHelp"></div>
@@ -194,11 +190,28 @@
           <label data-i18n="optionsLabelBody"></label>
           <div id="editor-body-warning" class="editor-warning" hidden></div>
           <div class="editor-toolbar">
-            <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold"><b>B</b></button>
-            <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic">
+            <button
+              type="button"
+              class="toolbar-btn"
+              data-cmd="bold"
+              data-i18n-title="optionsToolbarBold"
+            >
+              <b>B</b>
+            </button>
+            <button
+              type="button"
+              class="toolbar-btn"
+              data-cmd="italic"
+              data-i18n-title="optionsToolbarItalic"
+            >
               <i>I</i>
             </button>
-            <button type="button" class="toolbar-btn" data-cmd="underline" title="Underline">
+            <button
+              type="button"
+              class="toolbar-btn"
+              data-cmd="underline"
+              data-i18n-title="optionsToolbarUnderline"
+            >
               <u>U</u>
             </button>
             <span class="toolbar-sep"></span>
@@ -206,27 +219,25 @@
               type="button"
               class="toolbar-btn"
               data-cmd="insertUnorderedList"
-              title="Bullet List"
-            >
-              &#8226; List
-            </button>
+              data-i18n-title="optionsToolbarBulletList"
+              data-i18n="optionsToolbarBulletListLabel"
+            ></button>
             <button
               type="button"
               class="toolbar-btn"
               data-cmd="insertOrderedList"
-              title="Numbered List"
-            >
-              1. List
-            </button>
+              data-i18n-title="optionsToolbarNumberedList"
+              data-i18n="optionsToolbarNumberedListLabel"
+            ></button>
             <span class="toolbar-sep"></span>
-            <select id="format-block" class="toolbar-select" title="Format">
-              <option value="p">Normal</option>
-              <option value="h2">Heading 2</option>
-              <option value="h3">Heading 3</option>
-              <option value="blockquote">Quote</option>
+            <select id="format-block" class="toolbar-select" data-i18n-title="optionsToolbarFormat">
+              <option value="p" data-i18n="optionsToolbarFormatNormal"></option>
+              <option value="h2" data-i18n="optionsToolbarFormatHeading2"></option>
+              <option value="h3" data-i18n="optionsToolbarFormatHeading3"></option>
+              <option value="blockquote" data-i18n="optionsToolbarFormatQuote"></option>
             </select>
             <span class="toolbar-sep"></span>
-            <label class="toolbar-toggle" title="Paste as plain text">
+            <label class="toolbar-toggle" data-i18n-title="optionsToolbarPastePlain">
               <input type="checkbox" id="paste-plain-toggle" />
               <span data-i18n="optionsPastePlainText"></span>
             </label>
@@ -235,7 +246,7 @@
               type="button"
               class="toolbar-btn"
               id="btn-html-toggle"
-              title="Toggle HTML source view"
+              data-i18n-title="optionsToolbarHtmlSource"
             >
               HTML
             </button>
@@ -356,6 +367,14 @@
               <button
                 type="button"
                 class="variable-chip"
+                data-var="{RECIPIENT_NICKNAME}"
+                data-i18n-title="optionsVariableRecipientNickname"
+              >
+                {RECIPIENT_NICKNAME}
+              </button>
+              <button
+                type="button"
+                class="variable-chip"
                 data-var="{RECIPIENT_EMAIL}"
                 data-i18n-title="optionsVariableRecipientEmail"
               >
@@ -401,6 +420,19 @@
               >
                 {CHOICE:…}
               </button>
+            </div>
+            <div id="addressbook-permission" class="addressbook-permission" hidden>
+              <span
+                id="addressbook-permission-text"
+                class="addressbook-permission-text"
+                data-i18n="optionsAddressBookAsk"
+              ></span>
+              <button
+                type="button"
+                id="btn-grant-addressbook"
+                class="btn-grant-addressbook"
+                data-i18n="optionsAddressBookGrant"
+              ></button>
             </div>
           </div>
 

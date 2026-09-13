@@ -215,6 +215,49 @@ h2 {
   color: var(--color-text-secondary);
 }
 
+/* "Resolve again" for the template last inserted into this compose window.
+   Sits above the footer because it acts on the message, not on the list. */
+.reinsert-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-medium);
+  font-size: 12px;
+}
+
+.reinsert-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.btn-reinsert {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-reinsert:hover {
+  background: var(--color-bg-highlight);
+}
+
+/* Second click confirms: replacing the body is not undoable from here. */
+.btn-reinsert.confirming {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .popup-footer {
   margin-top: 10px;
   padding-top: 10px;

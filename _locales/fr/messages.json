@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Prénom du premier destinataire du champ « À »",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Surnom du premier destinataire À : issu du carnet d'adresses",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — Adresse e-mail du premier destinataire du champ « À »",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,120 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Libellé:opt1|opt2|opt3} — Demander de choisir une option",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} nécessite l'accès à vos carnets d'adresses.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Autoriser l'accès au carnet d'adresses",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Accès au carnet d'adresses autorisé — {RECIPIENT_NICKNAME} fonctionne.",
+    "description": "Status shown once the addressBooks permission is granted"
+  },
+  "promptDialogRecipientLabel": {
+    "message": "À qui ce message est-il destiné ?",
+    "description": "Label of the recipient field in the prompt dialog"
+  },
+  "promptDialogRecipientPlaceholder": {
+    "message": "nom@exemple.fr",
+    "description": "Placeholder of the recipient field"
+  },
+  "promptDialogRecipientHint": {
+    "message": "Ce modèle s'adresse au destinataire. Laissez vide pour conserver la formulation de repli.",
+    "description": "Explains that leaving the recipient blank is allowed"
+  },
+  "promptDialogRecipientInvalid": {
+    "message": "Cela ne ressemble pas à une adresse e-mail.",
+    "description": "Validation error for the recipient field"
+  },
+  "popupLastInserted": {
+    "message": "Dernière insertion : $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Follow-up"
+      }
+    },
+    "description": "Names the template last inserted into this compose window"
+  },
+  "popupReinsert": {
+    "message": "Réinsérer",
+    "description": "Button that re-resolves the last inserted template"
+  },
+  "popupReinsertConfirm": {
+    "message": "Remplacer le texte ?",
+    "description": "Second-click label confirming the body replacement"
+  },
+  "popupReinsertHint": {
+    "message": "Insérer à nouveau le même modèle avec les destinataires actuels de cette fenêtre. Remplace le texte du message.",
+    "description": "Tooltip of the re-resolve button"
+  },
+  "optionsPlaceholderRecipients": {
+    "message": "destinataire@exemple.fr, Nom <email@exemple.fr>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "destinataire@exemple.fr",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Gras",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Italique",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Souligné",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Liste à puces",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Liste",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Liste numérotée",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Liste",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Format de paragraphe",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Titre 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Titre 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Citation",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Coller en texte brut",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "Afficher ou masquer la source HTML",
+    "description": "Tooltip of the HTML source view button"
   },
   "promptDialogTitle": {
     "message": "Renseigner les valeurs du modèle",

@@ -497,6 +497,10 @@
     "message": "{RECIPIENT_FIRSTNAME} — Vorname des ersten An:-Empfängers",
     "description": "Describes RECIPIENT_FIRSTNAME variable"
   },
+  "optionsVariableRecipientNickname": {
+    "message": "{RECIPIENT_NICKNAME} — Spitzname des ersten An:-Empfängers aus dem Adressbuch",
+    "description": "Describes RECIPIENT_NICKNAME variable"
+  },
   "optionsVariableRecipientEmail": {
     "message": "{RECIPIENT_EMAIL} — E-Mail-Adresse des ersten An:-Empfängers",
     "description": "Describes RECIPIENT_EMAIL variable"
@@ -520,6 +524,120 @@
   "optionsVariableChoice": {
     "message": "{CHOICE:Label:opt1|opt2|opt3} — Beim Einfügen aus mehreren Optionen wählen",
     "description": "Describes CHOICE variable"
+  },
+  "optionsAddressBookAsk": {
+    "message": "{RECIPIENT_NICKNAME} benötigt Zugriff auf Ihre Adressbücher.",
+    "description": "Prompt shown when the optional addressBooks permission is missing"
+  },
+  "optionsAddressBookGrant": {
+    "message": "Adressbuch-Zugriff erlauben",
+    "description": "Button that requests the optional addressBooks permission"
+  },
+  "optionsAddressBookGranted": {
+    "message": "Adressbuch-Zugriff erlaubt — {RECIPIENT_NICKNAME} funktioniert.",
+    "description": "Status shown once the addressBooks permission is granted"
+  },
+  "promptDialogRecipientLabel": {
+    "message": "An wen geht diese Nachricht?",
+    "description": "Label of the recipient field in the prompt dialog"
+  },
+  "promptDialogRecipientPlaceholder": {
+    "message": "name@beispiel.de",
+    "description": "Placeholder of the recipient field"
+  },
+  "promptDialogRecipientHint": {
+    "message": "Diese Vorlage spricht den Empfänger an. Leer lassen behält die Ersatzformulierung.",
+    "description": "Explains that leaving the recipient blank is allowed"
+  },
+  "promptDialogRecipientInvalid": {
+    "message": "Das sieht nicht nach einer E-Mail-Adresse aus.",
+    "description": "Validation error for the recipient field"
+  },
+  "popupLastInserted": {
+    "message": "Zuletzt eingefügt: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Follow-up"
+      }
+    },
+    "description": "Names the template last inserted into this compose window"
+  },
+  "popupReinsert": {
+    "message": "Neu auflösen",
+    "description": "Button that re-resolves the last inserted template"
+  },
+  "popupReinsertConfirm": {
+    "message": "Text ersetzen?",
+    "description": "Second-click label confirming the body replacement"
+  },
+  "popupReinsertHint": {
+    "message": "Dieselbe Vorlage erneut einfügen, mit den Empfängern, die jetzt im Fenster stehen. Ersetzt den Nachrichtentext.",
+    "description": "Tooltip of the re-resolve button"
+  },
+  "optionsPlaceholderRecipients": {
+    "message": "empfaenger@beispiel.de, Name <email@beispiel.de>",
+    "description": "Placeholder of the To field in the template editor"
+  },
+  "optionsPlaceholderRecipient": {
+    "message": "empfaenger@beispiel.de",
+    "description": "Placeholder of the Cc/Bcc fields"
+  },
+  "optionsToolbarBold": {
+    "message": "Fett",
+    "description": "Tooltip of the bold button"
+  },
+  "optionsToolbarItalic": {
+    "message": "Kursiv",
+    "description": "Tooltip of the italic button"
+  },
+  "optionsToolbarUnderline": {
+    "message": "Unterstrichen",
+    "description": "Tooltip of the underline button"
+  },
+  "optionsToolbarBulletList": {
+    "message": "Aufzählung",
+    "description": "Tooltip of the bullet list button"
+  },
+  "optionsToolbarBulletListLabel": {
+    "message": "• Liste",
+    "description": "Label of the bullet list button"
+  },
+  "optionsToolbarNumberedList": {
+    "message": "Nummerierte Liste",
+    "description": "Tooltip of the numbered list button"
+  },
+  "optionsToolbarNumberedListLabel": {
+    "message": "1. Liste",
+    "description": "Label of the numbered list button"
+  },
+  "optionsToolbarFormat": {
+    "message": "Absatzformat",
+    "description": "Tooltip of the paragraph format select"
+  },
+  "optionsToolbarFormatNormal": {
+    "message": "Normal",
+    "description": "Paragraph format: normal text"
+  },
+  "optionsToolbarFormatHeading2": {
+    "message": "Überschrift 2",
+    "description": "Paragraph format: heading level 2"
+  },
+  "optionsToolbarFormatHeading3": {
+    "message": "Überschrift 3",
+    "description": "Paragraph format: heading level 3"
+  },
+  "optionsToolbarFormatQuote": {
+    "message": "Zitat",
+    "description": "Paragraph format: block quote"
+  },
+  "optionsToolbarPastePlain": {
+    "message": "Als reinen Text einfügen",
+    "description": "Tooltip of the paste-as-plain-text toggle"
+  },
+  "optionsToolbarHtmlSource": {
+    "message": "HTML-Quelltext ein-/ausblenden",
+    "description": "Tooltip of the HTML source view button"
   },
   "promptDialogTitle": {
     "message": "Vorlagenwerte ausfüllen",
